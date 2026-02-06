@@ -1,6 +1,37 @@
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte, desc, asc, or, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import {
+  InsertUser,
+  users,
+  groups,
+  teams,
+  staff,
+  companies,
+  divisions,
+  departments,
+  fsms,
+  clients,
+  cases,
+  sessionTypes,
+  sessionStatuses,
+  sessionResults,
+  sessions,
+  notifications,
+  type InsertGroup,
+  type InsertTeam,
+  type InsertStaff,
+  type InsertCompany,
+  type InsertDivision,
+  type InsertDepartment,
+  type InsertFSM,
+  type InsertClient,
+  type InsertCase,
+  type InsertSessionType,
+  type InsertSessionStatus,
+  type InsertSessionResult,
+  type InsertSession,
+  type InsertNotification,
+} from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +120,610 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ============================================================================
+// STAFF ORGANIZATION
+// ============================================================================
+
+export async function getAllGroups() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(groups).orderBy(asc(groups.name));
+}
+
+export async function getGroupById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(groups).where(eq(groups.id, id));
+  return result[0] || null;
+}
+
+export async function createGroup(data: InsertGroup) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(groups).values(data);
+  return result.insertId as number;
+}
+
+export async function updateGroup(id: number, data: Partial<InsertGroup>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(groups).set(data).where(eq(groups.id, id));
+}
+
+export async function deleteGroup(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(groups).where(eq(groups.id, id));
+}
+
+export async function getTeamsByGroupId(groupId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(teams).where(eq(teams.groupId, groupId)).orderBy(asc(teams.name));
+}
+
+export async function getTeamById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(teams).where(eq(teams.id, id));
+  return result[0] || null;
+}
+
+export async function createTeam(data: InsertTeam) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(teams).values(data);
+  return result.insertId as number;
+}
+
+export async function updateTeam(id: number, data: Partial<InsertTeam>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(teams).set(data).where(eq(teams.id, id));
+}
+
+export async function deleteTeam(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(teams).where(eq(teams.id, id));
+}
+
+export async function getStaffByTeamId(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(staff).where(eq(staff.teamId, teamId)).orderBy(asc(staff.name));
+}
+
+export async function getStaffById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(staff).where(eq(staff.id, id));
+  return result[0] || null;
+}
+
+export async function getStaffByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(staff).where(eq(staff.userId, userId));
+  return result[0] || null;
+}
+
+export async function createStaff(data: InsertStaff) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(staff).values(data);
+  return result.insertId as number;
+}
+
+export async function updateStaff(id: number, data: Partial<InsertStaff>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(staff).set(data).where(eq(staff.id, id));
+}
+
+export async function deleteStaff(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(staff).where(eq(staff.id, id));
+}
+
+// ============================================================================
+// CLIENT ORGANIZATION
+// ============================================================================
+
+export async function getAllCompanies() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(companies).orderBy(asc(companies.name));
+}
+
+export async function getCompanyById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(companies).where(eq(companies.id, id));
+  return result[0] || null;
+}
+
+export async function createCompany(data: InsertCompany) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(companies).values(data);
+  return result.insertId as number;
+}
+
+export async function updateCompany(id: number, data: Partial<InsertCompany>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(companies).set(data).where(eq(companies.id, id));
+}
+
+export async function deleteCompany(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(companies).where(eq(companies.id, id));
+}
+
+export async function getDivisionsByCompanyId(companyId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(divisions).where(eq(divisions.companyId, companyId)).orderBy(asc(divisions.name));
+}
+
+export async function getDivisionById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(divisions).where(eq(divisions.id, id));
+  return result[0] || null;
+}
+
+export async function createDivision(data: InsertDivision) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(divisions).values(data);
+  return result.insertId as number;
+}
+
+export async function updateDivision(id: number, data: Partial<InsertDivision>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(divisions).set(data).where(eq(divisions.id, id));
+}
+
+export async function deleteDivision(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(divisions).where(eq(divisions.id, id));
+}
+
+export async function getDepartmentsByDivisionId(divisionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(departments).where(eq(departments.divisionId, divisionId)).orderBy(asc(departments.name));
+}
+
+export async function getDepartmentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(departments).where(eq(departments.id, id));
+  return result[0] || null;
+}
+
+export async function createDepartment(data: InsertDepartment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(departments).values(data);
+  return result.insertId as number;
+}
+
+export async function updateDepartment(id: number, data: Partial<InsertDepartment>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(departments).set(data).where(eq(departments.id, id));
+}
+
+export async function deleteDepartment(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(departments).where(eq(departments.id, id));
+}
+
+// ============================================================================
+// REFERRAL SOURCES
+// ============================================================================
+
+export async function getAllFSMs() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(fsms).orderBy(asc(fsms.name));
+}
+
+export async function getFSMById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(fsms).where(eq(fsms.id, id));
+  return result[0] || null;
+}
+
+export async function createFSM(data: InsertFSM) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(fsms).values(data);
+  return result.insertId as number;
+}
+
+export async function updateFSM(id: number, data: Partial<InsertFSM>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(fsms).set(data).where(eq(fsms.id, id));
+}
+
+export async function deleteFSM(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(fsms).where(eq(fsms.id, id));
+}
+
+// ============================================================================
+// CLIENTS
+// ============================================================================
+
+export async function getClientsByDepartmentId(departmentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(clients).where(eq(clients.departmentId, departmentId)).orderBy(asc(clients.name));
+}
+
+export async function getClientById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(clients).where(eq(clients.id, id));
+  return result[0] || null;
+}
+
+export async function searchClients(searchTerm: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(clients)
+    .where(or(like(clients.name, `%${searchTerm}%`), like(clients.email, `%${searchTerm}%`)))
+    .orderBy(asc(clients.name))
+    .limit(50);
+}
+
+export async function createClient(data: InsertClient) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(clients).values(data);
+  return result.insertId as number;
+}
+
+export async function updateClient(id: number, data: Partial<InsertClient>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(clients).set(data).where(eq(clients.id, id));
+}
+
+export async function deleteClient(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(clients).where(eq(clients.id, id));
+}
+
+// ============================================================================
+// CASE MANAGEMENT
+// ============================================================================
+
+export async function getCasesByClientId(clientId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(cases).where(eq(cases.clientId, clientId)).orderBy(desc(cases.startDate));
+}
+
+export async function getCaseById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(cases).where(eq(cases.id, id));
+  return result[0] || null;
+}
+
+export async function getCaseByCaseNumber(caseNumber: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(cases).where(eq(cases.caseNumber, caseNumber));
+  return result[0] || null;
+}
+
+export async function createCase(data: InsertCase) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(cases).values(data);
+  return result.insertId as number;
+}
+
+export async function updateCase(id: number, data: Partial<InsertCase>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(cases).set(data).where(eq(cases.id, id));
+}
+
+export async function deleteCase(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(cases).where(eq(cases.id, id));
+}
+
+// ============================================================================
+// SESSION LOOKUP TABLES
+// ============================================================================
+
+export async function getAllSessionTypes() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessionTypes).where(eq(sessionTypes.isActive, 1)).orderBy(asc(sessionTypes.name));
+}
+
+export async function getSessionTypeById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(sessionTypes).where(eq(sessionTypes.id, id));
+  return result[0] || null;
+}
+
+export async function createSessionType(data: InsertSessionType) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(sessionTypes).values(data);
+  return result.insertId as number;
+}
+
+export async function updateSessionType(id: number, data: Partial<InsertSessionType>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(sessionTypes).set(data).where(eq(sessionTypes.id, id));
+}
+
+export async function getAllSessionStatuses() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessionStatuses).where(eq(sessionStatuses.isActive, 1)).orderBy(asc(sessionStatuses.name));
+}
+
+export async function getSessionStatusById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(sessionStatuses).where(eq(sessionStatuses.id, id));
+  return result[0] || null;
+}
+
+export async function createSessionStatus(data: InsertSessionStatus) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(sessionStatuses).values(data);
+  return result.insertId as number;
+}
+
+export async function updateSessionStatus(id: number, data: Partial<InsertSessionStatus>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(sessionStatuses).set(data).where(eq(sessionStatuses.id, id));
+}
+
+export async function getAllSessionResults() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessionResults).where(eq(sessionResults.isActive, 1)).orderBy(asc(sessionResults.name));
+}
+
+export async function getSessionResultById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(sessionResults).where(eq(sessionResults.id, id));
+  return result[0] || null;
+}
+
+export async function createSessionResult(data: InsertSessionResult) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(sessionResults).values(data);
+  return result.insertId as number;
+}
+
+export async function updateSessionResult(id: number, data: Partial<InsertSessionResult>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(sessionResults).set(data).where(eq(sessionResults.id, id));
+}
+
+// ============================================================================
+// SESSIONS
+// ============================================================================
+
+export async function getSessionsByCaseId(caseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessions).where(eq(sessions.caseId, caseId)).orderBy(desc(sessions.createdAt));
+}
+
+export async function getSessionsByStaffId(staffId: number, limit?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const query = db.select().from(sessions).where(eq(sessions.staffId, staffId)).orderBy(desc(sessions.createdAt));
+  if (limit) {
+    return query.limit(limit);
+  }
+  return query;
+}
+
+export async function getUpcomingSessions(staffId: number, days: number = 7) {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  const future = new Date();
+  future.setDate(future.getDate() + days);
+  
+  return db
+    .select()
+    .from(sessions)
+    .where(
+      and(
+        eq(sessions.staffId, staffId),
+        gte(sessions.scheduledDate, now),
+        lte(sessions.scheduledDate, future)
+      )
+    )
+    .orderBy(asc(sessions.scheduledDate));
+}
+
+export async function getRecentSessions(staffId: number, days: number = 7) {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  const past = new Date();
+  past.setDate(past.getDate() - days);
+  
+  return db
+    .select()
+    .from(sessions)
+    .where(
+      and(
+        eq(sessions.staffId, staffId),
+        gte(sessions.completedAt, past),
+        lte(sessions.completedAt, now)
+      )
+    )
+    .orderBy(desc(sessions.completedAt));
+}
+
+export async function getSessionById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(sessions).where(eq(sessions.id, id));
+  return result[0] || null;
+}
+
+export async function createSession(data: InsertSession) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(sessions).values(data);
+  return result.insertId as number;
+}
+
+export async function updateSession(id: number, data: Partial<InsertSession>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(sessions).set(data).where(eq(sessions.id, id));
+}
+
+export async function deleteSession(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(sessions).where(eq(sessions.id, id));
+}
+
+export async function canEditSession(sessionId: number, isAdmin: boolean): Promise<boolean> {
+  if (isAdmin) return true;
+  
+  const session = await getSessionById(sessionId);
+  if (!session || !session.completedAt) return true;
+  
+  const now = new Date();
+  const completedAt = new Date(session.completedAt);
+  const hoursSinceCompletion = (now.getTime() - completedAt.getTime()) / (1000 * 60 * 60);
+  
+  return hoursSinceCompletion <= 48;
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+export async function getNotificationsBySessionId(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(notifications).where(eq(notifications.sessionId, sessionId));
+}
+
+export async function getPendingNotifications() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(notifications).where(eq(notifications.status, "pending"));
+}
+
+export async function createNotification(data: InsertNotification) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(notifications).values(data);
+  return result.insertId as number;
+}
+
+export async function updateNotification(id: number, data: Partial<InsertNotification>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(notifications).set(data).where(eq(notifications.id, id));
+}
+
+// ============================================================================
+// REPORTING QUERIES
+// ============================================================================
+
+export async function getBillableHoursByStaff(staffId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return { totalSessions: 0, totalBillableHours: 0, sessions: [] };
+  
+  const sessionList = await db
+    .select()
+    .from(sessions)
+    .where(
+      and(
+        eq(sessions.staffId, staffId),
+        gte(sessions.completedAt, startDate),
+        lte(sessions.completedAt, endDate)
+      )
+    )
+    .orderBy(desc(sessions.completedAt));
+  
+  const totalBillableHours = sessionList.reduce((sum, s) => sum + parseFloat(s.billableHours || "0"), 0);
+  
+  return {
+    totalSessions: sessionList.length,
+    totalBillableHours,
+    sessions: sessionList,
+  };
+}
+
+export async function getBillableHoursByClient(clientId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return { totalSessions: 0, totalBillableHours: 0, sessions: [] };
+  
+  const sessionList = await db
+    .select()
+    .from(sessions)
+    .where(
+      and(
+        eq(sessions.clientId, clientId),
+        gte(sessions.completedAt, startDate),
+        lte(sessions.completedAt, endDate)
+      )
+    )
+    .orderBy(desc(sessions.completedAt));
+  
+  const totalBillableHours = sessionList.reduce((sum, s) => sum + parseFloat(s.billableHours || "0"), 0);
+  
+  return {
+    totalSessions: sessionList.length,
+    totalBillableHours,
+    sessions: sessionList,
+  };
+}
+
+export async function getMonthlyBillableHours(staffId: number, year: number, month: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+  
+  const result = await getBillableHoursByStaff(staffId, startDate, endDate);
+  return result.totalBillableHours;
+}

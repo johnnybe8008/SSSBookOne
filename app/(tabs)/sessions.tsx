@@ -1,0 +1,198 @@
+import { useState } from "react";
+import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator } from "react-native";
+import { ScreenContainer } from "@/components/screen-container";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useColors } from "@/hooks/use-colors";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "expo-router";
+
+/**
+ * Sessions Screen (Sessions Tab)
+ * 
+ * Displays:
+ * - Filter bar for date range, status, type
+ * - Scrollable list of session cards
+ * - Edit indicators for sessions within 48-hour window
+ */
+export default function SessionsScreen() {
+  const colors = useColors();
+  const router = useRouter();
+  const { user } = useAuth();
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Get staff record for current user
+  const { data: staffRecord } = trpc.staff.getByUserId.useQuery(
+    { userId: user?.id || 0 },
+    { enabled: !!user?.id }
+  );
+
+  // Get all sessions for staff
+  const { data: sessions, isLoading: sessionsLoading } = trpc.sessions.listByStaff.useQuery(
+    { staffId: staffRecord?.id || 0 },
+    { enabled: !!staffRecord?.id }
+  );
+
+  // Get session types and statuses for filtering
+  const { data: sessionTypes } = trpc.sessionTypes.list.useQuery();
+  const { data: sessionStatuses } = trpc.sessionStatuses.list.useQuery();
+
+  const getStatusColor = (statusId: number) => {
+    // This is a simplified version - in production, map statusId to actual status name
+    const statusColors: { [key: number]: string } = {
+      1: colors.primary, // Scheduled
+      2: colors.warning, // In Progress
+      3: colors.success, // Completed
+      4: colors.muted, // Cancelled
+      5: colors.error, // No-show
+    };
+    return statusColors[statusId] || colors.muted;
+  };
+
+  return (
+    <ScreenContainer className="flex-1">
+      {/* Header with Filter Button */}
+      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-2xl font-bold text-foreground">Sessions</Text>
+          <TouchableOpacity
+            className="flex-row items-center gap-2 px-4 py-2 bg-surface rounded-full border border-border"
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <IconSymbol name="line.3.horizontal.decrease" size={18} color={colors.foreground} />
+            <Text className="text-sm font-medium text-foreground">Filter</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Filter Panel (collapsed by default) */}
+      {showFilters && (
+        <View className="px-6 py-4 bg-surface border-b border-border">
+          <Text className="text-sm font-semibold text-foreground mb-3">Filter by Status</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View className="flex-row gap-2">
+              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border">
+                <Text className="text-sm font-medium text-foreground">All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border">
+                <Text className="text-sm font-medium text-foreground">Scheduled</Text>
+              </TouchableOpacity>
+              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border">
+                <Text className="text-sm font-medium text-foreground">Completed</Text>
+              </TouchableOpacity>
+              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border">
+                <Text className="text-sm font-medium text-foreground">In Progress</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Session List */}
+      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
+        {sessionsLoading ? (
+          <View className="items-center justify-center py-12">
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : sessions && sessions.length > 0 ? (
+          <View className="gap-4">
+            {sessions.map((session) => {
+              const canEdit = session.completedAt
+                ? (new Date().getTime() - new Date(session.completedAt).getTime()) / (1000 * 60 * 60) <= 48
+                : true;
+
+              return (
+                <TouchableOpacity
+                  key={session.id}
+                  className="bg-surface rounded-2xl p-5 border border-border"
+                  onPress={() => {
+                    // Navigate to session detail
+                    router.push(`/session/${session.id}` as any);
+                  }}
+                >
+                  {/* Header with Client and Edit Indicator */}
+                  <View className="flex-row items-start justify-between mb-3">
+                    <View className="flex-1">
+                      <Text className="text-lg font-semibold text-foreground">Client #{session.clientId}</Text>
+                      <Text className="text-sm text-muted mt-1">Case #{session.caseId}</Text>
+                    </View>
+                    <View className="flex-row items-center gap-2">
+                      {canEdit && (
+                        <View className="px-3 py-1 bg-primary/20 rounded-full">
+                          <Text className="text-xs font-medium text-primary">Editable</Text>
+                        </View>
+                      )}
+                      <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                    </View>
+                  </View>
+
+                  {/* Session Type and Status */}
+                  <View className="flex-row items-center gap-2 mb-3">
+                    <View className="px-3 py-1 bg-background rounded-full border border-border">
+                      <Text className="text-xs font-medium text-foreground">Type #{session.sessionTypeId}</Text>
+                    </View>
+                    <View
+                      className="px-3 py-1 rounded-full"
+                      style={{ backgroundColor: `${getStatusColor(session.sessionStatusId)}20` }}
+                    >
+                      <Text
+                        className="text-xs font-medium"
+                        style={{ color: getStatusColor(session.sessionStatusId) }}
+                      >
+                        Status #{session.sessionStatusId}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Date and Duration */}
+                  <View className="flex-row items-center gap-4 mb-3">
+                    <View className="flex-row items-center gap-2">
+                      <IconSymbol name="calendar" size={14} color={colors.muted} />
+                      <Text className="text-sm text-muted">
+                        {session.completedAt
+                          ? new Date(session.completedAt).toLocaleDateString()
+                          : session.scheduledDate
+                          ? new Date(session.scheduledDate).toLocaleDateString()
+                          : "Not scheduled"}
+                      </Text>
+                    </View>
+                    {session.sessionDuration && (
+                      <View className="flex-row items-center gap-2">
+                        <IconSymbol name="clock.fill" size={14} color={colors.muted} />
+                        <Text className="text-sm text-muted">{session.sessionDuration} min</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Billable Hours */}
+                  {session.billableHours && (
+                    <View className="pt-3 border-t border-border">
+                      <Text className="text-sm text-muted">
+                        Billable Hours: <Text className="font-semibold text-primary">{session.billableHours} hrs</Text>
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Notes Preview */}
+                  {session.notes && (
+                    <View className="pt-3 border-t border-border mt-3">
+                      <Text className="text-sm text-muted" numberOfLines={2}>
+                        {session.notes}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          <View className="items-center justify-center py-12">
+            <IconSymbol name="calendar" size={48} color={colors.muted} />
+            <Text className="text-base text-muted text-center mt-4">No sessions recorded yet</Text>
+            <Text className="text-sm text-muted text-center mt-2">Start by recording your first session</Text>
+          </View>
+        )}
+      </ScrollView>
+    </ScreenContainer>
+  );
+}

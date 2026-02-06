@@ -28,11 +28,11 @@ const schemeFromBundleId = `manus${timestamp}`;
 
 const env = {
   // App branding - update these values directly (do not use env vars)
-  appName: "DoH Book One - Counseling Tracker",
-  appSlug: "doh-book-one",
+  appName: "DoH Book One",
+  appSlug: "{{project_name}}",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "",
+  logoUrl: "https://private-us-east-1.manuscdn.com/sessionFile/WrlpYHTo5lPQTmFMIeMCl7/sandbox/uoXbrF2SCS2SpOOBhze0YD-img-1_1770383225000_na1fn_ZG9oLWJvb2stb25lLWljb24.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvV3JscFlIVG81bFBRVG1GTUllTUNsNy9zYW5kYm94L3VvWGJyRjJTQ1MyU3BPT0JoemUwWUQtaW1nLTFfMTc3MDM4MzIyNTAwMF9uYTFmbl9aRzlvTFdKdmIyc3RiMjVsTFdsamIyNC5wbmc~eC1vc3MtcHJvY2Vzcz1pbWFnZS9yZXNpemUsd18xOTIwLGhfMTkyMC9mb3JtYXQsd2VicC9xdWFsaXR5LHFfODAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3OTg3NjE2MDB9fX1dfQ__&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=KZwtPJDfPVXr2yK-RUERWW2TVEAOmtEGXkdLQ-o5b64ieiosls1ijRrwT02Nlh~u~TPqviFKb2XLNcGfPrEsOp0qGS7b9ARwdppq4LCF~ifjEmpDAmnnXhciLg7nJEF~KxxitOgB3jOZfxfzb~XZ3vBatqOPSo1ahHu~23bCGOUuLhaDJcbXNFk9eeZXnLbJWElPeLXfjsaSWfv4teiedXQlzgsTLKqtO4KcM1qf2EVjvdZOVnQPQh7OwghkJUDTtksr5ArqHlnqTHwraEG8DEX~A-XXZi2e1lTfP5oVTkYfGCrh~~zjTvMJd3FNYXCYCGb09tqkduASn~ZzYtKvsw__",
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
   androidPackage: bundleId,
