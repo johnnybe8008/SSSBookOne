@@ -188,9 +188,7 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-              onPress={() => {
-                // Navigate to manage companies
-              }}
+              onPress={() => router.push("/admin-companies" as any)}
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="house.fill" size={20} color={colors.foreground} />

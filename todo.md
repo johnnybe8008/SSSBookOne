@@ -295,3 +295,11 @@
 - [x] Replace app logo with custom DMSMH branding
 - [x] Copy new logo to all required asset locations
 - [x] Update app.config.ts with new logo URL
+
+## Bug Fixes - Unmatched Routes
+- [x] Create add-client screen for the + button on Clients tab
+- [ ] Create record-session screen for the + button on Dashboard
+- [x] Create admin management screen for companies
+- [ ] Create admin management screens for divisions, departments
+- [ ] Create admin management screens for staff, FSMs, lookup tables
+- [ ] Fix all navigation routes to point to existing screens
