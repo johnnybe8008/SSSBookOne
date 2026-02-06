@@ -280,3 +280,7 @@
 - [x] Copy logo to all required asset locations
 - [x] Update app.config.ts with app name "DoH Book One"
 - [x] Update app.config.ts with logo URL
+
+## Bug Fixes
+- [x] Fix app.config.ts slug placeholder causing EAS build failure
+- [x] Update appSlug from {{project_name}} to valid slug value
