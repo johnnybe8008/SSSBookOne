@@ -290,3 +290,8 @@
 - [x] Create mock admin user in database
 - [x] Update Log In button to trigger auto-login
 - [x] Store mock session in AsyncStorage
+
+## Logo Update
+- [x] Replace app logo with custom DMSMH branding
+- [x] Copy new logo to all required asset locations
+- [x] Update app.config.ts with new logo URL
