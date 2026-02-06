@@ -284,3 +284,9 @@
 ## Bug Fixes
 - [x] Fix app.config.ts slug placeholder causing EAS build failure
 - [x] Update appSlug from {{project_name}} to valid slug value
+
+## Authentication Development
+- [x] Add development bypass to auto-login as admin for testing
+- [x] Create mock admin user in database
+- [x] Update Log In button to trigger auto-login
+- [x] Store mock session in AsyncStorage
