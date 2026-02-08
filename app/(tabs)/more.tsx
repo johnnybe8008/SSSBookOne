@@ -49,13 +49,13 @@ export default function MoreScreen() {
       <ScreenContainer className="items-center justify-center p-6">
         <Text className="text-xl font-semibold text-foreground mb-4">Not Logged In</Text>
         <Text className="text-base text-muted text-center mb-6">
-          Please go to the Home tab and tap "Log In" to access your account.
+          Please log in to access settings and profile.
         </Text>
         <TouchableOpacity
           className="bg-primary px-6 py-3 rounded-full"
-          onPress={() => router.push("/(tabs)" as any)}
+          onPress={() => router.push("/login" as any)}
         >
-          <Text className="text-background font-semibold">Go to Home</Text>
+          <Text className="text-background font-semibold">Log In</Text>
         </TouchableOpacity>
       </ScreenContainer>
     );

@@ -5,8 +5,6 @@ import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
 
 /**
  * Dashboard Screen (Home Tab)
@@ -60,28 +58,8 @@ export default function DashboardScreen() {
     );
   }
 
-  const handleDevLogin = async () => {
-    // Development bypass: Create a mock admin user for testing
-    const mockUser = {
-      id: 1,
-      openId: "dev-admin-001",
-      name: "Admin User",
-      email: "admin@dohbookone.com",
-      loginMethod: "dev-bypass" as const,
-      lastSignedIn: new Date(),
-    };
-
-    // Store mock session token and user info
-    await AsyncStorage.setItem("sessionToken", "dev-mock-token-12345");
-    await AsyncStorage.setItem("userInfo", JSON.stringify(mockUser));
-
-    // Refresh auth state
-    if (Platform.OS === "web") {
-      window.location.reload();
-    } else {
-      // For native, trigger a re-render by navigating
-      router.replace("/" as any);
-    }
+  const handleLogin = () => {
+    router.push("/login" as any);
   };
 
   if (!isAuthenticated) {
@@ -93,13 +71,10 @@ export default function DashboardScreen() {
         </Text>
         <TouchableOpacity
           className="bg-primary px-6 py-3 rounded-full"
-          onPress={handleDevLogin}
+          onPress={handleLogin}
         >
           <Text className="text-background font-semibold">Log In</Text>
         </TouchableOpacity>
-        <Text className="text-xs text-muted mt-4 text-center">
-          Development Mode: Auto-login as Admin
-        </Text>
       </ScreenContainer>
     );
   }

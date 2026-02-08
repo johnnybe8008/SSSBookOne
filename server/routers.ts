@@ -4,12 +4,41 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { authenticateUser, changePassword } from "./auth";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
+    login: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          password: z.string().min(1),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const user = await authenticateUser(input.email, input.password);
+        if (!user) {
+          throw new Error("Invalid email or password");
+        }
+        // For now, return the user - session management will be handled by the frontend
+        return { user, success: true };
+      }),
+    changePassword: protectedProcedure
+      .input(
+        z.object({
+          newPassword: z.string().min(6),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+        await changePassword(ctx.user.id, input.newPassword);
+        return { success: true };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
