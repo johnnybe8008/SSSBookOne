@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert } from "react-native";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { trpc } from "@/lib/trpc";
+import * as Auth from "@/lib/_core/auth";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -24,9 +24,19 @@ export default function LoginScreen() {
       const result = await loginMutation.mutateAsync({ email, password });
       
       if (result.success && result.user) {
-        // Store user session in AsyncStorage
-        await AsyncStorage.setItem("user", JSON.stringify(result.user));
-        await AsyncStorage.setItem("isAuthenticated", "true");
+        // Store user info using Auth helpers
+        const userInfo: Auth.User = {
+          id: result.user.id,
+          openId: result.user.openId || `email-${result.user.id}`,
+          name: result.user.name,
+          email: result.user.email,
+          loginMethod: "email-password",
+          lastSignedIn: new Date(),
+        };
+        
+        await Auth.setUserInfo(userInfo);
+        // For native, we also need a session token (use a mock token for now)
+        await Auth.setSessionToken(`session-${result.user.id}-${Date.now()}`);
         
         // Navigate to home
         router.replace("/(tabs)");

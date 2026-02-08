@@ -316,3 +316,8 @@
 - [x] Add password change functionality
 - [x] Replace auto-login with proper login flow
 - [x] Add server initialization to create default admin on startup
+
+## Bug Fixes - Authentication Persistence
+- [x] Fix login state not persisting after successful authentication
+- [x] Update login screen to use Auth helper functions (setUserInfo, setSessionToken)
+- [x] Ensure More tab shows admin section after login instead of login prompt
