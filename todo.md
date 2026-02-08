@@ -303,3 +303,8 @@
 - [ ] Create admin management screens for divisions, departments
 - [ ] Create admin management screens for staff, FSMs, lookup tables
 - [ ] Fix all navigation routes to point to existing screens
+
+## Bug Fixes - Authentication
+- [x] Fix "Not Logged In" screen appearing in More tab
+- [x] Remove broken "/login" route that causes page not found error
+- [x] Redirect to Home tab instead of showing broken login button
