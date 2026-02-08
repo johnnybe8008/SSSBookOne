@@ -321,3 +321,6 @@
 - [x] Fix login state not persisting after successful authentication
 - [x] Update login screen to use Auth helper functions (setUserInfo, setSessionToken)
 - [x] Ensure More tab shows admin section after login instead of login prompt
+
+## UI Improvements
+- [x] Remove default admin credentials display from login screen for better security

@@ -96,14 +96,6 @@ export default function LoginScreen() {
               <Text className="text-background text-center font-semibold text-lg">Sign In</Text>
             )}
           </TouchableOpacity>
-
-          <View className="mt-6 p-4 bg-surface rounded-lg border border-border">
-            <Text className="text-xs text-muted text-center">
-              Default Admin Account{"\n"}
-              Email: admin@dohbookone.com{"\n"}
-              Password: password
-            </Text>
-          </View>
         </View>
       </View>
     </ScreenContainer>
