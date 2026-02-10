@@ -5,6 +5,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
+import Constants from "expo-constants";
 
 /**
  * More Screen (More Tab)
@@ -117,7 +118,7 @@ export default function MoreScreen() {
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
             onPress={() => {
-              // Navigate to profile edit
+              Alert.alert("Edit Profile", "Profile editing will be implemented in a future update");
             }}
           >
             <View className="flex-row items-center gap-3">
@@ -130,7 +131,7 @@ export default function MoreScreen() {
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
             onPress={() => {
-              // Navigate to notifications settings
+              Alert.alert("Notifications", "Notification settings will be implemented in a future update");
             }}
           >
             <View className="flex-row items-center gap-3">
@@ -160,7 +161,10 @@ export default function MoreScreen() {
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
             onPress={() => {
-              // Navigate to about screen
+              Alert.alert(
+                "About DoH Book One",
+                "Version: " + (Constants.expoConfig?.version || "1.0.7") + "\n\nA mobile counseling tracker app for managing sessions, clients, and cases."
+              );
             }}
           >
             <View className="flex-row items-center gap-3">
@@ -270,7 +274,9 @@ export default function MoreScreen() {
         </TouchableOpacity>
 
         {/* App Version */}
-        <Text className="text-xs text-muted text-center mt-6">DoH Book One v1.0.0</Text>
+        <Text className="text-xs text-muted text-center mt-6">
+          DoH Book One v{Constants.expoConfig?.version || "1.0.7"}
+        </Text>
       </ScrollView>
     </ScreenContainer>
   );

@@ -344,3 +344,14 @@
 
 ## UI Improvements - Login Screen
 - [x] Remove suggested email display (admin@dohbookone.com) from login screen for cleaner UI
+
+## Bug Fixes - Missing Fix Admin Account Button
+- [ ] Investigate why Fix Admin Account button doesn't appear in v1.0.6 Settings section
+- [ ] Verify button was included in checkpoint 59cd3842
+- [ ] Check if button is conditionally hidden based on user state
+
+## v1.0.8 Bug Fixes
+- [x] Fix Admin Account button not appearing in More tab Settings section
+- [x] Fix Settings menu items 1-4 (Edit Profile, Notifications, Sync Data, About) doing nothing when tapped
+- [x] Fix version number display showing v1.0.0 instead of actual version from app.config.ts
+- [x] Verify admin section appears for users with staff records
