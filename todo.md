@@ -341,3 +341,6 @@
 - [x] Create API endpoint to manually trigger admin staff record creation
 - [x] Add "Fix Admin Account" button in More tab settings for troubleshooting
 - [ ] Fix non-functional menu items in More tab (Edit Profile, Notifications, About)
+
+## UI Improvements - Login Screen
+- [x] Remove suggested email display (admin@dohbookone.com) from login screen for cleaner UI

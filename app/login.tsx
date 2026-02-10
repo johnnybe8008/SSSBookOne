@@ -61,7 +61,7 @@ export default function LoginScreen() {
             <Text className="text-sm font-medium text-foreground mb-2">Email</Text>
             <TextInput
               className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
-              placeholder="admin@dohbookone.com"
+              placeholder="Enter your email"
               placeholderTextColor="#9BA1A6"
               value={email}
               onChangeText={setEmail}
