@@ -35,8 +35,10 @@ export default function LoginScreen() {
         };
         
         await Auth.setUserInfo(userInfo);
-        // For native, we also need a session token (use a mock token for now)
-        await Auth.setSessionToken(`session-${result.user.id}-${Date.now()}`);
+        // Store the real session token from backend
+        if (result.sessionToken) {
+          await Auth.setSessionToken(result.sessionToken);
+        }
         
         // Navigate to home
         router.replace("/(tabs)");

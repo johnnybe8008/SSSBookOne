@@ -355,3 +355,9 @@
 - [x] Fix Settings menu items 1-4 (Edit Profile, Notifications, Sync Data, About) doing nothing when tapped
 - [x] Fix version number display showing v1.0.0 instead of actual version from app.config.ts
 - [x] Verify admin section appears for users with staff records
+
+## v1.0.9 Authentication Fix
+- [x] Fix "Please login (10001)" error when using Fix Admin Account button
+- [x] Ensure session token is properly sent with all tRPC API requests
+- [x] Verify authentication persists after app restart
+- [x] Test all authenticated API calls work correctly
