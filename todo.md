@@ -330,3 +330,8 @@
 - [x] Create default group and team for admin staff record
 - [x] Create staff record for default admin user during initialization
 - [x] Admin section now visible in More tab after login
+
+## Bug Fixes - Admin Staff Record Migration
+- [x] Update initialization to check if admin user exists without staff record
+- [x] Create staff record for existing admin users who don't have one
+- [x] Ensure admin section appears for all admin users regardless of when they were created

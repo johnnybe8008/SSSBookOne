@@ -56,6 +56,67 @@ export async function createDefaultAdmin() {
 
   if (existingAdmin) {
     console.log("Default admin user already exists");
+    
+    // Check if admin has a staff record
+    const [existingStaff] = await db
+      .select()
+      .from(staff)
+      .where(eq(staff.userId, existingAdmin.id))
+      .limit(1);
+    
+    if (!existingStaff) {
+      console.log("Admin user exists but has no staff record, creating one...");
+      
+      // Create default group if it doesn't exist
+      const [existingGroup] = await db.select().from(groups).limit(1);
+      let groupId: number;
+      
+      if (!existingGroup) {
+        const groupResult = await db.insert(groups).values({
+          name: "Default Group",
+          description: "Default organizational group",
+          createdBy: existingAdmin.id,
+          updatedBy: existingAdmin.id,
+        });
+        groupId = (groupResult as any).insertId;
+        console.log("Default group created");
+      } else {
+        groupId = existingGroup.id;
+      }
+      
+      // Create default team if it doesn't exist
+      const [existingTeam] = await db.select().from(teams).where(eq(teams.groupId, groupId)).limit(1);
+      let teamId: number;
+      
+      if (!existingTeam) {
+        const teamResult = await db.insert(teams).values({
+          groupId,
+          name: "Default Team",
+          description: "Default organizational team",
+          createdBy: existingAdmin.id,
+          updatedBy: existingAdmin.id,
+        });
+        teamId = (teamResult as any).insertId;
+        console.log("Default team created");
+      } else {
+        teamId = existingTeam.id;
+      }
+      
+      // Create staff record for the existing admin user
+      await db.insert(staff).values({
+        teamId,
+        userId: existingAdmin.id,
+        name: "Admin",
+        email: "admin@dohbookone.com",
+        isAdmin: 1,
+        isVipRated: 1,
+        createdBy: existingAdmin.id,
+        updatedBy: existingAdmin.id,
+      });
+      
+      console.log("Staff record created for existing admin user");
+    }
+    
     return existingAdmin;
   }
 
