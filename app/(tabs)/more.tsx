@@ -21,10 +21,13 @@ export default function MoreScreen() {
   const { user, isAuthenticated, logout } = useAuth();
 
   // Get staff record for current user
-  const { data: staffRecord } = trpc.staff.getByUserId.useQuery(
+  const { data: staffRecord, refetch: refetchStaff } = trpc.staff.getByUserId.useQuery(
     { userId: user?.id || 0 },
     { enabled: !!user?.id }
   );
+
+  // Fix admin account mutation
+  const fixAdminMutation = trpc.auth.fixAdmin.useMutation();
 
   const handleLogout = () => {
     Alert.alert(
@@ -163,6 +166,26 @@ export default function MoreScreen() {
             <View className="flex-row items-center gap-3">
               <IconSymbol name="exclamationmark.triangle.fill" size={20} color={colors.foreground} />
               <Text className="text-base text-foreground">About</Text>
+            </View>
+            <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+            onPress={async () => {
+              try {
+                const result = await fixAdminMutation.mutateAsync();
+                Alert.alert("Success", result.message || "Admin account fixed successfully. Please restart the app.");
+                // Refetch staff record to update UI
+                refetchStaff();
+              } catch (error: any) {
+                Alert.alert("Error", error.message || "Failed to fix admin account");
+              }
+            }}
+          >
+            <View className="flex-row items-center gap-3">
+              <IconSymbol name="wrench.fill" size={20} color={colors.warning} />
+              <Text className="text-base text-foreground">Fix Admin Account</Text>
             </View>
             <IconSymbol name="chevron.right" size={20} color={colors.muted} />
           </TouchableOpacity>

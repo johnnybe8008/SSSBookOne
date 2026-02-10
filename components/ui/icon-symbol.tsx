@@ -33,6 +33,7 @@ const MAPPING = {
   "checkmark.circle.fill": "check-circle",
   "xmark.circle.fill": "cancel",
   "exclamationmark.triangle.fill": "warning",
+  "wrench.fill": "build",
 } as IconMapping;
 
 /**

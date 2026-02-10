@@ -335,3 +335,9 @@
 - [x] Update initialization to check if admin user exists without staff record
 - [x] Create staff record for existing admin users who don't have one
 - [x] Ensure admin section appears for all admin users regardless of when they were created
+
+## Bug Fixes - Version and Admin Account
+- [x] Increment version number in app.config.ts to 1.0.6
+- [x] Create API endpoint to manually trigger admin staff record creation
+- [x] Add "Fix Admin Account" button in More tab settings for troubleshooting
+- [ ] Fix non-functional menu items in More tab (Edit Profile, Notifications, About)
