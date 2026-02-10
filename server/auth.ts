@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { getDb } from "./db";
-import { users } from "../drizzle/schema";
+import { users, staff, groups, teams } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 /**
@@ -74,6 +74,55 @@ export async function createDefaultAdmin() {
   const insertId = (result as any).insertId;
   
   console.log("Default admin user created: admin@dohbookone.com / password");
+  
+  // Create default group if it doesn't exist
+  const [existingGroup] = await db.select().from(groups).limit(1);
+  let groupId: number;
+  
+  if (!existingGroup) {
+    const groupResult = await db.insert(groups).values({
+      name: "Default Group",
+      description: "Default organizational group",
+      createdBy: insertId,
+      updatedBy: insertId,
+    });
+    groupId = (groupResult as any).insertId;
+    console.log("Default group created");
+  } else {
+    groupId = existingGroup.id;
+  }
+  
+  // Create default team if it doesn't exist
+  const [existingTeam] = await db.select().from(teams).where(eq(teams.groupId, groupId)).limit(1);
+  let teamId: number;
+  
+  if (!existingTeam) {
+    const teamResult = await db.insert(teams).values({
+      groupId,
+      name: "Default Team",
+      description: "Default organizational team",
+      createdBy: insertId,
+      updatedBy: insertId,
+    });
+    teamId = (teamResult as any).insertId;
+    console.log("Default team created");
+  } else {
+    teamId = existingTeam.id;
+  }
+  
+  // Create staff record for the admin user
+  await db.insert(staff).values({
+    teamId,
+    userId: insertId,
+    name: "Admin",
+    email: "admin@dohbookone.com",
+    isAdmin: 1,
+    isVipRated: 1,
+    createdBy: insertId,
+    updatedBy: insertId,
+  });
+  
+  console.log("Default admin staff record created");
   
   // Return the created user
   const [newAdmin] = await db.select().from(users).where(eq(users.id, insertId)).limit(1);

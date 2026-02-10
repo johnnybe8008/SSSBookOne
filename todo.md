@@ -324,3 +324,9 @@
 
 ## UI Improvements
 - [x] Remove default admin credentials display from login screen for better security
+
+## Bug Fixes - Admin Section Missing
+- [x] Fix More tab not showing admin management buttons
+- [x] Create default group and team for admin staff record
+- [x] Create staff record for default admin user during initialization
+- [x] Admin section now visible in More tab after login
