@@ -55,9 +55,22 @@ export const groups = mysqlTable("groups", {
 
 export const teams = mysqlTable("teams", {
   id: int("id").autoincrement().primaryKey(),
-  groupId: int("groupId").notNull(),
+  groupId: int("groupId").notNull(), // Link to group for staff organization
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdBy: int("createdBy").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: int("updatedBy").notNull(),
+});
+
+// Company Teams - for client organization hierarchy
+export const companyTeams = mysqlTable("companyTeams", {
+  id: int("id").autoincrement().primaryKey(),
+  departmentId: int("departmentId").notNull(), // Link to department in company hierarchy
+  code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., CTEAM-001)
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(), // Mandatory description
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -101,8 +114,9 @@ export const companies = mysqlTable("companies", {
 export const divisions = mysqlTable("divisions", {
   id: int("id").autoincrement().primaryKey(),
   companyId: int("companyId").notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., DIV-001)
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
+  description: text("description").notNull(), // Mandatory description
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -112,8 +126,9 @@ export const divisions = mysqlTable("divisions", {
 export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
   divisionId: int("divisionId").notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., DEPT-001)
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
+  description: text("description").notNull(), // Mandatory description
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -279,6 +294,7 @@ export type InsertGroup = typeof groups.$inferInsert;
 
 export type Team = typeof teams.$inferSelect;
 export type InsertTeam = typeof teams.$inferInsert;
+export type InsertCompanyTeam = typeof companyTeams.$inferInsert;
 
 export type Staff = typeof staff.$inferSelect;
 export type InsertStaff = typeof staff.$inferInsert;

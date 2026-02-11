@@ -73,7 +73,7 @@ export default function AdminDivisionsScreen() {
     createDivision.mutate({
       companyId,
       name: newDivisionName.trim(),
-      description: newDivisionDescription.trim() || undefined,
+      description: newDivisionDescription.trim() || '',
       createdBy: user.id,
       updatedBy: user.id,
     });

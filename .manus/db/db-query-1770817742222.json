@@ -1,0 +1,9 @@
+{
+  "query": "-- For existing teams, set departmentId to 1 (or create a default department)\n-- First, ensure there's at least one department\nINSERT IGNORE INTO departments (id, divisionId, code, name, description, createdBy, updatedBy)\nVALUES (1, 1, 'DEPT-DEFAULT', 'Default Department', 'Default department for migration', 1, 1);\n\n-- Update existing teams to use departmentId instead of groupId\nUPDATE teams SET departmentId = 1 WHERE departmentId = 0;\n\n-- Drop the old groupId column\nALTER TABLE teams DROP COLUMN IF EXISTS groupId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute -- For existing teams, set departmentId to 1 (or create a default department)\n-- First, ensure there's at least one department\nINSERT IGNORE INTO departments (id, divisionId, code, name, description, createdBy, updatedBy)\nVALUES (1, 1, 'DEPT-DEFAULT', 'Default Department', 'Default department for migration', 1, 1);\n\n-- Update existing teams to use departmentId instead of groupId\nUPDATE teams SET departmentId = 1 WHERE departmentId = 0;\n\n-- Drop the old groupId column\nALTER TABLE teams DROP COLUMN IF EXISTS groupId;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 605
+}

@@ -451,3 +451,38 @@
 - [ ] Implement edit functionality with full form
 - [ ] Ensure role and team assignment are editable
 - [ ] Improve delete confirmation
+
+## v1.0.14 Organizational Hierarchy Redesign
+
+### 1. Lookup Tables Restructure
+- [ ] Remove session types, statuses, and results from Lookup Tables
+- [ ] Restructure Lookup Tables to only manage Divisions, Departments, and Teams
+- [ ] Add auto-generated unique code/account number for each Division
+- [ ] Add auto-generated unique code/account number for each Department
+- [ ] Add auto-generated unique code/account number for each Team
+- [ ] Make description field mandatory for all three entity types
+- [ ] Implement code generation logic (e.g., DIV-001, DEPT-001, TEAM-001)
+
+### 2. Database Schema Updates
+- [x] Add companyId foreign key to divisions table (already exists)
+- [x] Add divisionId foreign key to departments table (already exists)
+- [x] Create separate companyTeams table (departmentId foreign key)
+- [x] Add unique code fields to divisions, departments, and companyTeams tables
+- [x] Create database migration for schema changes
+- [x] Update tRPC endpoints to support company-specific filtering
+- [x] Separate Teams (staff) from Company Teams (client organization)
+
+### 3. Company Management Enhancement
+- [ ] Add Division selection/creation within Company add/edit screen
+- [ ] Add Department selection/creation within each Division
+- [ ] Add Team selection/creation within each Department
+- [ ] Implement cascading hierarchy display (Company → Divisions → Departments → Teams)
+- [ ] Show unique codes for each organizational level
+- [ ] Allow adding/removing Divisions, Departments, and Teams from Company screen
+
+### 4. Client Creation Update
+- [ ] Filter Divisions dropdown to show only divisions for selected Company
+- [ ] Filter Departments dropdown to show only departments for selected Division
+- [ ] Filter Teams dropdown to show only teams for selected Department
+- [ ] Update client creation workflow to enforce hierarchical selection
+- [ ] Display full hierarchy path in client detail (Company → Division → Department → Team)

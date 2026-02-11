@@ -33,6 +33,32 @@ import {
   type InsertNotification,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { sql } from "drizzle-orm";
+
+// Helper functions to generate unique codes
+async function generateDivisionCode(): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.execute(sql`SELECT MAX(CAST(SUBSTRING(code, 5) AS UNSIGNED)) as maxNum FROM divisions WHERE code LIKE 'DIV-%'`);
+  const maxNum = result[0]?.[0]?.maxNum || 0;
+  return `DIV-${String(maxNum + 1).padStart(3, '0')}`;
+}
+
+async function generateDepartmentCode(): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.execute(sql`SELECT MAX(CAST(SUBSTRING(code, 6) AS UNSIGNED)) as maxNum FROM departments WHERE code LIKE 'DEPT-%'`);
+  const maxNum = result[0]?.[0]?.maxNum || 0;
+  return `DEPT-${String(maxNum + 1).padStart(3, '0')}`;
+}
+
+async function generateTeamCode(): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.execute(sql`SELECT MAX(CAST(SUBSTRING(code, 6) AS UNSIGNED)) as maxNum FROM teams WHERE code LIKE 'TEAM-%'`);
+  const maxNum = result[0]?.[0]?.maxNum || 0;
+  return `TEAM-${String(maxNum + 1).padStart(3, '0')}`;
+}
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -276,10 +302,11 @@ export async function getDivisionById(id: number) {
   return result[0] || null;
 }
 
-export async function createDivision(data: InsertDivision) {
+export async function createDivision(data: Omit<InsertDivision, 'code'>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result: any = await db.insert(divisions).values(data);
+  const code = await generateDivisionCode();
+  const result: any = await db.insert(divisions).values({ ...data, code });
   return result.insertId as number;
 }
 
@@ -308,10 +335,11 @@ export async function getDepartmentById(id: number) {
   return result[0] || null;
 }
 
-export async function createDepartment(data: InsertDepartment) {
+export async function createDepartment(data: Omit<InsertDepartment, 'code'>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result: any = await db.insert(departments).values(data);
+  const code = await generateDepartmentCode();
+  const result: any = await db.insert(departments).values({ ...data, code });
   return result.insertId as number;
 }
 

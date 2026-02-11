@@ -73,7 +73,7 @@ export default function AdminDepartmentsScreen() {
     createDepartment.mutate({
       divisionId,
       name: newDepartmentName.trim(),
-      description: newDepartmentDescription.trim() || undefined,
+      description: newDepartmentDescription.trim() || '',
       createdBy: user.id,
       updatedBy: user.id,
     });

@@ -1,0 +1,9 @@
+{
+  "query": "-- Restore teams table to use groupId\nALTER TABLE teams DROP COLUMN IF EXISTS departmentId;\nALTER TABLE teams DROP COLUMN IF EXISTS code;\nALTER TABLE teams ADD COLUMN groupId INT NOT NULL DEFAULT 1 AFTER id;\nALTER TABLE teams MODIFY COLUMN description TEXT NULL;\n\n-- Create companyTeams table\nCREATE TABLE IF NOT EXISTS companyTeams (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  departmentId INT NOT NULL,\n  code VARCHAR(50) NOT NULL UNIQUE,\n  name VARCHAR(255) NOT NULL,\n  description TEXT NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  createdBy INT NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,\n  updatedBy INT NOT NULL\n);\n\n-- Remove default from groupId\nALTER TABLE teams ALTER COLUMN groupId DROP DEFAULT;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute -- Restore teams table to use groupId\nALTER TABLE teams DROP COLUMN IF EXISTS departmentId;\nALTER TABLE teams DROP COLUMN IF EXISTS code;\nALTER TABLE teams ADD COLUMN groupId INT NOT NULL DEFAULT 1 AFTER id;\nALTER TABLE teams MODIFY COLUMN description TEXT NULL;\n\n-- Create companyTeams table\nCREATE TABLE IF NOT EXISTS companyTeams (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  departmentId INT NOT NULL,\n  code VARCHAR(50) NOT NULL UNIQUE,\n  name VARCHAR(255) NOT NULL,\n  description TEXT NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  createdBy INT NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,\n  updatedBy INT NOT NULL\n);\n\n-- Remove default from groupId\nALTER TABLE teams ALTER COLUMN groupId DROP DEFAULT;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1987
+}

@@ -206,7 +206,7 @@ export const appRouter = router({
         z.object({
           companyId: z.number(),
           name: z.string().min(1).max(255),
-          description: z.string().optional(),
+          description: z.string().min(1), // Mandatory description
           createdBy: z.number(),
           updatedBy: z.number(),
         })
@@ -236,7 +236,7 @@ export const appRouter = router({
         z.object({
           divisionId: z.number(),
           name: z.string().min(1).max(255),
-          description: z.string().optional(),
+          description: z.string().min(1), // Mandatory description
           createdBy: z.number(),
           updatedBy: z.number(),
         })
