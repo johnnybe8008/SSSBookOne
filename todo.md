@@ -361,3 +361,10 @@
 - [x] Ensure session token is properly sent with all tRPC API requests
 - [x] Verify authentication persists after app restart
 - [x] Test all authenticated API calls work correctly
+
+## v1.0.10 Token Validation & UX Fixes
+- [x] Fix session token validation - tokens created by login endpoint aren't being recognized by backend
+- [x] Investigate why backend context.user is null despite valid token being sent
+- [x] Improve More tab UX - show user settings for all users, admin section only for admins
+- [x] Consider renaming More tab to Admin if it only contains admin functions
+- [x] Test that Fix Admin Account works after token validation fix

@@ -6,7 +6,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { authenticateUser, changePassword } from "./auth";
 import { fixAdminAccount } from "./fix-admin";
-import { sdk } from "./_core/sdk";
+import { createSession } from "./session-manager";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -26,12 +26,8 @@ export const appRouter = router({
           throw new Error("Invalid email or password");
         }
         
-        // Create session token for native apps
-        const openId = user.openId || `email-${user.id}`;
-        const sessionToken = await sdk.createSessionToken(openId, {
-          name: user.name || user.email || "User",
-          expiresInMs: 365 * 24 * 60 * 60 * 1000, // 1 year
-        });
+        // Create custom session token for email/password users
+        const sessionToken = await createSession(user.id);
         
         return { user, sessionToken, success: true };
       }),

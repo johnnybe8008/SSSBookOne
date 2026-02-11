@@ -1,0 +1,105 @@
+import crypto from "crypto";
+import { getDb } from "./db";
+import { authSessions, users } from "../drizzle/schema";
+import { eq, and, gt, lt } from "drizzle-orm";
+
+/**
+ * Session Management for Email/Password Authentication
+ * 
+ * This module handles custom session tokens for email/password users,
+ * separate from Manus OAuth tokens.
+ */
+
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
+/**
+ * Create a new session token for a user
+ */
+export async function createSession(userId: number): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Generate a secure random token
+  const token = crypto.randomBytes(32).toString("base64url");
+  
+  // Set expiration to 1 year from now
+  const expiresAt = new Date(Date.now() + ONE_YEAR_MS);
+
+  // Store in database
+  await db.insert(authSessions).values({
+    userId,
+    token,
+    expiresAt,
+  });
+
+  return token;
+}
+
+/**
+ * Validate a session token and return the associated user
+ */
+export async function validateSession(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Find session that matches token and hasn't expired
+  const now = new Date();
+  const [session] = await db
+    .select()
+    .from(authSessions)
+    .where(
+      and(
+        eq(authSessions.token, token),
+        gt(authSessions.expiresAt, now)
+      )
+    )
+    .limit(1);
+
+  if (!session) {
+    return null;
+  }
+
+  // Get the associated user
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, session.userId))
+    .limit(1);
+
+  return user || null;
+}
+
+/**
+ * Delete a session (logout)
+ */
+export async function deleteSession(token: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.delete(authSessions).where(eq(authSessions.token, token));
+}
+
+/**
+ * Delete all sessions for a user
+ */
+export async function deleteAllUserSessions(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.delete(authSessions).where(eq(authSessions.userId, userId));
+}
+
+/**
+ * Clean up expired sessions (should be run periodically)
+ */
+export async function cleanupExpiredSessions(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const now = new Date();
+  const result = await db
+    .delete(authSessions)
+    .where(lt(authSessions.expiresAt, now));
+
+  return (result as any).affectedRows || 0;
+}
