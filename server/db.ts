@@ -9,6 +9,7 @@ import {
   companies,
   divisions,
   departments,
+  companyTeams,
   fsms,
   clients,
   cases,
@@ -23,6 +24,7 @@ import {
   type InsertCompany,
   type InsertDivision,
   type InsertDepartment,
+  type InsertCompanyTeam,
   type InsertFSM,
   type InsertClient,
   type InsertCase,
@@ -52,12 +54,12 @@ async function generateDepartmentCode(): Promise<string> {
   return `DEPT-${String(maxNum + 1).padStart(3, '0')}`;
 }
 
-async function generateTeamCode(): Promise<string> {
+async function generateCompanyTeamCode(): Promise<string> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result: any = await db.execute(sql`SELECT MAX(CAST(SUBSTRING(code, 6) AS UNSIGNED)) as maxNum FROM teams WHERE code LIKE 'TEAM-%'`);
+  const result: any = await db.execute(sql`SELECT MAX(CAST(SUBSTRING(code, 7) AS UNSIGNED)) as maxNum FROM companyTeams WHERE code LIKE 'CTEAM-%'`);
   const maxNum = result[0]?.[0]?.maxNum || 0;
-  return `TEAM-${String(maxNum + 1).padStart(3, '0')}`;
+  return `CTEAM-${String(maxNum + 1).padStart(3, '0')}`;
 }
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -353,6 +355,43 @@ export async function deleteDepartment(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(departments).where(eq(departments.id, id));
+}
+
+// ============================================================================
+// COMPANY TEAMS
+// ============================================================================
+
+export async function getCompanyTeamsByDepartmentId(departmentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(companyTeams).where(eq(companyTeams.departmentId, departmentId)).orderBy(asc(companyTeams.name));
+}
+
+export async function getCompanyTeamById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(companyTeams).where(eq(companyTeams.id, id));
+  return result[0] || null;
+}
+
+export async function createCompanyTeam(data: Omit<InsertCompanyTeam, 'code'>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const code = await generateCompanyTeamCode();
+  const result: any = await db.insert(companyTeams).values({ ...data, code });
+  return result.insertId as number;
+}
+
+export async function updateCompanyTeam(id: number, data: Partial<InsertCompanyTeam>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(companyTeams).set(data).where(eq(companyTeams.id, id));
+}
+
+export async function deleteCompanyTeam(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(companyTeams).where(eq(companyTeams.id, id));
 }
 
 // ============================================================================

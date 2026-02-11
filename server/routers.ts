@@ -258,6 +258,36 @@ export const appRouter = router({
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteDepartment(input.id)),
   }),
 
+  companyTeams: router({
+    list: protectedProcedure.input(z.object({ departmentId: z.number() })).query(({ input }) => db.getCompanyTeamsByDepartmentId(input.departmentId)),
+    get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getCompanyTeamById(input.id)),
+    create: protectedProcedure
+      .input(
+        z.object({
+          departmentId: z.number(),
+          name: z.string().min(1).max(255),
+          description: z.string().min(1), // Mandatory description
+          createdBy: z.number(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => db.createCompanyTeam(input)),
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).max(255).optional(),
+          description: z.string().optional(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => {
+        const { id, ...data } = input;
+        return db.updateCompanyTeam(id, data);
+      }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCompanyTeam(input.id)),
+  }),
+
   // Referral Sources
   fsms: router({
     list: protectedProcedure.query(() => db.getAllFSMs()),

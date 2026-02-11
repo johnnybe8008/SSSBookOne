@@ -235,6 +235,17 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() => router.push("/admin-hierarchy" as any)}
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="list.bullet.indent" size={20} color={colors.foreground} />
+                <Text className="text-base text-foreground">View Hierarchy</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
               onPress={() => router.push("/admin-fsms" as any)}
             >
               <View className="flex-row items-center gap-3">

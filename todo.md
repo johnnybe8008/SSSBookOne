@@ -486,3 +486,34 @@
 - [ ] Filter Teams dropdown to show only teams for selected Department
 - [ ] Update client creation workflow to enforce hierarchical selection
 - [ ] Display full hierarchy path in client detail (Company → Division → Department → Team)
+
+## v1.0.15 Complete Organizational Hierarchy Implementation
+
+### 1. Company Teams Backend
+- [x] Add Company Teams CRUD functions to db.ts (create, read, update, delete)
+- [x] Add Company Teams tRPC router with all endpoints
+- [x] Implement auto-generated code for Company Teams (CTEAM-001, CTEAM-002, etc.)
+- [x] Add getCompanyTeamsByDepartmentId function
+- [x] Test Company Teams API endpoints
+
+### 2. Hierarchy Viewer
+- [x] Create new admin-hierarchy screen to view all Divisions, Departments, and Company Teams
+- [x] Display auto-generated codes for each entity
+- [x] Show parent hierarchy (Company for Divisions, Division for Departments, Department for Company Teams)
+- [x] Add link to Hierarchy viewer in More tab
+- [x] Keep existing Lookup Tables for session types/statuses/results
+
+### 3. Client Creation Enhancement
+- [ ] Update add-client screen with cascading dropdowns
+- [ ] Filter Divisions by selected Company
+- [ ] Filter Departments by selected Division
+- [ ] Filter Company Teams by selected Department
+- [ ] Display full hierarchy path in client detail
+- [ ] Update edit-client screen with same cascading logic
+
+### 4. Company Management Enhancement
+- [ ] Show Divisions list in Company detail/edit screen
+- [ ] Allow adding/removing Divisions from Company screen
+- [ ] Navigate to Departments when clicking a Division
+- [ ] Navigate to Company Teams when clicking a Department
+- [ ] Display entity codes throughout the hierarchy
