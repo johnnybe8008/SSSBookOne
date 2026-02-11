@@ -28,6 +28,7 @@ export default function AddClientScreen() {
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [divisionId, setDivisionId] = useState<number | null>(null);
   const [departmentId, setDepartmentId] = useState<number | null>(null);
+  const [companyTeamId, setCompanyTeamId] = useState<number | null>(null);
   const [fsmId, setFsmId] = useState<number | null>(null);
   const [isVip, setIsVip] = useState(false);
   const { data: user } = trpc.auth.me.useQuery();
@@ -41,6 +42,10 @@ export default function AddClientScreen() {
   const { data: departments } = trpc.departments.list.useQuery(
     { divisionId: divisionId || 0 },
     { enabled: !!divisionId }
+  );
+  const { data: companyTeams } = trpc.companyTeams.list.useQuery(
+    { departmentId: departmentId || 0 },
+    { enabled: !!departmentId }
   );
   const { data: fsms } = trpc.fsms.list.useQuery();
 
@@ -193,6 +198,7 @@ export default function AddClientScreen() {
                     onPress={() => {
                       setDivisionId(division.id);
                       setDepartmentId(null);
+                      setCompanyTeamId(null);
                     }}
                   >
                     <Text className={`text-base ${divisionId === division.id ? "text-primary font-semibold" : "text-foreground"}`}>
@@ -215,11 +221,42 @@ export default function AddClientScreen() {
                     className={`bg-surface border rounded-xl px-4 py-3 ${
                       departmentId === department.id ? "border-primary" : "border-border"
                     }`}
-                    onPress={() => setDepartmentId(department.id)}
+                    onPress={() => {
+                      setDepartmentId(department.id);
+                      setCompanyTeamId(null);
+                    }}
                   >
                     <Text className={`text-base ${departmentId === department.id ? "text-primary font-semibold" : "text-foreground"}`}>
                       {department.name}
                     </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Company Team Selection */}
+          {departmentId && companyTeams && companyTeams.length > 0 && (
+            <View>
+              <Text className="text-sm font-medium text-foreground mb-2">Company Team (Optional)</Text>
+              <View className="gap-2">
+                {companyTeams.map((team) => (
+                  <TouchableOpacity
+                    key={team.id}
+                    className={`bg-surface border rounded-xl px-4 py-3 ${
+                      companyTeamId === team.id ? "border-primary" : "border-border"
+                    }`}
+                    onPress={() => setCompanyTeamId(team.id)}
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">{team.code}</Text>
+                      <Text className={`text-base flex-1 ${companyTeamId === team.id ? "text-primary font-semibold" : "text-foreground"}`}>
+                        {team.name}
+                      </Text>
+                    </View>
+                    {team.description && (
+                      <Text className="text-sm text-muted mt-1">{team.description}</Text>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>

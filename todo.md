@@ -517,3 +517,26 @@
 - [ ] Navigate to Departments when clicking a Division
 - [ ] Navigate to Company Teams when clicking a Department
 - [ ] Display entity codes throughout the hierarchy
+
+## v1.0.16 Cascading Dropdowns for Client Creation
+
+### Client Creation Enhancement
+- [x] Update add-client screen with cascading dropdowns
+- [x] Filter Divisions by selected Company
+- [x] Filter Departments by selected Division
+- [x] Filter Company Teams by selected Department
+- [x] Reset child selections when parent changes
+- [x] Show loading states during filtering
+- [x] Display Company Team codes in selection UI
+
+### Client Editing Enhancement
+- [ ] Update edit-client screen with same cascading logic (deferred - client already linked to department)
+- [ ] Preserve existing selections when editing
+- [ ] Handle cases where existing data might be orphaned
+
+### Testing
+- [x] Test full cascade: Company → Division → Department → Company Team
+- [x] Test changing Company resets Division/Department/Team
+- [x] Test changing Division resets Department/Team
+- [x] Test changing Department resets Team
+- [ ] Verify client saves with correct hierarchy (needs user testing)
