@@ -202,9 +202,7 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-              onPress={() => {
-                // Navigate to manage organizations
-              }}
+              onPress={() => router.push("/admin-organizations" as any)}
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="person.2.fill" size={20} color={colors.foreground} />
@@ -226,9 +224,7 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-              onPress={() => {
-                // Navigate to manage lookup tables
-              }}
+              onPress={() => router.push("/admin-lookup-tables" as any)}
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="chart.bar.fill" size={20} color={colors.foreground} />
@@ -239,9 +235,7 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-              onPress={() => {
-                // Navigate to manage FSMs
-              }}
+              onPress={() => router.push("/admin-fsms" as any)}
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="person.2.fill" size={20} color={colors.foreground} />

@@ -368,3 +368,18 @@
 - [x] Improve More tab UX - show user settings for all users, admin section only for admins
 - [x] Consider renaming More tab to Admin if it only contains admin functions
 - [x] Test that Fix Admin Account works after token validation fix
+
+## v1.0.11 Data Management Features
+- [x] Fix data refetching - users shouldn't need to logout/login to see updates
+- [x] Add automatic query invalidation after mutations
+- [x] Implement Divisions management screen (add/edit/delete divisions for companies)
+- [x] Implement Departments management screen (add/edit/delete departments for divisions)
+- [x] Activate "Manage Lookup Tables" button in More tab
+- [x] Create Lookup Tables management screen for session types, statuses, and results
+- [x] Test all CRUD operations work without requiring logout/login
+- [x] Activate "Manage Organizations" button (Groups/Teams management)
+- [x] Activate "Manage FSMs" button
+- [x] Create tRPC endpoints for divisions (list, create, delete)
+- [x] Create tRPC endpoints for departments (list, create, delete)
+- [x] Create tRPC endpoints for groups/teams (list, create, delete)
+- [x] Create tRPC endpoints for FSMs (list, create, delete)
