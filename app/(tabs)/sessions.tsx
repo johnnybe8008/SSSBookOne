@@ -89,6 +89,7 @@ export default function SessionsScreen() {
       )}
 
       {/* Session List */}
+      <View className="flex-1">
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
         {sessionsLoading ? (
           <View className="items-center justify-center py-12">
@@ -193,6 +194,16 @@ export default function SessionsScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        className="absolute bottom-6 right-6 bg-primary w-16 h-16 rounded-full items-center justify-center shadow-lg"
+        onPress={() => router.push("/record-session" as any)}
+        style={{ elevation: 8 }}
+      >
+        <IconSymbol name="plus" size={32} color={colors.background} />
+      </TouchableOpacity>
+      </View>
     </ScreenContainer>
   );
 }

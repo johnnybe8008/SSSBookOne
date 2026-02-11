@@ -383,3 +383,35 @@
 - [x] Create tRPC endpoints for departments (list, create, delete)
 - [x] Create tRPC endpoints for groups/teams (list, create, delete)
 - [x] Create tRPC endpoints for FSMs (list, create, delete)
+
+## v1.0.12 Core Features - Session Recording, Client Management, User Management
+
+### Session Recording Screen
+- [x] Create session recording screen with dual timers (Interview Time + Session Time)
+- [x] Implement start/stop/pause functionality for both timers
+- [x] Add session type, status, and result dropdowns (from lookup tables)
+- [x] Add FSM/referral source selection
+- [x] Add notes field for session details
+- [x] Save session to database with all metadata
+- [x] Link session to client
+- [x] Display session history for each client
+
+### Client Management
+- [x] Create clients list screen showing all clients
+- [x] Implement client search and filtering
+- [x] Create add client screen with all required fields
+- [x] Link clients to companies, divisions, and departments
+- [x] Create client detail screen showing profile and session history
+- [ ] Implement edit client functionality
+- [ ] Add delete client with confirmation
+- [ ] Display client statistics (total sessions, last session date, etc.)
+
+### User Management
+- [x] Create staff/users list screen
+- [x] Implement add user functionality
+- [x] Assign users to groups and teams
+- [x] Set user roles (Admin, Counselor, Viewer)
+- [ ] Implement edit user functionality
+- [x] Add delete user with confirmation
+- [ ] Display user statistics (assigned clients, sessions conducted, etc.)
+- [ ] Implement user permissions based on role
