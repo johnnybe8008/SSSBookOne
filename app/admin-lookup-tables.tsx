@@ -8,6 +8,12 @@ import { useRouter } from "expo-router";
 
 type TableType = "types" | "statuses" | "results";
 
+interface EditingItem {
+  id: number;
+  name: string;
+  description?: string;
+}
+
 /**
  * Admin - Manage Lookup Tables
  * 
@@ -24,7 +30,8 @@ export default function AdminLookupTablesScreen() {
 
   const [activeTable, setActiveTable] = useState<TableType>("types");
   const [isAdding, setIsAdding] = useState(false);
-  const [newItemName, setNewItemName] = useState("");
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
+  const [formData, setFormData] = useState({ name: "", description: "" });
 
   // Fetch data for all tables
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery();
@@ -35,8 +42,7 @@ export default function AdminLookupTablesScreen() {
   const createType = trpc.sessionTypes.create.useMutation({
     onSuccess: () => {
       utils.sessionTypes.invalidate();
-      setIsAdding(false);
-      setNewItemName("");
+      resetForm();
       Alert.alert("Success", "Session type created successfully");
     },
     onError: (error) => {
@@ -44,9 +50,10 @@ export default function AdminLookupTablesScreen() {
     },
   });
 
-  const toggleType = trpc.sessionTypes.update.useMutation({
+  const updateType = trpc.sessionTypes.update.useMutation({
     onSuccess: () => {
       utils.sessionTypes.invalidate();
+      resetForm();
       Alert.alert("Success", "Session type updated successfully");
     },
     onError: (error: any) => {
@@ -58,8 +65,7 @@ export default function AdminLookupTablesScreen() {
   const createStatus = trpc.sessionStatuses.create.useMutation({
     onSuccess: () => {
       utils.sessionStatuses.invalidate();
-      setIsAdding(false);
-      setNewItemName("");
+      resetForm();
       Alert.alert("Success", "Session status created successfully");
     },
     onError: (error) => {
@@ -67,9 +73,10 @@ export default function AdminLookupTablesScreen() {
     },
   });
 
-  const toggleStatus = trpc.sessionStatuses.update.useMutation({
+  const updateStatus = trpc.sessionStatuses.update.useMutation({
     onSuccess: () => {
       utils.sessionStatuses.invalidate();
+      resetForm();
       Alert.alert("Success", "Session status updated successfully");
     },
     onError: (error: any) => {
@@ -81,8 +88,7 @@ export default function AdminLookupTablesScreen() {
   const createResult = trpc.sessionResults.create.useMutation({
     onSuccess: () => {
       utils.sessionResults.invalidate();
-      setIsAdding(false);
-      setNewItemName("");
+      resetForm();
       Alert.alert("Success", "Session result created successfully");
     },
     onError: (error) => {
@@ -90,9 +96,10 @@ export default function AdminLookupTablesScreen() {
     },
   });
 
-  const toggleResult = trpc.sessionResults.update.useMutation({
+  const updateResult = trpc.sessionResults.update.useMutation({
     onSuccess: () => {
       utils.sessionResults.invalidate();
+      resetForm();
       Alert.alert("Success", "Session result updated successfully");
     },
     onError: (error: any) => {
@@ -100,8 +107,14 @@ export default function AdminLookupTablesScreen() {
     },
   });
 
+  const resetForm = () => {
+    setIsAdding(false);
+    setEditingItem(null);
+    setFormData({ name: "", description: "" });
+  };
+
   const handleCreate = () => {
-    if (!newItemName.trim()) {
+    if (!formData.name.trim()) {
       Alert.alert("Validation Error", "Please enter a name");
       return;
     }
@@ -111,7 +124,8 @@ export default function AdminLookupTablesScreen() {
     }
 
     const input = {
-      name: newItemName.trim(),
+      name: formData.name.trim(),
+      description: formData.description.trim() || undefined,
       isActive: 1,
       createdBy: user.id,
       updatedBy: user.id,
@@ -128,6 +142,43 @@ export default function AdminLookupTablesScreen() {
         createResult.mutate(input);
         break;
     }
+  };
+
+  const handleUpdate = () => {
+    if (!editingItem) return;
+    if (!formData.name.trim()) {
+      Alert.alert("Validation Error", "Please enter a name");
+      return;
+    }
+    if (!user?.id) {
+      Alert.alert("Error", "User not authenticated");
+      return;
+    }
+
+    const input = {
+      id: editingItem.id,
+      name: formData.name.trim(),
+      description: formData.description.trim() || undefined,
+      updatedBy: user.id,
+    };
+
+    switch (activeTable) {
+      case "types":
+        updateType.mutate(input);
+        break;
+      case "statuses":
+        updateStatus.mutate(input);
+        break;
+      case "results":
+        updateResult.mutate(input);
+        break;
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingItem({ id: item.id, name: item.name, description: item.description });
+    setFormData({ name: item.name, description: item.description || "" });
+    setIsAdding(false);
   };
 
   const handleToggleActive = (id: number, name: string, currentIsActive: number) => {
@@ -147,13 +198,13 @@ export default function AdminLookupTablesScreen() {
             const input = { id, isActive: newIsActive, updatedBy: user.id };
             switch (activeTable) {
               case "types":
-                toggleType.mutate(input);
+                updateType.mutate(input);
                 break;
               case "statuses":
-                toggleStatus.mutate(input);
+                updateStatus.mutate(input);
                 break;
               case "results":
-                toggleResult.mutate(input);
+                updateResult.mutate(input);
                 break;
             }
           },
@@ -185,7 +236,8 @@ export default function AdminLookupTablesScreen() {
   };
 
   const data = getCurrentData();
-  const isPending = createType.isPending || createStatus.isPending || createResult.isPending;
+  const isPending = createType.isPending || createStatus.isPending || createResult.isPending ||
+                    updateType.isPending || updateStatus.isPending || updateResult.isPending;
 
   return (
     <ScreenContainer className="flex-1">
@@ -198,8 +250,14 @@ export default function AdminLookupTablesScreen() {
             </TouchableOpacity>
             <Text className="text-2xl font-bold text-foreground">Lookup Tables</Text>
           </View>
-          <TouchableOpacity onPress={() => setIsAdding(!isAdding)}>
-            <IconSymbol name={isAdding ? "xmark.circle.fill" : "plus.circle.fill"} size={28} color={colors.primary} />
+          <TouchableOpacity onPress={() => {
+            if (isAdding || editingItem) {
+              resetForm();
+            } else {
+              setIsAdding(true);
+            }
+          }}>
+            <IconSymbol name={(isAdding || editingItem) ? "xmark.circle.fill" : "plus.circle.fill"} size={28} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -209,7 +267,7 @@ export default function AdminLookupTablesScreen() {
             className={`flex-1 py-2 rounded-lg ${activeTable === "types" ? "bg-primary" : "bg-surface"}`}
             onPress={() => {
               setActiveTable("types");
-              setIsAdding(false);
+              resetForm();
             }}
           >
             <Text className={`text-center font-semibold ${activeTable === "types" ? "text-background" : "text-foreground"}`}>
@@ -220,7 +278,7 @@ export default function AdminLookupTablesScreen() {
             className={`flex-1 py-2 rounded-lg ${activeTable === "statuses" ? "bg-primary" : "bg-surface"}`}
             onPress={() => {
               setActiveTable("statuses");
-              setIsAdding(false);
+              resetForm();
             }}
           >
             <Text className={`text-center font-semibold ${activeTable === "statuses" ? "text-background" : "text-foreground"}`}>
@@ -231,7 +289,7 @@ export default function AdminLookupTablesScreen() {
             className={`flex-1 py-2 rounded-lg ${activeTable === "results" ? "bg-primary" : "bg-surface"}`}
             onPress={() => {
               setActiveTable("results");
-              setIsAdding(false);
+              resetForm();
             }}
           >
             <Text className={`text-center font-semibold ${activeTable === "results" ? "text-background" : "text-foreground"}`}>
@@ -243,10 +301,12 @@ export default function AdminLookupTablesScreen() {
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
-          {/* Add New Item Form */}
-          {isAdding && (
+          {/* Add/Edit Form */}
+          {(isAdding || editingItem) && (
             <View className="bg-surface border border-primary rounded-2xl p-4 gap-3">
-              <Text className="text-lg font-semibold text-foreground">Add New {getTableTitle().slice(8, -1)}</Text>
+              <Text className="text-lg font-semibold text-foreground">
+                {editingItem ? `Edit ${getTableTitle().slice(8, -1)}` : `Add New ${getTableTitle().slice(8, -1)}`}
+              </Text>
               
               <View>
                 <Text className="text-sm font-medium text-foreground mb-2">Name *</Text>
@@ -254,23 +314,45 @@ export default function AdminLookupTablesScreen() {
                   className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
                   placeholder="Enter name"
                   placeholderTextColor={colors.muted}
-                  value={newItemName}
-                  onChangeText={setNewItemName}
+                  value={formData.name}
+                  onChangeText={(text) => setFormData({ ...formData, name: text })}
                   autoCapitalize="words"
                 />
               </View>
 
-              <TouchableOpacity
-                className="bg-primary py-3 rounded-full items-center"
-                onPress={handleCreate}
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <ActivityIndicator size="small" color={colors.background} />
-                ) : (
-                  <Text className="text-background font-semibold">Create</Text>
-                )}
-              </TouchableOpacity>
+              <View>
+                <Text className="text-sm font-medium text-foreground mb-2">Description</Text>
+                <TextInput
+                  className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                  placeholder="Enter description (optional)"
+                  placeholderTextColor={colors.muted}
+                  value={formData.description}
+                  onChangeText={(text) => setFormData({ ...formData, description: text })}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+              </View>
+
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  className="flex-1 bg-surface border border-border py-3 rounded-full items-center"
+                  onPress={resetForm}
+                >
+                  <Text className="text-foreground font-semibold">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-1 bg-primary py-3 rounded-full items-center"
+                  onPress={editingItem ? handleUpdate : handleCreate}
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <ActivityIndicator size="small" color={colors.background} />
+                  ) : (
+                    <Text className="text-background font-semibold">{editingItem ? "Update" : "Create"}</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           )}
 
@@ -279,22 +361,38 @@ export default function AdminLookupTablesScreen() {
           
           {data.length > 0 ? (
             data.map((item: any) => (
-              <View key={item.id} className="bg-surface border border-border rounded-2xl p-4 flex-row items-center justify-between">
-                <View className="flex-1 mr-3">
-                  <Text className="text-base font-medium text-foreground">{item.name}</Text>
-                  {item.isActive === 0 && (
-                    <Text className="text-sm text-muted mt-1">Inactive</Text>
-                  )}
+              <View key={item.id} className="bg-surface border border-border rounded-2xl p-4">
+                <View className="flex-row items-start justify-between mb-2">
+                  <View className="flex-1 mr-3">
+                    <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                    {item.description && (
+                      <Text className="text-sm text-muted mt-1">{item.description}</Text>
+                    )}
+                    {item.isActive === 0 && (
+                      <View className="mt-2">
+                        <View className="px-2 py-1 bg-error/20 rounded self-start">
+                          <Text className="text-xs font-medium text-error">Inactive</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
                 </View>
-                <TouchableOpacity
-                  onPress={() => handleToggleActive(item.id, item.name, item.isActive)}
-                >
-                  <IconSymbol 
-                    name={item.isActive === 1 ? "xmark.circle.fill" : "checkmark.circle.fill"} 
-                    size={22} 
-                    color={item.isActive === 1 ? colors.error : colors.success} 
-                  />
-                </TouchableOpacity>
+                <View className="flex-row gap-2 pt-3 border-t border-border">
+                  <TouchableOpacity
+                    className="flex-1 bg-background border border-border py-2 rounded-xl items-center"
+                    onPress={() => handleEdit(item)}
+                  >
+                    <Text className="text-sm font-medium text-foreground">Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className={`flex-1 py-2 rounded-xl items-center ${item.isActive === 1 ? "bg-error/10 border border-error" : "bg-success/10 border border-success"}`}
+                    onPress={() => handleToggleActive(item.id, item.name, item.isActive)}
+                  >
+                    <Text className={`text-sm font-medium ${item.isActive === 1 ? "text-error" : "text-success"}`}>
+                      {item.isActive === 1 ? "Deactivate" : "Activate"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))
           ) : (
