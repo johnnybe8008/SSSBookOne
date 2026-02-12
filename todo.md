@@ -581,3 +581,17 @@
 - [ ] Organizational Chart: Drag-and-drop reorganization capability
 - [ ] Organizational Chart: Expand/collapse nodes for better navigation
 - [ ] Add all new features to More tab admin section
+
+
+## v1.0.21 Features - CSV Documentation & Advanced Features
+- [x] Create comprehensive CSV format documentation with field descriptions
+- [x] Generate sample CSV templates for organizational and client imports
+- [x] Add in-app CSV help screen showing format and examples
+- [x] Implement bulk client CSV import with automatic organizational assignment
+- [x] Add client import validation (duplicate detection, required fields)
+- [x] Create reporting dashboard screen
+- [x] Add analytics: client distribution across departments
+- [x] Add analytics: session completion rates by FSM
+- [x] Add analytics: organizational utilization metrics
+- [ ] Add date range filters for reports (future enhancement)
+- [ ] Add export functionality for reports (future enhancement)

@@ -279,6 +279,17 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() => router.push("/admin-reports" as any)}
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="chart.bar" size={20} color={colors.primary} />
+                <Text className="text-base text-foreground">Reports & Analytics</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
               onPress={() => router.push("/admin-templates" as any)}
             >
               <View className="flex-row items-center gap-3">
@@ -294,7 +305,18 @@ export default function MoreScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="doc.fill" size={20} color={colors.success} />
-                <Text className="text-base text-foreground">CSV Import</Text>
+                <Text className="text-base text-foreground">CSV Import (Organizational)</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() => router.push("/admin-csv-import-clients" as any)}
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="doc.fill" size={20} color={colors.success} />
+                <Text className="text-base text-foreground">CSV Import (Clients)</Text>
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>

@@ -21,6 +21,7 @@ export default function AdminCSVImportScreen() {
   const utils = trpc.useUtils();
   const [csvText, setCsvText] = useState("");
   const [importResult, setImportResult] = useState<any>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const importMutation = trpc.auth.importCSV.useMutation({
     onSuccess: (result) => {
@@ -114,6 +115,52 @@ export default function AdminCSVImportScreen() {
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-6">
+          {/* CSV Format Help (Expandable) */}
+          <TouchableOpacity
+            className="bg-primary/10 border border-primary rounded-2xl p-4"
+            onPress={() => setShowHelp(!showHelp)}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="doc.fill" size={24} color={colors.primary} />
+                <Text className="text-lg font-semibold text-foreground">CSV Format Guide</Text>
+              </View>
+              <IconSymbol 
+                name={showHelp ? "chevron.down" : "chevron.right"} 
+                size={20} 
+                color={colors.primary} 
+              />
+            </View>
+            {showHelp && (
+              <View className="mt-4 pt-4 border-t border-primary/30 gap-4">
+                <View>
+                  <Text className="text-sm font-semibold text-foreground mb-2">📋 Required Columns</Text>
+                  <View className="bg-background rounded-xl p-3">
+                    <Text className="text-xs font-mono text-foreground">Company,Division,Department,CompanyTeam</Text>
+                  </View>
+                </View>
+
+                <View>
+                  <Text className="text-sm font-semibold text-foreground mb-2">✅ Key Points</Text>
+                  <Text className="text-sm text-muted leading-relaxed">• Use names, not IDs - the system creates entities automatically{"\n"}• Case-insensitive matching{"\n"}• Empty divisions/departments/teams are allowed{"\n"}• Duplicates are automatically skipped</Text>
+                </View>
+
+                <View>
+                  <Text className="text-sm font-semibold text-foreground mb-2">📝 Example Row</Text>
+                  <View className="bg-background rounded-xl p-3">
+                    <Text className="text-xs font-mono text-foreground">ABC Corp,Sales,Enterprise,Team A</Text>
+                  </View>
+                  <Text className="text-xs text-muted mt-2">Creates: Company "ABC Corp" → Division "Sales" → Department "Enterprise" → Team "Team A"</Text>
+                </View>
+
+                <View>
+                  <Text className="text-sm font-semibold text-foreground mb-2">💡 Tips</Text>
+                  <Text className="text-sm text-muted leading-relaxed">• Import organizational structure before importing clients{"\n"}• Use consistent naming across rows{"\n"}• Check the sample template below for reference</Text>
+                </View>
+              </View>
+            )}
+          </TouchableOpacity>
+
           {/* Instructions */}
           <View className="bg-surface border border-border rounded-2xl p-5">
             <Text className="text-lg font-semibold text-foreground mb-3">CSV Format</Text>

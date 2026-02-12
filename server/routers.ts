@@ -9,6 +9,7 @@ import { fixAdminAccount } from "./fix-admin";
 import { createSession } from "./session-manager";
 import { resetDatabase } from "./reset-database";
 import { importOrganizationalCSV, parseCSV, type CSVImportRow } from "./csv-import";
+import { importClientsFromCSV, parseClientCSV, type ClientCSVRow } from "./csv-import-clients";
 import { saveCompanyAsTemplate, applyTemplateToCompany, getAllTemplates, deleteTemplate, renameTemplate } from "./templates";
 
 export const appRouter = router({
@@ -95,6 +96,28 @@ export const appRouter = router({
           return {
             success: false,
             message: error.message || "Failed to parse CSV"
+          };
+        }
+      }),
+    importClients: protectedProcedure
+      .input(z.object({ csvText: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+        if (ctx.user.role !== 'admin') {
+          throw new Error("Only admin users can import clients");
+        }
+        try {
+          const rows = parseClientCSV(input.csvText);
+          return await importClientsFromCSV(rows, ctx.user.id);
+        } catch (error: any) {
+          return {
+            success: false,
+            message: error.message || "Failed to parse CSV",
+            clientsCreated: 0,
+            clientsSkipped: 0,
+            errors: [error.message || "Unknown error"]
           };
         }
       }),
