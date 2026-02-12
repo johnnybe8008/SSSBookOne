@@ -625,3 +625,10 @@
 - [x] Fix admin-divisions screen to be view-only in global mode (hide add/edit/delete buttons)
 - [x] Fix admin-departments screen to be view-only in global mode (hide add/edit/delete buttons)
 - [x] Add informational message explaining that entities must be added through Companies
+
+
+## v1.0.25 Feature - Global Organizational Search
+- [x] Add search bar to Org Lookup Tables screen
+- [x] Implement search across all divisions and departments simultaneously
+- [x] Display search results with full hierarchy context (Company → Division → Department)
+- [x] Add navigation to specific entities from search results
