@@ -554,3 +554,9 @@
 - [x] Add list/add/edit/delete capabilities for each organizational entity in Lookup Tables submenu
 - [x] Make Departments, Divisions, and Company Teams visible and selectable when editing/adding Companies
 - [x] Make Company, Departments, Divisions, and Company Teams visible when editing Clients
+
+
+## v1.0.18 Requirements - Referral Source Identifier
+- [x] Add visual identifier showing referral source type (Company, Client, Staff, or FSM) in client detail screen
+- [x] Add referral source type display in client edit screen
+- [x] Add referral source type badge in client list items

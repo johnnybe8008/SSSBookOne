@@ -204,6 +204,31 @@ export default function EditClientScreen() {
             return null;
           })()}
           
+          {/* Referral Source Display */}
+          {client?.referralSourceType && (
+            <View className="bg-warning/10 border border-warning/30 rounded-2xl p-4">
+              <View className="flex-row items-center gap-2 mb-2">
+                <IconSymbol name="person.badge.plus" size={20} color={colors.warning} />
+                <Text className="text-sm font-semibold text-warning">Referred By</Text>
+              </View>
+              <View className="flex-row items-center gap-2">
+                <View
+                  className="px-3 py-1 rounded-full"
+                  style={{ backgroundColor: `${colors.primary}20` }}
+                >
+                  <Text className="text-xs font-medium text-primary">
+                    {client.referralSourceType === 'fsm' ? 'FSM' : 
+                     client.referralSourceType === 'staff' ? 'Staff' : 
+                     client.referralSourceType === 'client' ? 'Client' : 'Unknown'}
+                  </Text>
+                </View>
+                {client.referralSourceId && (
+                  <Text className="text-sm text-foreground">ID: {client.referralSourceId}</Text>
+                )}
+              </View>
+            </View>
+          )}
+          
           {/* Basic Info */}
           <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
             <Text className="text-base font-semibold text-foreground">Basic Information</Text>

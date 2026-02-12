@@ -121,7 +121,7 @@ export default function ClientsScreen() {
                   </View>
 
                   {/* Status Badge */}
-                  <View className="flex-row items-center gap-2">
+                  <View className="flex-row items-center gap-2 flex-wrap">
                     <View className={`px-3 py-1 rounded-full ${client.status === "Active" ? "bg-success/20" : "bg-muted/20"}`}>
                       <Text className={`text-xs font-medium ${client.status === "Active" ? "text-success" : "text-muted"}`}>
                         {client.status}
@@ -130,6 +130,16 @@ export default function ClientsScreen() {
                     {client.notificationOptOut === 1 && (
                       <View className="px-3 py-1 rounded-full bg-warning/20">
                         <Text className="text-xs font-medium text-warning">Opted Out</Text>
+                      </View>
+                    )}
+                    {client.referralSourceType && (
+                      <View className="px-3 py-1 rounded-full bg-primary/20 flex-row items-center gap-1">
+                        <IconSymbol name="person.badge.plus" size={12} color={colors.primary} />
+                        <Text className="text-xs font-medium text-primary">
+                          {client.referralSourceType === 'fsm' ? 'FSM' : 
+                           client.referralSourceType === 'staff' ? 'Staff' : 
+                           client.referralSourceType === 'client' ? 'Client' : 'Ref'}
+                        </Text>
                       </View>
                     )}
                   </View>
