@@ -39,6 +39,8 @@ export default function AdminDivisionsScreen() {
   const createDivision = trpc.divisions.create.useMutation({
     onSuccess: () => {
       utils.divisions.invalidate();
+      utils.departments.invalidate();
+      utils.companyTeams.invalidate();
       setIsAdding(false);
       setNewDivisionName("");
       setNewDivisionDescription("");
@@ -53,6 +55,8 @@ export default function AdminDivisionsScreen() {
   const deleteDivision = trpc.divisions.delete.useMutation({
     onSuccess: () => {
       utils.divisions.invalidate();
+      utils.departments.invalidate();
+      utils.companyTeams.invalidate();
       Alert.alert("Success", "Division deleted successfully");
     },
     onError: (error) => {

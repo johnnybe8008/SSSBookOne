@@ -560,3 +560,11 @@
 - [x] Add visual identifier showing referral source type (Company, Client, Staff, or FSM) in client detail screen
 - [x] Add referral source type display in client edit screen
 - [x] Add referral source type badge in client list items
+
+
+## v1.0.19 Bug Fixes - Organizational Lookups
+- [x] Fix Organizational Lookups to display all divisions (currently showing empty)
+- [x] Fix Organizational Lookups to display all departments (currently showing empty)
+- [x] Fix Organizational Lookups to display all company teams (currently showing empty)
+- [x] Fix company hierarchy counts showing zero when divisions/departments exist
+- [x] Add link to create company teams from department screen in admin-departments

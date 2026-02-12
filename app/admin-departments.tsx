@@ -39,6 +39,7 @@ export default function AdminDepartmentsScreen() {
   const createDepartment = trpc.departments.create.useMutation({
     onSuccess: () => {
       utils.departments.invalidate();
+      utils.companyTeams.invalidate();
       setIsAdding(false);
       setNewDepartmentName("");
       setNewDepartmentDescription("");
@@ -53,6 +54,7 @@ export default function AdminDepartmentsScreen() {
   const deleteDepartment = trpc.departments.delete.useMutation({
     onSuccess: () => {
       utils.departments.invalidate();
+      utils.companyTeams.invalidate();
       Alert.alert("Success", "Department deleted successfully");
     },
     onError: (error) => {
@@ -183,7 +185,7 @@ export default function AdminDepartmentsScreen() {
           {departments && departments.length > 0 ? (
             departments.map((department: any) => (
               <View key={department.id} className="bg-surface border border-border rounded-2xl p-4">
-                <View className="flex-row items-start justify-between">
+                <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1 mr-3">
                     <Text className="text-lg font-semibold text-foreground">{department.name}</Text>
                     <Text className="text-xs text-muted mt-1">ID: {department.id} | Code: {department.code}</Text>
@@ -196,6 +198,14 @@ export default function AdminDepartmentsScreen() {
                     disabled={deleteDepartment.isPending}
                   >
                     <IconSymbol name="trash" size={22} color={colors.error} />
+                  </TouchableOpacity>
+                </View>
+                <View className="flex-row gap-2 pt-3 border-t border-border">
+                  <TouchableOpacity
+                    className="flex-1 bg-primary/10 border border-primary py-2 rounded-xl items-center"
+                    onPress={() => router.push(`/admin-organizations?departmentId=${department.id}&departmentName=${encodeURIComponent(department.name)}` as any)}
+                  >
+                    <Text className="text-sm font-medium text-primary">Company Teams</Text>
                   </TouchableOpacity>
                 </View>
               </View>
