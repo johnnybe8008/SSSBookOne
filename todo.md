@@ -568,3 +568,16 @@
 - [x] Fix Organizational Lookups to display all company teams (currently showing empty)
 - [x] Fix company hierarchy counts showing zero when divisions/departments exist
 - [x] Add link to create company teams from department screen in admin-departments
+
+
+## v1.0.20 Features - Advanced Organizational Management
+- [x] Database Reset functionality (admin-only, clears all data except admin user)
+- [x] Bulk CSV Import for organizational structures (companies, divisions, departments, teams)
+- [x] CSV Import validation and error reporting
+- [x] Template System: "Save as Template" button on company screens (admin-only)
+- [x] Template System: "Apply Template" option when creating new companies
+- [x] Template System: Template management screen (list, rename, delete templates)
+- [ ] Interactive Organizational Chart visualization with hierarchy tree
+- [ ] Organizational Chart: Drag-and-drop reorganization capability
+- [ ] Organizational Chart: Expand/collapse nodes for better navigation
+- [ ] Add all new features to More tab admin section

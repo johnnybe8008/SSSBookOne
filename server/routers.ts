@@ -7,6 +7,9 @@ import * as db from "./db";
 import { authenticateUser, changePassword } from "./auth";
 import { fixAdminAccount } from "./fix-admin";
 import { createSession } from "./session-manager";
+import { resetDatabase } from "./reset-database";
+import { importOrganizationalCSV, parseCSV, type CSVImportRow } from "./csv-import";
+import { saveCompanyAsTemplate, applyTemplateToCompany, getAllTemplates, deleteTemplate, renameTemplate } from "./templates";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -58,6 +61,118 @@ export const appRouter = router({
       const result = await fixAdminAccount(ctx.user.id);
       return result;
     }),
+    resetDatabase: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user) {
+        throw new Error("Not authenticated");
+      }
+      // Only allow admin users to reset database
+      if (ctx.user.role !== 'admin') {
+        throw new Error("Only admin users can reset the database");
+      }
+      const result = await resetDatabase(ctx.user.id);
+      return result;
+    }),
+    importCSV: protectedProcedure
+      .input(
+        z.object({
+          csvText: z.string().min(1),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+        // Only allow admin users to import CSV
+        if (ctx.user.role !== 'admin') {
+          throw new Error("Only admin users can import CSV data");
+        }
+        
+        try {
+          const csvData = parseCSV(input.csvText);
+          const result = await importOrganizationalCSV(csvData, ctx.user.id);
+          return result;
+        } catch (error: any) {
+          return {
+            success: false,
+            message: error.message || "Failed to parse CSV"
+          };
+        }
+      }),
+  }),
+
+  // Company Templates
+  templates: router({
+    list: protectedProcedure.query(() => getAllTemplates()),
+    save: protectedProcedure
+      .input(
+        z.object({
+          companyId: z.number(),
+          templateName: z.string().min(1).max(255),
+          templateDescription: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+        if (ctx.user.role !== 'admin') {
+          throw new Error("Only admin users can save templates");
+        }
+        return await saveCompanyAsTemplate(
+          input.companyId,
+          input.templateName,
+          input.templateDescription || '',
+          ctx.user.id
+        );
+      }),
+    applyToCompany: protectedProcedure
+      .input(
+        z.object({
+          templateId: z.number(),
+          companyId: z.number(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+        if (ctx.user.role !== 'admin') {
+          throw new Error("Only admin users can apply templates");
+        }
+        return await applyTemplateToCompany(
+          input.templateId,
+          input.companyId,
+          ctx.user.id
+        );
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+        if (ctx.user.role !== 'admin') {
+          throw new Error("Only admin users can delete templates");
+        }
+        return await deleteTemplate(input.id);
+      }),
+    rename: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).max(255),
+          description: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+        if (ctx.user.role !== 'admin') {
+          throw new Error("Only admin users can rename templates");
+        }
+        return await renameTemplate(input.id, input.name, input.description);
+      }),
   }),
 
   // Staff Organization

@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -267,6 +267,24 @@ export const sessions = mysqlTable("sessions", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").notNull(),
 });
+
+// ============================================================================
+// COMPANY TEMPLATES
+// ============================================================================
+
+export const companyTemplates = mysqlTable("companyTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  // Store the template structure as JSON
+  templateData: json("templateData").notNull(), // { divisions: [{name, desc, departments: [{name, desc, teams: [{name, desc}]}]}] }
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CompanyTemplate = typeof companyTemplates.$inferSelect;
+export type InsertCompanyTemplate = typeof companyTemplates.$inferInsert;
 
 // ============================================================================
 // NOTIFICATIONS

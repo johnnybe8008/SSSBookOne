@@ -37,9 +37,12 @@ export default function AdminCompaniesScreen() {
     phone: "",
     email: "",
   });
+  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
-  // Fetch all companies
+  // Fetch all companies and templates
   const { data: companies, isLoading } = trpc.companies.list.useQuery();
+  const { data: templates } = trpc.templates.list.useQuery();
   
   // Fetch organizational hierarchy for display (passing 0 gets all items)
   const { data: allDivisions } = trpc.divisions.list.useQuery({ companyId: 0 });
@@ -56,12 +59,41 @@ export default function AdminCompaniesScreen() {
     return { divisions: divisions.length, departments: departments.length, teams: teams.length };
   };
 
+  // Apply template mutation
+  const applyTemplateMutation = trpc.templates.applyToCompany.useMutation({
+    onSuccess: (result) => {
+      if (result.success) {
+        utils.companies.invalidate();
+        utils.divisions.invalidate();
+        utils.departments.invalidate();
+        utils.companyTeams.invalidate();
+        Alert.alert("Success", `Company created and template applied successfully!\n\n${result.message}`);
+      } else {
+        Alert.alert("Warning", `Company created but template failed: ${result.message}`);
+      }
+      resetForm();
+    },
+    onError: (error) => {
+      Alert.alert("Warning", `Company created but template failed: ${error.message}`);
+      resetForm();
+    },
+  });
+
   // Create company mutation
   const createCompany = trpc.companies.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (companyId) => {
       utils.companies.invalidate();
-      resetForm();
-      Alert.alert("Success", "Company created successfully");
+      
+      // If a template is selected, apply it to the new company
+      if (selectedTemplate && companyId) {
+        applyTemplateMutation.mutate({
+          templateId: selectedTemplate,
+          companyId: companyId,
+        });
+      } else {
+        Alert.alert("Success", "Company created successfully");
+        resetForm();
+      }
     },
     onError: (error) => {
       Alert.alert("Error", error.message || "Failed to create company");
@@ -95,6 +127,8 @@ export default function AdminCompaniesScreen() {
     setIsAdding(false);
     setEditingCompany(null);
     setFormData({ name: "", address: "", phone: "", email: "" });
+    setSelectedTemplate(null);
+    setShowTemplateSelector(false);
   };
 
   const handleCreate = () => {
@@ -157,8 +191,8 @@ export default function AdminCompaniesScreen() {
 
   const handleDelete = (id: number, name: string) => {
     Alert.alert(
-      "Confirm Delete",
-      `Are you sure you want to delete "${name}"? This will also delete all associated divisions, departments, and clients.`,
+      "Delete Company",
+      `Are you sure you want to delete "${name}"? This will also delete all associated divisions, departments, and teams.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -169,6 +203,46 @@ export default function AdminCompaniesScreen() {
       ]
     );
   };
+
+  const handleSaveAsTemplate = (companyId: number, companyName: string) => {
+    Alert.prompt(
+      "Save as Template",
+      `Enter a name for this template based on "${companyName}":`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Save",
+          onPress: (templateName?: string) => {
+            if (!templateName || !templateName.trim()) {
+              Alert.alert("Error", "Template name is required");
+              return;
+            }
+            saveTemplateMutation.mutate({
+              companyId,
+              templateName: templateName.trim(),
+              templateDescription: `Template based on ${companyName}`,
+            });
+          },
+        },
+      ],
+      "plain-text",
+      `${companyName} Template`
+    );
+  };
+
+  const saveTemplateMutation = trpc.templates.save.useMutation({
+    onSuccess: (result) => {
+      if (result.success) {
+        Alert.alert("Success", result.message);
+        utils.templates.list.invalidate();
+      } else {
+        Alert.alert("Error", result.message);
+      }
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message || "Failed to save template");
+    },
+  });
 
   if (isLoading) {
     return (
@@ -261,6 +335,57 @@ export default function AdminCompaniesScreen() {
                 />
               </View>
 
+              {/* Apply Template Option (only when creating new company) */}
+              {isAdding && !editingCompany && (
+                <View>
+                  <Text className="text-sm font-medium text-foreground mb-2">Apply Template (Optional)</Text>
+                  <View className="bg-background border border-border rounded-xl px-4 py-3">
+                    <TouchableOpacity
+                      onPress={() => setShowTemplateSelector(!showTemplateSelector)}
+                      className="flex-row items-center justify-between"
+                    >
+                      <Text className="text-base text-foreground">
+                        {selectedTemplate ? templates?.find(t => t.id === selectedTemplate)?.name : "Select a template"}
+                      </Text>
+                      <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                    </TouchableOpacity>
+                    {showTemplateSelector && templates && templates.length > 0 && (
+                      <View className="mt-3 pt-3 border-t border-border gap-2">
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedTemplate(null);
+                            setShowTemplateSelector(false);
+                          }}
+                          className="py-2"
+                        >
+                          <Text className="text-sm text-muted">None (create empty company)</Text>
+                        </TouchableOpacity>
+                        {templates.map((template: any) => (
+                          <TouchableOpacity
+                            key={template.id}
+                            onPress={() => {
+                              setSelectedTemplate(template.id);
+                              setShowTemplateSelector(false);
+                            }}
+                            className="py-2"
+                          >
+                            <Text className="text-sm text-foreground font-medium">{template.name}</Text>
+                            {template.description && (
+                              <Text className="text-xs text-muted mt-1">{template.description}</Text>
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                  {selectedTemplate && (
+                    <Text className="text-xs text-success mt-1">
+                      ✓ Template will be applied after company is created
+                    </Text>
+                  )}
+                </View>
+              )}
+
               <View className="flex-row gap-2">
                 <TouchableOpacity
                   className="flex-1 bg-surface border border-border py-3 rounded-full items-center"
@@ -312,25 +437,33 @@ export default function AdminCompaniesScreen() {
                     </View>
                   </View>
                 </View>
-                <View className="flex-row gap-2 pt-3 border-t border-border">
+                <View className="gap-2 pt-3 border-t border-border">
+                  <View className="flex-row gap-2">
+                    <TouchableOpacity
+                      className="flex-1 bg-background border border-border py-2 rounded-xl items-center"
+                      onPress={() => handleEdit(company)}
+                    >
+                      <Text className="text-sm font-medium text-foreground">Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="flex-1 bg-primary/10 border border-primary py-2 rounded-xl items-center"
+                      onPress={() => router.push(`/admin-divisions?companyId=${company.id}&companyName=${encodeURIComponent(company.name)}` as any)}
+                    >
+                      <Text className="text-sm font-medium text-primary">Divisions</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="flex-1 bg-error/10 border border-error py-2 rounded-xl items-center"
+                      onPress={() => handleDelete(company.id, company.name)}
+                      disabled={deleteCompany.isPending}
+                    >
+                      <Text className="text-sm font-medium text-error">Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                   <TouchableOpacity
-                    className="flex-1 bg-background border border-border py-2 rounded-xl items-center"
-                    onPress={() => handleEdit(company)}
+                    className="bg-success/10 border border-success py-2 rounded-xl items-center"
+                    onPress={() => handleSaveAsTemplate(company.id, company.name)}
                   >
-                    <Text className="text-sm font-medium text-foreground">Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="flex-1 bg-primary/10 border border-primary py-2 rounded-xl items-center"
-                    onPress={() => router.push(`/admin-divisions?companyId=${company.id}&companyName=${encodeURIComponent(company.name)}` as any)}
-                  >
-                    <Text className="text-sm font-medium text-primary">Divisions</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="flex-1 bg-error/10 border border-error py-2 rounded-xl items-center"
-                    onPress={() => handleDelete(company.id, company.name)}
-                    disabled={deleteCompany.isPending}
-                  >
-                    <Text className="text-sm font-medium text-error">Delete</Text>
+                    <Text className="text-sm font-medium text-success">💾 Save as Template</Text>
                   </TouchableOpacity>
                 </View>
               </View>

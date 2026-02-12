@@ -276,6 +276,39 @@ export default function MoreScreen() {
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() => router.push("/admin-templates" as any)}
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="doc.fill" size={20} color={colors.primary} />
+                <Text className="text-base text-foreground">Company Templates</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() => router.push("/admin-csv-import" as any)}
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="doc.fill" size={20} color={colors.success} />
+                <Text className="text-base text-foreground">CSV Import</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() => router.push("/admin-reset-database" as any)}
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="trash" size={20} color={colors.error} />
+                <Text className="text-base text-error font-semibold">Reset Database</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
           </View>
         )}
 

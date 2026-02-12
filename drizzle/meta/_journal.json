@@ -36,6 +36,13 @@
       "when": 1770818132522,
       "tag": "0004_bouncy_brood",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1770905008415,
+      "tag": "0005_perpetual_raider",
+      "breakpoints": true
     }
   ]
 }
