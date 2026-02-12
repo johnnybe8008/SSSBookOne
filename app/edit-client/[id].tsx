@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 /**
  * Edit Client Screen
@@ -35,6 +36,7 @@ export default function EditClientScreen() {
     notificationOptOut: 0,
     isVip: 0,
   });
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Fetch client data
   const { data: client, isLoading } = trpc.clients.get.useQuery({ id: clientId });
@@ -361,17 +363,32 @@ export default function EditClientScreen() {
             <View className="flex-row gap-3">
               <View className="flex-1">
                 <Text className="text-sm font-medium text-foreground mb-2">Date of Birth</Text>
-                <TextInput
-                  className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.muted}
-                  value={formData.dateOfBirth}
-                  onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
-                />
+                <TouchableOpacity
+                  className="bg-background border border-border rounded-xl px-4 py-3"
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text className={`text-base ${formData.dateOfBirth ? "text-foreground" : "text-muted"}`}>
+                    {formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : "Select date"}
+                  </Text>
+                </TouchableOpacity>
                 {formData.dateOfBirth && (
                   <Text className="text-xs text-muted mt-1">
                     Age: {Math.floor((Date.now() - new Date(formData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}
                   </Text>
+                )}
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : new Date()}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={(event, selectedDate) => {
+                      setShowDatePicker(Platform.OS === "ios");
+                      if (selectedDate) {
+                        setFormData({ ...formData, dateOfBirth: selectedDate.toISOString().split('T')[0] });
+                      }
+                    }}
+                    maximumDate={new Date()}
+                  />
                 )}
               </View>
               <View className="flex-1">

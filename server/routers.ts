@@ -533,6 +533,28 @@ export const appRouter = router({
         return db.updateClient(id, updates);
       }),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteClient(input.id)),
+    bulkUpdate: protectedProcedure
+      .input(
+        z.object({
+          clientIds: z.array(z.number()),
+          departmentId: z.number().optional(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { clientIds, departmentId, updatedBy } = input;
+        const updates: any = { updatedBy };
+        if (departmentId !== undefined) {
+          updates.departmentId = departmentId;
+        }
+        
+        // Update all clients
+        const results = await Promise.all(
+          clientIds.map((id) => db.updateClient(id, updates))
+        );
+        
+        return { success: true, updatedCount: results.length };
+      }),
   }),
 
   // Cases

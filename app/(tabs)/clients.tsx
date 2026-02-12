@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Modal, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
+import { Picker } from "@react-native-picker/picker";
 
 /**
  * Clients Screen (Clients Tab)
@@ -19,15 +20,107 @@ export default function ClientsScreen() {
   const colors = useColors();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Cascading filter state
+  const [filterCompanyId, setFilterCompanyId] = useState<number | null>(null);
+  const [filterDivisionId, setFilterDivisionId] = useState<number | null>(null);
+  const [filterDepartmentId, setFilterDepartmentId] = useState<number | null>(null);
+  const [filterTeamId, setFilterTeamId] = useState<number | null>(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  
+  // Bulk selection state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedClientIds, setSelectedClientIds] = useState<number[]>([]);
+  const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
+  const [bulkAssignDepartmentId, setBulkAssignDepartmentId] = useState<number | null>(null);
 
-  // Search clients
+  // Search clients with filters
   const { data: searchResults, isLoading: searchLoading } = trpc.clients.search.useQuery(
     { searchTerm },
     { enabled: searchTerm.length >= 2 }
   );
 
-  // Get all companies for filtering
+  // Filter queries for cascading dropdowns
   const { data: companies } = trpc.companies.list.useQuery();
+  const { data: divisions } = trpc.divisions.list.useQuery(
+    { companyId: filterCompanyId || 0 },
+    { enabled: !!filterCompanyId }
+  );
+  const { data: departments } = trpc.departments.list.useQuery(
+    { divisionId: filterDivisionId || 0 },
+    { enabled: !!filterDivisionId }
+  );
+  const { data: companyTeams } = trpc.companyTeams.list.useQuery(
+    { departmentId: filterDepartmentId || 0 },
+    { enabled: !!filterDepartmentId }
+  );
+  
+  // Get filtered clients list
+  const { data: filteredClients } = trpc.clients.list.useQuery(
+    { departmentId: filterDepartmentId || 0 },
+    { enabled: !searchTerm && !!filterDepartmentId }
+  );
+  
+  // Reset cascading filters when parent changes
+  const handleCompanyChange = (companyId: number | null) => {
+    setFilterCompanyId(companyId);
+    setFilterDivisionId(null);
+    setFilterDepartmentId(null);
+    setFilterTeamId(null);
+  };
+  
+  const handleDivisionChange = (divisionId: number | null) => {
+    setFilterDivisionId(divisionId);
+    setFilterDepartmentId(null);
+    setFilterTeamId(null);
+  };
+  
+  const handleDepartmentChange = (departmentId: number | null) => {
+    setFilterDepartmentId(departmentId);
+    setFilterTeamId(null);
+  };
+  
+  const clearFilters = () => {
+    setFilterCompanyId(null);
+    setFilterDivisionId(null);
+    setFilterDepartmentId(null);
+    setFilterTeamId(null);
+  };
+  
+  // Bulk update mutation
+  const { data: user } = trpc.auth.me.useQuery();
+  const utils = trpc.useUtils();
+  const bulkUpdateMutation = trpc.clients.bulkUpdate.useMutation({
+    onSuccess: () => {
+      utils.clients.list.invalidate();
+      utils.clients.search.invalidate();
+      setSelectedClientIds([]);
+      setSelectionMode(false);
+      setShowBulkAssignModal(false);
+      Alert.alert("Success", "Clients updated successfully");
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message || "Failed to update clients");
+    },
+  });
+  
+  const toggleClientSelection = (clientId: number) => {
+    setSelectedClientIds(prev => 
+      prev.includes(clientId) 
+        ? prev.filter(id => id !== clientId)
+        : [...prev, clientId]
+    );
+  };
+  
+  const handleBulkAssign = () => {
+    if (!bulkAssignDepartmentId || !user) return;
+    
+    bulkUpdateMutation.mutate({
+      clientIds: selectedClientIds,
+      departmentId: bulkAssignDepartmentId,
+      updatedBy: user.id,
+    });
+  };
 
   return (
     <ScreenContainer className="flex-1">
@@ -52,24 +145,174 @@ export default function ClientsScreen() {
         </View>
       </View>
 
-      {/* Filter Chips */}
-      <View className="px-6 py-3 bg-background">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View className="flex-row gap-2">
-            <TouchableOpacity className="px-4 py-2 bg-surface rounded-full border border-border flex-row items-center gap-2">
-              <IconSymbol name="line.3.horizontal.decrease" size={16} color={colors.foreground} />
-              <Text className="text-sm font-medium text-foreground">All Companies</Text>
+      {/* Filter Section */}
+      <View className="px-6 py-3 bg-background border-b border-border">
+        <View className="flex-row items-center gap-2">
+          <TouchableOpacity
+            className="flex-1 px-4 py-3 bg-surface rounded-xl border border-border flex-row items-center justify-between"
+            onPress={() => setShowFilterModal(true)}
+          >
+            <View className="flex-row items-center gap-2">
+              <IconSymbol name="line.3.horizontal.decrease" size={18} color={colors.foreground} />
+              <Text className="text-sm font-medium text-foreground">
+                {filterDepartmentId ? "Filtered" : "Filter by Organization"}
+              </Text>
+            </View>
+            <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+          </TouchableOpacity>
+          {(filterCompanyId || filterDivisionId || filterDepartmentId) && (
+            <TouchableOpacity
+              className="px-4 py-3 bg-error rounded-xl"
+              onPress={clearFilters}
+            >
+              <Text className="text-sm font-semibold text-white">Clear</Text>
             </TouchableOpacity>
-            <TouchableOpacity className="px-4 py-2 bg-surface rounded-full border border-border flex-row items-center gap-2">
-              <IconSymbol name="star.fill" size={16} color={colors.warning} />
-              <Text className="text-sm font-medium text-foreground">VIP Only</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="px-4 py-2 bg-surface rounded-full border border-border">
-              <Text className="text-sm font-medium text-foreground">Active</Text>
+          )}
+        </View>
+        {filterDepartmentId && (
+          <View className="mt-2">
+            <Text className="text-xs text-muted">
+              Showing clients from selected department
+            </Text>
+          </View>
+        )}
+        
+        {/* Selection Mode Toggle */}
+        {filterDepartmentId && (
+          <View className="mt-3">
+            <TouchableOpacity
+              className="px-4 py-2 bg-primary rounded-xl"
+              onPress={() => {
+                setSelectionMode(!selectionMode);
+                setSelectedClientIds([]);
+              }}
+            >
+              <Text className="text-sm font-semibold text-white text-center">
+                {selectionMode ? "Cancel Selection" : "Select Multiple Clients"}
+              </Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
+        )}
       </View>
+      
+      {/* Bulk Action Bar */}
+      {selectionMode && selectedClientIds.length > 0 && (
+        <View className="px-6 py-3 bg-primary border-t border-primary">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm font-semibold text-white">
+              {selectedClientIds.length} client{selectedClientIds.length > 1 ? 's' : ''} selected
+            </Text>
+            <TouchableOpacity
+              className="px-4 py-2 bg-white rounded-xl"
+              onPress={() => setShowBulkAssignModal(true)}
+            >
+              <Text className="text-sm font-semibold text-primary">Reassign</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-background rounded-t-3xl p-6" style={{ maxHeight: '80%' }}>
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-xl font-bold text-foreground">Filter Clients</Text>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+                <IconSymbol name="xmark.circle.fill" size={28} color={colors.muted} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView>
+              {/* Company Filter */}
+              <View className="mb-4">
+                <Text className="text-sm font-medium text-foreground mb-2">Company</Text>
+                <View className="bg-surface border border-border rounded-xl overflow-hidden">
+                  <Picker
+                    selectedValue={filterCompanyId}
+                    onValueChange={(value) => handleCompanyChange(value)}
+                    style={{ color: colors.foreground }}
+                  >
+                    <Picker.Item label="Select company..." value={null} />
+                    {companies?.map((company) => (
+                      <Picker.Item key={company.id} label={company.name} value={company.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+              
+              {/* Division Filter */}
+              {filterCompanyId && (
+                <View className="mb-4">
+                  <Text className="text-sm font-medium text-foreground mb-2">Division</Text>
+                  <View className="bg-surface border border-border rounded-xl overflow-hidden">
+                    <Picker
+                      selectedValue={filterDivisionId}
+                      onValueChange={(value) => handleDivisionChange(value)}
+                      style={{ color: colors.foreground }}
+                    >
+                      <Picker.Item label="Select division..." value={null} />
+                      {divisions?.map((division) => (
+                        <Picker.Item key={division.id} label={division.name} value={division.id} />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              )}
+              
+              {/* Department Filter */}
+              {filterDivisionId && (
+                <View className="mb-4">
+                  <Text className="text-sm font-medium text-foreground mb-2">Department</Text>
+                  <View className="bg-surface border border-border rounded-xl overflow-hidden">
+                    <Picker
+                      selectedValue={filterDepartmentId}
+                      onValueChange={(value) => handleDepartmentChange(value)}
+                      style={{ color: colors.foreground }}
+                    >
+                      <Picker.Item label="Select department..." value={null} />
+                      {departments?.map((dept) => (
+                        <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              )}
+              
+              {/* Company Team Filter */}
+              {filterDepartmentId && companyTeams && companyTeams.length > 0 && (
+                <View className="mb-4">
+                  <Text className="text-sm font-medium text-foreground mb-2">Company Team (Optional)</Text>
+                  <View className="bg-surface border border-border rounded-xl overflow-hidden">
+                    <Picker
+                      selectedValue={filterTeamId}
+                      onValueChange={(value) => setFilterTeamId(value)}
+                      style={{ color: colors.foreground }}
+                    >
+                      <Picker.Item label="All teams..." value={null} />
+                      {companyTeams.map((team) => (
+                        <Picker.Item key={team.id} label={team.name} value={team.id} />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+            
+            <TouchableOpacity
+              className="bg-primary rounded-xl py-4 mt-4"
+              onPress={() => setShowFilterModal(false)}
+            >
+              <Text className="text-center text-base font-semibold text-white">Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Client List */}
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
@@ -78,18 +321,98 @@ export default function ClientsScreen() {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : searchTerm.length >= 2 && searchResults ? (
+          // Show search results
           searchResults.length > 0 ? (
             <View className="gap-4 py-4">
               {searchResults.map((client) => (
                 <TouchableOpacity
                   key={client.id}
                   className="bg-surface rounded-2xl p-5 border border-border"
+                  onPress={() => router.push(`/client/${client.id}` as any)}
+                >
+                  <View className="flex-row items-start justify-between mb-3">
+                    <View className="flex-1">
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-lg font-semibold text-foreground">{client.name}</Text>
+                        {client.isVip === 1 && (
+                          <IconSymbol name="star.fill" size={18} color={colors.warning} />
+                        )}
+                      </View>
+                      <Text className="text-sm text-muted mt-1">
+                        {client.title || "No title"} • {client.occupation || "No occupation"}
+                      </Text>
+                    </View>
+                    <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                  </View>
+                  {client.mobilePhone && (
+                    <View className="flex-row items-center gap-2">
+                      <IconSymbol name="phone.fill" size={14} color={colors.muted} />
+                      <Text className="text-sm text-muted">{client.mobilePhone}</Text>
+                    </View>
+                  )}
+                  {client.email && (
+                    <View className="flex-row items-center gap-2">
+                      <IconSymbol name="envelope.fill" size={14} color={colors.muted} />
+                      <Text className="text-sm text-muted">{client.email}</Text>
+                    </View>
+                  )}
+                  {/* Referral Source Badge */}
+                  {client.referralSourceType && (
+                    <View className="mt-3">
+                      <View className={`self-start px-3 py-1 rounded-full ${
+                        client.referralSourceType === 'fsm' ? 'bg-primary/10' :
+                        client.referralSourceType === 'staff' ? 'bg-success/10' :
+                        'bg-warning/10'
+                      }`}>
+                        <Text className={`text-xs font-medium ${
+                          client.referralSourceType === 'fsm' ? 'text-primary' :
+                          client.referralSourceType === 'staff' ? 'text-success' :
+                          'text-warning'
+                        }`}>
+                          Referred by {client.referralSourceType.toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View className="items-center justify-center py-12">
+              <Text className="text-base text-muted">No clients found</Text>
+            </View>
+          )
+        ) : filterDepartmentId && filteredClients ? (
+          // Show filtered results
+          filteredClients.length > 0 ? (
+            <View className="gap-4 py-4">
+              {filteredClients.map((client) => (
+                <TouchableOpacity
+                  key={client.id}
+                  className="bg-surface rounded-2xl p-5 border border-border"
                   onPress={() => {
-                    // Navigate to client detail
-                    router.push(`/client/${client.id}` as any);
+                    if (selectionMode) {
+                      toggleClientSelection(client.id);
+                    } else {
+                      router.push(`/client/${client.id}` as any);
+                    }
                   }}
                 >
                   <View className="flex-row items-start justify-between mb-3">
+                    {/* Checkbox in selection mode */}
+                    {selectionMode && (
+                      <View className="mr-3">
+                        <View className={`w-6 h-6 rounded border-2 items-center justify-center ${
+                          selectedClientIds.includes(client.id) 
+                            ? 'bg-primary border-primary' 
+                            : 'border-border'
+                        }`}>
+                          {selectedClientIds.includes(client.id) && (
+                            <IconSymbol name="checkmark" size={16} color="white" />
+                          )}
+                        </View>
+                      </View>
+                    )}
                     <View className="flex-1">
                       <View className="flex-row items-center gap-2">
                         <Text className="text-lg font-semibold text-foreground">{client.name}</Text>
@@ -161,6 +484,65 @@ export default function ClientsScreen() {
         )}
       </ScrollView>
 
+      {/* Bulk Assignment Modal */}
+      <Modal
+        visible={showBulkAssignModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowBulkAssignModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-background rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-xl font-bold text-foreground">Reassign Clients</Text>
+              <TouchableOpacity onPress={() => setShowBulkAssignModal(false)}>
+                <IconSymbol name="xmark.circle.fill" size={28} color={colors.muted} />
+              </TouchableOpacity>
+            </View>
+            
+            <Text className="text-sm text-muted mb-4">
+              Reassigning {selectedClientIds.length} client{selectedClientIds.length > 1 ? 's' : ''} to a new department
+            </Text>
+            
+            {/* Department Selection */}
+            <View className="mb-6">
+              <Text className="text-sm font-medium text-foreground mb-2">New Department</Text>
+              <View className="bg-surface border border-border rounded-xl overflow-hidden">
+                <Picker
+                  selectedValue={bulkAssignDepartmentId}
+                  onValueChange={(value) => setBulkAssignDepartmentId(value)}
+                  style={{ color: colors.foreground }}
+                >
+                  <Picker.Item label="Select department..." value={null} />
+                  {departments?.map((dept) => (
+                    <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+            
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                className="flex-1 bg-surface rounded-xl py-4 border border-border"
+                onPress={() => setShowBulkAssignModal(false)}
+              >
+                <Text className="text-center text-base font-semibold text-foreground">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 bg-primary rounded-xl py-4"
+                onPress={handleBulkAssign}
+                disabled={!bulkAssignDepartmentId || bulkUpdateMutation.isPending}
+                style={{ opacity: !bulkAssignDepartmentId || bulkUpdateMutation.isPending ? 0.5 : 1 }}
+              >
+                <Text className="text-center text-base font-semibold text-white">
+                  {bulkUpdateMutation.isPending ? "Updating..." : "Reassign"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
       {/* Floating Action Button */}
       <View className="absolute bottom-6 right-6">
         <TouchableOpacity

@@ -608,3 +608,14 @@
 - [x] Add searchable dropdown for company selection in client creation (type to filter/jump to matching companies)
 - [x] Add scrollable dropdowns for Division, Department, and Company Teams in client creation
 - [x] Add radio button selection for referral source type (Client/Staff/FSM) with conditional scrollable menu
+
+
+## v1.0.23 Features - Date Picker, Filters & Bulk Assignment
+- [x] Install React Native date picker library (@react-native-community/datetimepicker)
+- [x] Add date picker component to add client screen for Date of Birth field
+- [x] Add date picker component to edit client screen for Date of Birth field
+- [x] Ensure date picker works on iOS, Android, and Web platforms
+- [x] Add cascading filters to client list (Company → Division → Department → Team)
+- [x] Implement bulk client selection in client list
+- [x] Create bulk assignment UI to reassign selected clients
+- [x] Add backend endpoint for bulk client department/team updates

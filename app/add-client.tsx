@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 /**
  * Add Client Screen
@@ -26,7 +27,8 @@ export default function AddClientScreen() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [divisionId, setDivisionId] = useState<number | null>(null);
   const [departmentId, setDepartmentId] = useState<number | null>(null);
@@ -118,7 +120,7 @@ export default function AddClientScreen() {
       address: address.trim() || undefined,
       mobilePhone: phone.trim() || undefined,
       email: email.trim() || undefined,
-      dateOfBirth: dateOfBirth || undefined,
+      dateOfBirth: dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : undefined,
       status: "Active",
       isVip: isVip ? 1 : 0,
       notificationPreference: "sms",
@@ -209,17 +211,32 @@ export default function AddClientScreen() {
             {/* Date of Birth Input */}
             <View>
               <Text className="text-sm font-medium text-foreground mb-2">Date of Birth</Text>
-              <TextInput
-                className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.muted}
-                value={dateOfBirth}
-                onChangeText={setDateOfBirth}
-              />
+              <TouchableOpacity
+                className="bg-background border border-border rounded-xl px-4 py-3"
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text className={`text-base ${dateOfBirth ? "text-foreground" : "text-muted"}`}>
+                  {dateOfBirth ? dateOfBirth.toLocaleDateString() : "Select date of birth"}
+                </Text>
+              </TouchableOpacity>
               {dateOfBirth && (
                 <Text className="text-xs text-muted mt-1">
-                  Age: {Math.floor((Date.now() - new Date(dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}
+                  Age: {Math.floor((Date.now() - dateOfBirth.getTime()) / (365.25 * 24 * 60 * 60 * 1000))}
                 </Text>
+              )}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={dateOfBirth || new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(Platform.OS === "ios");
+                    if (selectedDate) {
+                      setDateOfBirth(selectedDate);
+                    }
+                  }}
+                  maximumDate={new Date()}
+                />
               )}
             </View>
           </View>
