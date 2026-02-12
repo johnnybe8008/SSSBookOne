@@ -135,11 +135,12 @@ function DivisionsTab({ divisions, companies, colors, router, isLoading }: any) 
           return (
             <View key={division.id} className="bg-surface border border-border rounded-2xl p-4">
               <View className="flex-row items-start justify-between">
-                <View className="flex-1 mr-3">
-                  <View className="flex-row items-center gap-2 mb-1">
-                    <Text className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">{division.code}</Text>
-                    <Text className="text-lg font-semibold text-foreground">{division.name}</Text>
-                  </View>
+                  <View className="flex-1 mr-3">
+                    <View className="flex-row items-center gap-2 mb-1">
+                      <Text className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">{division.code}</Text>
+                      <Text className="text-lg font-semibold text-foreground">{division.name}</Text>
+                    </View>
+                    <Text className="text-xs text-muted">ID: {division.id}</Text>
                   {division.description && (
                     <Text className="text-sm text-muted mt-1">{division.description}</Text>
                   )}
@@ -202,6 +203,7 @@ function DepartmentsTab({ departments, allDivisions, companies, colors, router, 
                     <Text className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">{department.code}</Text>
                     <Text className="text-lg font-semibold text-foreground">{department.name}</Text>
                   </View>
+                  <Text className="text-xs text-muted">ID: {department.id}</Text>
                   {department.description && (
                     <Text className="text-sm text-muted mt-1">{department.description}</Text>
                   )}
@@ -267,6 +269,7 @@ function CompanyTeamsTab({ companyTeams, allDepartments, allDivisions, companies
                     <Text className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">{team.code}</Text>
                     <Text className="text-lg font-semibold text-foreground">{team.name}</Text>
                   </View>
+                  <Text className="text-xs text-muted">ID: {team.id}</Text>
                   {team.description && (
                     <Text className="text-sm text-muted mt-1">{team.description}</Text>
                   )}

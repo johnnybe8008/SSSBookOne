@@ -186,6 +186,7 @@ export default function AdminDepartmentsScreen() {
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1 mr-3">
                     <Text className="text-lg font-semibold text-foreground">{department.name}</Text>
+                    <Text className="text-xs text-muted mt-1">ID: {department.id} | Code: {department.code}</Text>
                     {department.description && (
                       <Text className="text-sm text-muted mt-1">{department.description}</Text>
                     )}

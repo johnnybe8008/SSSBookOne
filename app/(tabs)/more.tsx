@@ -235,6 +235,17 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() => router.push("/admin-lookup-org" as any)}
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="building.2.fill" size={20} color={colors.foreground} />
+                <Text className="text-base text-foreground">Organizational Lookup Tables</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
               onPress={() => router.push("/admin-hierarchy" as any)}
             >
               <View className="flex-row items-center gap-3">

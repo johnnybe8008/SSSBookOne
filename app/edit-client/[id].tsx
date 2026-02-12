@@ -38,6 +38,23 @@ export default function EditClientScreen() {
 
   // Fetch client data
   const { data: client, isLoading } = trpc.clients.get.useQuery({ id: clientId });
+  
+  // Fetch organizational hierarchy data
+  const { data: companies } = trpc.companies.list.useQuery();
+  const { data: allDivisions } = trpc.divisions.list.useQuery({ companyId: 0 });
+  const { data: allDepartments } = trpc.departments.list.useQuery({ divisionId: 0 });
+  const { data: allCompanyTeams } = trpc.companyTeams.list.useQuery({ departmentId: 0 });
+  
+  // Get hierarchy names for display
+  const getHierarchyInfo = () => {
+    if (!client) return null;
+    const department = allDepartments?.find((d: any) => d.id === client.departmentId);
+    const division = allDivisions?.find((d: any) => d.id === department?.divisionId);
+    const company = companies?.find((c: any) => c.id === division?.companyId);
+    // Find company teams in this department
+    const teams = allCompanyTeams?.filter((t: any) => t.departmentId === client.departmentId) || [];
+    return { company, division, department, teams };
+  };
 
   // Update client mutation
   const updateClient = trpc.clients.update.useMutation({
@@ -135,12 +152,58 @@ export default function EditClientScreen() {
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
             <IconSymbol name="chevron.left" size={24} color={colors.primary} />
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Edit Client</Text>
+          <View>
+            <Text className="text-2xl font-bold text-foreground">Edit Client</Text>
+            <Text className="text-xs text-muted mt-1">ID: {clientId}</Text>
+          </View>
         </View>
       </View>
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
+          {/* Organizational Hierarchy Display */}
+          {(() => {
+            const hierarchy = getHierarchyInfo();
+            if (hierarchy && hierarchy.company) {
+              return (
+                <View className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
+                  <Text className="text-sm font-semibold text-primary mb-3">Organizational Hierarchy</Text>
+                  <View className="gap-2">
+                    {hierarchy.company && (
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-xs text-muted w-24">Company:</Text>
+                        <Text className="text-sm text-foreground font-medium flex-1">{hierarchy.company.name}</Text>
+                      </View>
+                    )}
+                    {hierarchy.division && (
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-xs text-muted w-24">Division:</Text>
+                        <Text className="text-sm text-foreground font-medium flex-1">{hierarchy.division.code} - {hierarchy.division.name}</Text>
+                      </View>
+                    )}
+                    {hierarchy.department && (
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-xs text-muted w-24">Department:</Text>
+                        <Text className="text-sm text-foreground font-medium flex-1">{hierarchy.department.code} - {hierarchy.department.name}</Text>
+                      </View>
+                    )}
+                    {hierarchy.teams && hierarchy.teams.length > 0 && (
+                      <View className="flex-row items-start gap-2">
+                        <Text className="text-xs text-muted w-24">Teams:</Text>
+                        <View className="flex-1 gap-1">
+                          {hierarchy.teams.map((team: any) => (
+                            <Text key={team.id} className="text-sm text-foreground">{team.code} - {team.name}</Text>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            }
+            return null;
+          })()}
+          
           {/* Basic Info */}
           <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
             <Text className="text-base font-semibold text-foreground">Basic Information</Text>

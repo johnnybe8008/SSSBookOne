@@ -540,3 +540,17 @@
 - [x] Test changing Division resets Department/Team
 - [x] Test changing Department resets Team
 - [ ] Verify client saves with correct hierarchy (needs user testing)
+
+## v1.0.17 Requirements - ID Display and Navigation Improvements
+- [ ] Display unique ID numbers on all edit/delete screens (Companies, Clients, Staff, FSMs, Departments, Divisions, Company Teams, Staff Teams)
+- [ ] Create submenu navigation for Lookup Tables (Departments, Divisions, Company Teams)
+- [ ] Add list/add/edit/delete capabilities for each organizational entity in Lookup Tables submenu
+- [ ] Make Departments, Divisions, and Company Teams visible and selectable when editing/adding Companies
+- [ ] Make Company, Departments, Divisions, and Company Teams visible when editing Clients
+
+## v1.0.17 Progress
+- [x] Display unique ID numbers on all edit/delete screens (Companies, Clients, Staff, FSMs, Departments, Divisions, Company Teams, Staff Teams)
+- [x] Create submenu navigation for Lookup Tables (Departments, Divisions, Company Teams)
+- [x] Add list/add/edit/delete capabilities for each organizational entity in Lookup Tables submenu
+- [x] Make Departments, Divisions, and Company Teams visible and selectable when editing/adding Companies
+- [x] Make Company, Departments, Divisions, and Company Teams visible when editing Clients

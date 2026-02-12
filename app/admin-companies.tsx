@@ -40,6 +40,21 @@ export default function AdminCompaniesScreen() {
 
   // Fetch all companies
   const { data: companies, isLoading } = trpc.companies.list.useQuery();
+  
+  // Fetch organizational hierarchy for display (passing 0 gets all items)
+  const { data: allDivisions } = trpc.divisions.list.useQuery({ companyId: 0 });
+  const { data: allDepartments } = trpc.departments.list.useQuery({ divisionId: 0 });
+  const { data: allCompanyTeams } = trpc.companyTeams.list.useQuery({ departmentId: 0 });
+  
+  // Helper to count organizational entities for a company
+  const getCompanyHierarchyCounts = (companyId: number) => {
+    const divisions = allDivisions?.filter((d: any) => d.companyId === companyId) || [];
+    const divisionIds = divisions.map((d: any) => d.id);
+    const departments = allDepartments?.filter((d: any) => divisionIds.includes(d.divisionId)) || [];
+    const departmentIds = departments.map((d: any) => d.id);
+    const teams = allCompanyTeams?.filter((t: any) => departmentIds.includes(t.departmentId)) || [];
+    return { divisions: divisions.length, departments: departments.length, teams: teams.length };
+  };
 
   // Create company mutation
   const createCompany = trpc.companies.create.useMutation({
@@ -192,7 +207,7 @@ export default function AdminCompaniesScreen() {
           {(isAdding || editingCompany) && (
             <View className="bg-surface border border-primary rounded-2xl p-4 gap-3">
               <Text className="text-lg font-semibold text-foreground">
-                {editingCompany ? "Edit Company" : "Add New Company"}
+                {editingCompany ? `Edit Company (ID: ${editingCompany.id})` : "Add New Company"}
               </Text>
               
               <View>
@@ -272,11 +287,14 @@ export default function AdminCompaniesScreen() {
           <Text className="text-lg font-semibold text-foreground mt-2">All Companies ({companies?.length || 0})</Text>
           
           {companies && companies.length > 0 ? (
-            companies.map((company) => (
+            companies.map((company) => {
+              const counts = getCompanyHierarchyCounts(company.id);
+              return (
               <View key={company.id} className="bg-surface border border-border rounded-2xl p-4">
                 <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1 mr-3">
                     <Text className="text-lg font-semibold text-foreground">{company.name}</Text>
+                    <Text className="text-xs text-muted mt-1">ID: {company.id}</Text>
                     {company.address && (
                       <Text className="text-sm text-muted mt-1">{company.address}</Text>
                     )}
@@ -286,6 +304,12 @@ export default function AdminCompaniesScreen() {
                     {company.email && (
                       <Text className="text-sm text-muted mt-1">✉️ {company.email}</Text>
                     )}
+                    {/* Organizational Hierarchy Summary */}
+                    <View className="flex-row gap-3 mt-2 pt-2 border-t border-border">
+                      <Text className="text-xs text-primary font-medium">{counts.divisions} Division{counts.divisions !== 1 ? 's' : ''}</Text>
+                      <Text className="text-xs text-success font-medium">{counts.departments} Department{counts.departments !== 1 ? 's' : ''}</Text>
+                      <Text className="text-xs text-warning font-medium">{counts.teams} Team{counts.teams !== 1 ? 's' : ''}</Text>
+                    </View>
                   </View>
                 </View>
                 <View className="flex-row gap-2 pt-3 border-t border-border">
@@ -310,7 +334,8 @@ export default function AdminCompaniesScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-            ))
+              );
+            })
           ) : (
             <View className="bg-surface border border-border rounded-2xl p-6 items-center">
               <Text className="text-base text-muted text-center">No companies yet. Add your first company above.</Text>

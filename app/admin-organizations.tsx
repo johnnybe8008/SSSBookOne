@@ -245,6 +245,7 @@ export default function AdminOrganizationsScreen() {
                 >
                   <View className="flex-1 mr-3">
                     <Text className="text-lg font-semibold text-foreground">{group.name}</Text>
+                    <Text className="text-xs text-muted mt-1">ID: {group.id}</Text>
                     {group.description && (
                       <Text className="text-sm text-muted mt-1">{group.description}</Text>
                     )}
@@ -323,6 +324,7 @@ export default function AdminOrganizationsScreen() {
                           <View key={team.id} className="bg-surface border border-border rounded-xl p-3 flex-row items-start justify-between">
                             <View className="flex-1 mr-2">
                               <Text className="text-base font-medium text-foreground">{team.name}</Text>
+                              <Text className="text-xs text-muted mt-1">ID: {team.id}</Text>
                               {team.description && (
                                 <Text className="text-sm text-muted mt-1">{team.description}</Text>
                               )}

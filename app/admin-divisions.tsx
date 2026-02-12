@@ -186,6 +186,7 @@ export default function AdminDivisionsScreen() {
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1 mr-3">
                     <Text className="text-lg font-semibold text-foreground">{division.name}</Text>
+                    <Text className="text-xs text-muted mt-1">ID: {division.id} | Code: {division.code}</Text>
                     {division.description && (
                       <Text className="text-sm text-muted mt-1">{division.description}</Text>
                     )}

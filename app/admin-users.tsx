@@ -195,6 +195,7 @@ export default function AdminUsersScreen() {
                 <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1">
                     <Text className="text-lg font-semibold text-foreground">{staff.name}</Text>
+                    <Text className="text-xs text-muted mt-1">ID: {staff.id}</Text>
                     {staff.email && (
                       <Text className="text-sm text-muted mt-1">{staff.email}</Text>
                     )}

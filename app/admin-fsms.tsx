@@ -204,7 +204,7 @@ export default function AdminFSMsScreen() {
           {/* Add/Edit FSM Form */}
           {(isAdding || editingFSM) && (
             <View className="bg-surface border border-primary rounded-2xl p-4 gap-3">
-              <Text className="text-lg font-semibold text-foreground">{editingFSM ? "Edit FSM" : "Add New FSM"}</Text>
+              <Text className="text-lg font-semibold text-foreground">{editingFSM ? `Edit FSM (ID: ${editingFSM.id})` : "Add New FSM"}</Text>
               
               <View>
                 <Text className="text-sm font-medium text-foreground mb-2">Name *</Text>
@@ -327,6 +327,7 @@ export default function AdminFSMsScreen() {
                 <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1 mr-3">
                     <Text className="text-lg font-semibold text-foreground">{fsm.name}</Text>
+                    <Text className="text-xs text-muted mt-1">ID: {fsm.id}</Text>
                     {fsm.organization && (
                       <Text className="text-sm text-muted mt-1">{fsm.organization}</Text>
                     )}
