@@ -23,17 +23,19 @@ export default function AdminDepartmentsScreen() {
   const params = useLocalSearchParams<{ divisionId: string; divisionName: string }>();
   
   const divisionId = parseInt(params.divisionId || "0");
-  const divisionName = params.divisionName || "Division";
+  const divisionName = params.divisionName || "All Divisions";
+  const isGlobalMode = divisionId === 0; // Show all departments across all divisions
 
   const [isAdding, setIsAdding] = useState(false);
   const [newDepartmentName, setNewDepartmentName] = useState("");
   const [newDepartmentDescription, setNewDepartmentDescription] = useState("");
 
-  // Fetch all departments for this division
-  const { data: departments, isLoading } = trpc.departments.list.useQuery(
-    { divisionId },
-    { enabled: divisionId > 0 }
-  );
+  // Fetch departments (all if divisionId=0, or specific division)
+  const { data: departments, isLoading } = trpc.departments.list.useQuery({ divisionId });
+  
+  // Fetch all divisions and companies for global mode
+  const { data: divisions } = trpc.divisions.list.useQuery({ companyId: 0 }, { enabled: isGlobalMode });
+  const { data: companies } = trpc.companies.list.useQuery(undefined, { enabled: isGlobalMode });
 
   // Create department mutation
   const createDepartment = trpc.departments.create.useMutation({
@@ -183,11 +185,17 @@ export default function AdminDepartmentsScreen() {
           <Text className="text-lg font-semibold text-foreground mt-2">All Departments ({departments?.length || 0})</Text>
           
           {departments && departments.length > 0 ? (
-            departments.map((department: any) => (
+            departments.map((department: any) => {
+              const division = divisions?.find((d: any) => d.id === department.divisionId);
+              const company = companies?.find((c: any) => c.id === division?.companyId);
+              return (
               <View key={department.id} className="bg-surface border border-border rounded-2xl p-4">
                 <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1 mr-3">
                     <Text className="text-lg font-semibold text-foreground">{department.name}</Text>
+                    {isGlobalMode && division && company && (
+                      <Text className="text-sm text-primary mt-1">{company.name} → {division.name}</Text>
+                    )}
                     <Text className="text-xs text-muted mt-1">ID: {department.id} | Code: {department.code}</Text>
                     {department.description && (
                       <Text className="text-sm text-muted mt-1">{department.description}</Text>
@@ -209,7 +217,8 @@ export default function AdminDepartmentsScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-            ))
+            );
+            })
           ) : (
             <View className="bg-surface border border-border rounded-2xl p-6 items-center">
               <Text className="text-base text-muted text-center">No departments yet. Add your first department above.</Text>

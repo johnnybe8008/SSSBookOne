@@ -485,7 +485,7 @@ export const appRouter = router({
           email: z.string().email().optional(),
           occupation: z.string().max(255).optional(),
           title: z.string().max(255).optional(),
-          age: z.number().optional(),
+          dateOfBirth: z.string().optional(),
           timeInService: z.number().optional(),
           status: z.enum(["Active", "Inactive", "Referred", "On Hold"]).default("Active"),
           isVip: z.number().default(0),
@@ -495,7 +495,14 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => db.createClient(input)),
+      .mutation(({ input }) => {
+        const { dateOfBirth, ...data } = input;
+        const clientData: any = { ...data };
+        if (dateOfBirth) {
+          clientData.dateOfBirth = new Date(dateOfBirth);
+        }
+        return db.createClient(clientData);
+      }),
     update: protectedProcedure
       .input(
         z.object({
@@ -508,7 +515,7 @@ export const appRouter = router({
           email: z.string().email().optional(),
           occupation: z.string().max(255).optional(),
           title: z.string().max(255).optional(),
-          age: z.number().optional(),
+          dateOfBirth: z.string().optional(),
           timeInService: z.number().optional(),
           status: z.enum(["Active", "Inactive", "Referred", "On Hold"]).optional(),
           isVip: z.number().optional(),
@@ -518,8 +525,12 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => {
-        const { id, ...data } = input;
-        return db.updateClient(id, data);
+        const { id, dateOfBirth, ...data } = input;
+        const updates: any = { ...data };
+        if (dateOfBirth) {
+          updates.dateOfBirth = new Date(dateOfBirth);
+        }
+        return db.updateClient(id, updates);
       }),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteClient(input.id)),
   }),

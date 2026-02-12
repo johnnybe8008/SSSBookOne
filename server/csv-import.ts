@@ -73,6 +73,33 @@ export async function importOrganizationalCSV(
     const divisionMap = new Map<string, number>(); // companyName:divisionName -> id
     const departmentMap = new Map<string, number>(); // divisionKey:departmentName -> id
 
+    // Pre-load existing companies to avoid duplicates
+    const existingCompanies: any = await db.select().from(companies);
+    for (const company of existingCompanies) {
+      companyMap.set(company.name, company.id);
+    }
+
+    // Pre-load existing divisions
+    const existingDivisions: any = await db.select().from(divisions);
+    for (const division of existingDivisions) {
+      const company = existingCompanies.find((c: any) => c.id === division.companyId);
+      if (company) {
+        divisionMap.set(`${company.name}:${division.name}`, division.id);
+      }
+    }
+
+    // Pre-load existing departments
+    const existingDepartments: any = await db.select().from(departments);
+    for (const department of existingDepartments) {
+      const division = existingDivisions.find((d: any) => d.id === department.divisionId);
+      if (division) {
+        const company = existingCompanies.find((c: any) => c.id === division.companyId);
+        if (company) {
+          departmentMap.set(`${company.name}:${division.name}:${department.name}`, department.id);
+        }
+      }
+    }
+
     for (let i = 0; i < csvData.length; i++) {
       const row = csvData[i];
       const rowNum = i + 2; // +2 for header and 1-indexed

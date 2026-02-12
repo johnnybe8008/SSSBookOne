@@ -34,9 +34,9 @@ export default function AdminLookupOrgScreen() {
     },
     {
       title: "Company Teams",
-      description: "Manage all company teams across departments",
+      description: "View all company teams across departments",
       icon: "person.3.fill" as const,
-      route: "/admin-organizations" as any,
+      route: "/admin-hierarchy" as any,
       color: colors.warning,
     },
   ];

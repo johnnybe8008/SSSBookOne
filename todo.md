@@ -595,3 +595,16 @@
 - [x] Add analytics: organizational utilization metrics
 - [ ] Add date range filters for reports (future enhancement)
 - [ ] Add export functionality for reports (future enhancement)
+
+
+## v1.0.22 Bug Fixes & Improvements - Testing Feedback
+- [x] Fix CSV import duplicate prevention (companies being imported twice)
+- [x] Fix company hierarchy counts showing zero (Divisions, Departments, Teams)
+- [x] Fix Org Lookup Tables navigation errors (invalid ID when clicking tabs)
+- [x] Remove obsolete "Manage Lookup Tables" link from More tab
+- [x] Change Age field to Date of Birth in client schema
+- [x] Add calculated age display in client views
+- [x] Update client CSV import to use Date of Birth instead of Age
+- [x] Add searchable dropdown for company selection in client creation (type to filter/jump to matching companies)
+- [x] Add scrollable dropdowns for Division, Department, and Company Teams in client creation
+- [x] Add radio button selection for referral source type (Client/Staff/FSM) with conditional scrollable menu

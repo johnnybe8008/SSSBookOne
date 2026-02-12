@@ -23,17 +23,18 @@ export default function AdminDivisionsScreen() {
   const params = useLocalSearchParams<{ companyId: string; companyName: string }>();
   
   const companyId = parseInt(params.companyId || "0");
-  const companyName = params.companyName || "Company";
+  const companyName = params.companyName || "All Companies";
+  const isGlobalMode = companyId === 0; // Show all divisions across all companies
 
   const [isAdding, setIsAdding] = useState(false);
   const [newDivisionName, setNewDivisionName] = useState("");
   const [newDivisionDescription, setNewDivisionDescription] = useState("");
 
-  // Fetch all divisions for this company
-  const { data: divisions, isLoading } = trpc.divisions.list.useQuery(
-    { companyId },
-    { enabled: companyId > 0 }
-  );
+  // Fetch divisions (all if companyId=0, or specific company)
+  const { data: divisions, isLoading } = trpc.divisions.list.useQuery({ companyId });
+  
+  // Fetch all companies for global mode
+  const { data: companies } = trpc.companies.list.useQuery(undefined, { enabled: isGlobalMode });
 
   // Create division mutation
   const createDivision = trpc.divisions.create.useMutation({
@@ -185,11 +186,16 @@ export default function AdminDivisionsScreen() {
           <Text className="text-lg font-semibold text-foreground mt-2">All Divisions ({divisions?.length || 0})</Text>
           
           {divisions && divisions.length > 0 ? (
-            divisions.map((division: any) => (
+             divisions.map((division: any) => {
+              const company = companies?.find((c: any) => c.id === division.companyId);
+              return (
               <View key={division.id} className="bg-surface border border-border rounded-2xl p-4">
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1 mr-3">
                     <Text className="text-lg font-semibold text-foreground">{division.name}</Text>
+                    {isGlobalMode && company && (
+                      <Text className="text-sm text-primary mt-1">Company: {company.name}</Text>
+                    )}
                     <Text className="text-xs text-muted mt-1">ID: {division.id} | Code: {division.code}</Text>
                     {division.description && (
                       <Text className="text-sm text-muted mt-1">{division.description}</Text>
@@ -210,7 +216,8 @@ export default function AdminDivisionsScreen() {
                   </View>
                 </View>
               </View>
-            ))
+            );
+            })
           ) : (
             <View className="bg-surface border border-border rounded-2xl p-6 items-center">
               <Text className="text-base text-muted text-center">No divisions yet. Add your first division above.</Text>

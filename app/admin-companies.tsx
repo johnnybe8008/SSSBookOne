@@ -51,11 +51,14 @@ export default function AdminCompaniesScreen() {
   
   // Helper to count organizational entities for a company
   const getCompanyHierarchyCounts = (companyId: number) => {
-    const divisions = allDivisions?.filter((d: any) => d.companyId === companyId) || [];
+    if (!allDivisions || !allDepartments || !allCompanyTeams) {
+      return { divisions: 0, departments: 0, teams: 0 };
+    }
+    const divisions = allDivisions.filter((d: any) => d.companyId === companyId);
     const divisionIds = divisions.map((d: any) => d.id);
-    const departments = allDepartments?.filter((d: any) => divisionIds.includes(d.divisionId)) || [];
+    const departments = allDepartments.filter((d: any) => divisionIds.includes(d.divisionId));
     const departmentIds = departments.map((d: any) => d.id);
-    const teams = allCompanyTeams?.filter((t: any) => departmentIds.includes(t.departmentId)) || [];
+    const teams = allCompanyTeams.filter((t: any) => departmentIds.includes(t.departmentId));
     return { divisions: divisions.length, departments: departments.length, teams: teams.length };
   };
 

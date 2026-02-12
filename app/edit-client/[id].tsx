@@ -23,7 +23,7 @@ export default function EditClientScreen() {
     name: "",
     title: "",
     occupation: "",
-    age: "",
+    dateOfBirth: "",
     timeInService: "",
     address: "",
     mobilePhone: "",
@@ -75,7 +75,7 @@ export default function EditClientScreen() {
         name: client.name,
         title: client.title || "",
         occupation: client.occupation || "",
-        age: client.age?.toString() || "",
+        dateOfBirth: client.dateOfBirth ? new Date(client.dateOfBirth).toISOString().split('T')[0] : "",
         timeInService: client.timeInService?.toString() || "",
         address: client.address || "",
         mobilePhone: client.mobilePhone || "",
@@ -107,7 +107,7 @@ export default function EditClientScreen() {
       name: formData.name.trim(),
       title: formData.title.trim() || undefined,
       occupation: formData.occupation.trim() || undefined,
-      age: formData.age ? parseInt(formData.age) : undefined,
+      dateOfBirth: formData.dateOfBirth || undefined,
       timeInService: formData.timeInService ? parseInt(formData.timeInService) : undefined,
       address: formData.address.trim() || undefined,
       mobilePhone: formData.mobilePhone.trim() || undefined,
@@ -360,15 +360,19 @@ export default function EditClientScreen() {
 
             <View className="flex-row gap-3">
               <View className="flex-1">
-                <Text className="text-sm font-medium text-foreground mb-2">Age</Text>
+                <Text className="text-sm font-medium text-foreground mb-2">Date of Birth</Text>
                 <TextInput
                   className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                  placeholder="Age"
+                  placeholder="YYYY-MM-DD"
                   placeholderTextColor={colors.muted}
-                  value={formData.age}
-                  onChangeText={(text) => setFormData({ ...formData, age: text })}
-                  keyboardType="number-pad"
+                  value={formData.dateOfBirth}
+                  onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
                 />
+                {formData.dateOfBirth && (
+                  <Text className="text-xs text-muted mt-1">
+                    Age: {Math.floor((Date.now() - new Date(formData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}
+                  </Text>
+                )}
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-medium text-foreground mb-2">Time in Service (months)</Text>

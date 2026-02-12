@@ -1,4 +1,4 @@
-import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { date, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -172,7 +172,7 @@ export const clients = mysqlTable("clients", {
   email: varchar("email", { length: 320 }),
   occupation: varchar("occupation", { length: 255 }),
   title: varchar("title", { length: 255 }),
-  age: int("age"),
+  dateOfBirth: date("dateOfBirth"),
   timeInService: int("timeInService"), // in months
   status: mysqlEnum("status", ["Active", "Inactive", "Referred", "On Hold"]).default("Active").notNull(),
   isVip: int("isVip").notNull().default(0), // 0 = false, 1 = true

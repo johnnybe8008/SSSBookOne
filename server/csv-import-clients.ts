@@ -11,7 +11,7 @@ export interface ClientCSVRow {
   Address?: string;
   Occupation?: string;
   Title?: string;
-  Age?: string;
+  DateOfBirth?: string; // Format: YYYY-MM-DD
   Company?: string;
   Division?: string;
   Department: string; // Required - clients must belong to a department
@@ -169,12 +169,12 @@ export async function importClientsFromCSV(
         }
       }
 
-      // Parse age
-      let age: number | null = null;
-      if (row.Age && row.Age.trim()) {
-        const parsedAge = parseInt(row.Age.trim(), 10);
-        if (!isNaN(parsedAge)) {
-          age = parsedAge;
+      // Parse date of birth
+      let dateOfBirth: Date | null = null;
+      if (row.DateOfBirth && row.DateOfBirth.trim()) {
+        const parsed = new Date(row.DateOfBirth.trim());
+        if (!isNaN(parsed.getTime())) {
+          dateOfBirth = parsed;
         }
       }
 
@@ -195,7 +195,7 @@ export async function importClientsFromCSV(
         address: row.Address && row.Address.trim() ? row.Address.trim() : null,
         occupation: row.Occupation && row.Occupation.trim() ? row.Occupation.trim() : null,
         title: row.Title && row.Title.trim() ? row.Title.trim() : null,
-        age: age,
+        dateOfBirth: dateOfBirth,
         departmentId: departmentId,
         referralSourceType: referralSourceType,
         referralSourceId: referralSourceId,

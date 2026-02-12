@@ -182,10 +182,12 @@ export default function ClientDetailScreen() {
                   <Text className="text-base text-foreground mt-1">{client.occupation}</Text>
                 </View>
               )}
-              {client.age && (
+              {client.dateOfBirth && (
                 <View>
-                  <Text className="text-sm text-muted">Age</Text>
-                  <Text className="text-base text-foreground mt-1">{client.age} years</Text>
+                  <Text className="text-sm text-muted">Date of Birth</Text>
+                  <Text className="text-base text-foreground mt-1">
+                    {new Date(client.dateOfBirth).toLocaleDateString()} (Age: {Math.floor((Date.now() - new Date(client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))})
+                  </Text>
                 </View>
               )}
               {client.timeInService && (
