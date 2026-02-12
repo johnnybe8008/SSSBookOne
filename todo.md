@@ -619,3 +619,9 @@
 - [x] Implement bulk client selection in client list
 - [x] Create bulk assignment UI to reassign selected clients
 - [x] Add backend endpoint for bulk client department/team updates
+
+
+## v1.0.24 Bug Fix - Org Lookup Tables
+- [x] Fix admin-divisions screen to be view-only in global mode (hide add/edit/delete buttons)
+- [x] Fix admin-departments screen to be view-only in global mode (hide add/edit/delete buttons)
+- [x] Add informational message explaining that entities must be added through Companies

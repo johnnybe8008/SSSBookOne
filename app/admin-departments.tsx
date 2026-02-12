@@ -98,14 +98,6 @@ export default function AdminDepartmentsScreen() {
     );
   };
 
-  if (divisionId === 0) {
-    return (
-      <ScreenContainer className="items-center justify-center p-6">
-        <Text className="text-xl font-semibold text-error">Invalid Division ID</Text>
-      </ScreenContainer>
-    );
-  }
-
   if (isLoading) {
     return (
       <ScreenContainer className="items-center justify-center">
@@ -128,14 +120,27 @@ export default function AdminDepartmentsScreen() {
               <Text className="text-sm text-muted mt-1">{divisionName}</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={() => setIsAdding(!isAdding)}>
-            <IconSymbol name={isAdding ? "xmark.circle.fill" : "plus.circle.fill"} size={28} color={colors.primary} />
-          </TouchableOpacity>
+          {!isGlobalMode && (
+            <TouchableOpacity onPress={() => setIsAdding(!isAdding)}>
+              <IconSymbol name={isAdding ? "xmark.circle.fill" : "plus.circle.fill"} size={28} color={colors.primary} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
+          {/* Global Mode Info Message */}
+          {isGlobalMode && (
+            <View className="bg-primary/10 border border-primary/30 rounded-2xl p-4">
+              <View className="flex-row items-start gap-3">
+                <IconSymbol name="info.circle.fill" size={20} color={colors.primary} />
+                <Text className="flex-1 text-sm text-foreground">
+                  This is a read-only view of all departments across all divisions and companies. To add, edit, or delete departments, please navigate through the Companies screen.
+                </Text>
+              </View>
+            </View>
+          )}
           {/* Add New Department Form */}
           {isAdding && (
             <View className="bg-surface border border-primary rounded-2xl p-4 gap-3">
@@ -201,12 +206,14 @@ export default function AdminDepartmentsScreen() {
                       <Text className="text-sm text-muted mt-1">{department.description}</Text>
                     )}
                   </View>
-                  <TouchableOpacity
-                    onPress={() => handleDelete(department.id, department.name)}
-                    disabled={deleteDepartment.isPending}
-                  >
-                    <IconSymbol name="trash" size={22} color={colors.error} />
-                  </TouchableOpacity>
+                  {!isGlobalMode && (
+                    <TouchableOpacity
+                      onPress={() => handleDelete(department.id, department.name)}
+                      disabled={deleteDepartment.isPending}
+                    >
+                      <IconSymbol name="trash" size={22} color={colors.error} />
+                    </TouchableOpacity>
+                  )}
                 </View>
                 <View className="flex-row gap-2 pt-3 border-t border-border">
                   <TouchableOpacity
@@ -221,7 +228,9 @@ export default function AdminDepartmentsScreen() {
             })
           ) : (
             <View className="bg-surface border border-border rounded-2xl p-6 items-center">
-              <Text className="text-base text-muted text-center">No departments yet. Add your first department above.</Text>
+              <Text className="text-base text-muted text-center">
+                {isGlobalMode ? "No departments found across all divisions." : "No departments yet. Add your first department above."}
+              </Text>
             </View>
           )}
         </View>
