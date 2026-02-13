@@ -789,3 +789,15 @@
 - [x] Test organizational filters with expanded data - each department now has 5+ clients
 - [x] Verify Reports & Analytics displays correct counts with filters
 - [x] Verify CSV export includes filtered data only
+
+## Version 1.0.36 - Debug Reports Showing Zero Clients & Sessions
+- [x] Investigate why Reports & Analytics shows zero clients despite 75 in database
+- [x] Investigate why Reports & Analytics shows zero sessions despite 225 in database
+- [x] Found issue: SES_UNCAUGHT_EXCEPTION errors in browser console
+- [x] Identified root cause: hierarchyData calculation accessing undefined data
+- [x] Test API endpoints directly (clients.listAll, sessions.listAll)
+- [x] Confirmed tRPC endpoints require authentication (protectedProcedure)
+- [x] Add null safety check to hierarchyData calculation
+- [x] Add debug logging to track data loading
+- [x] Fix data loading issues in Reports screen
+- [x] Verify Reports screen displays correct counts after fix

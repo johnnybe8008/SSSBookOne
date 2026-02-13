@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator, Modal, Alert, Platform } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -41,6 +41,13 @@ export default function AdminReportsScreen() {
   // Fetch all data for analytics
   const { data: clients, isLoading: loadingClients } = trpc.clients.listAll.useQuery();
   const { data: sessions, isLoading: loadingSessions } = trpc.sessions.listAll.useQuery();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[AdminReports] Clients data:', clients?.length || 0, 'items');
+    console.log('[AdminReports] Sessions data:', sessions?.length || 0, 'items');
+    console.log('[AdminReports] Loading states - clients:', loadingClients, 'sessions:', loadingSessions);
+  }, [clients, sessions, loadingClients, loadingSessions]);
   const { data: companies, isLoading: loadingCompanies } = trpc.companies.list.useQuery();
   const { data: divisions, isLoading: loadingDivisions } = trpc.divisions.listAll.useQuery();
   const { data: departments, isLoading: loadingDepartments } = trpc.departments.listAll.useQuery();
@@ -191,7 +198,8 @@ export default function AdminReportsScreen() {
 
   // Build hierarchy data
   const hierarchyData = useMemo(() => {
-    return companies?.map((company: any) => {
+    if (!companies || !divisions || !departments || !companyTeams) return [];
+    return companies.map((company: any) => {
       const companyDivisions = divisions?.filter((d: any) => d.companyId === company.id) || [];
       
       // Count clients by traversing: company -> divisions -> departments -> clients
@@ -233,7 +241,7 @@ export default function AdminReportsScreen() {
           };
         }),
       };
-    }) || [];
+    });
   }, [companies, divisions, departments, companyTeams, filteredClients]);
 
   // Export functions
