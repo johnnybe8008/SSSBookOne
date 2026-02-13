@@ -22,9 +22,10 @@ export default function AdminLookupOrgScreen() {
   // Fetch all organizational data for search
   const { data: divisions, isLoading: divisionsLoading } = trpc.divisions.list.useQuery({ companyId: 0 });
   const { data: departments, isLoading: departmentsLoading } = trpc.departments.list.useQuery({ divisionId: 0 });
+  const { data: companyTeams, isLoading: companyTeamsLoading } = trpc.companyTeams.list.useQuery({ departmentId: 0 });
   const { data: companies } = trpc.companies.list.useQuery();
 
-  const isLoading = divisionsLoading || departmentsLoading;
+  const isLoading = divisionsLoading || departmentsLoading || companyTeamsLoading;
 
   // Filter results based on search query
   const searchResults = searchQuery.trim() ? {
@@ -45,6 +46,7 @@ export default function AdminLookupOrgScreen() {
       icon: "building.2.fill" as const,
       route: "/admin-divisions" as any,
       color: colors.primary,
+      count: divisions?.length || 0,
     },
     {
       title: "Departments",
@@ -52,6 +54,7 @@ export default function AdminLookupOrgScreen() {
       icon: "square.grid.2x2.fill" as const,
       route: "/admin-departments" as any,
       color: colors.success,
+      count: departments?.length || 0,
     },
     {
       title: "Company Teams",
@@ -59,6 +62,7 @@ export default function AdminLookupOrgScreen() {
       icon: "person.3.fill" as const,
       route: "/admin-hierarchy" as any,
       color: colors.warning,
+      count: companyTeams?.length || 0,
     },
   ];
 
@@ -203,7 +207,17 @@ export default function AdminLookupOrgScreen() {
                     <IconSymbol name={item.icon} size={24} color={item.color} />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-lg font-semibold text-foreground">{item.title}</Text>
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-lg font-semibold text-foreground">{item.title}</Text>
+                      <View
+                        className="px-2 py-1 rounded-full"
+                        style={{ backgroundColor: `${item.color}20` }}
+                      >
+                        <Text className="text-xs font-semibold" style={{ color: item.color }}>
+                          {item.count}
+                        </Text>
+                      </View>
+                    </View>
                     <Text className="text-sm text-muted mt-1">{item.description}</Text>
                   </View>
                   <IconSymbol name="chevron.right" size={24} color={colors.muted} />

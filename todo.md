@@ -632,3 +632,9 @@
 - [x] Implement search across all divisions and departments simultaneously
 - [x] Display search results with full hierarchy context (Company → Division → Department)
 - [x] Add navigation to specific entities from search results
+
+
+## v1.0.26 Bug Fix - Org Lookup Tables Zero Counts
+- [x] Fix Org Lookup Tables showing zero counts for Divisions, Departments, and Company Teams
+- [x] Verify data queries are fetching correctly
+- [x] Ensure counts update in real-time
