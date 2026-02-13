@@ -722,3 +722,21 @@
 - [x] Verify all foreign key relationships are consistent
 - [x] Run seed script and verify data integrity
 - [x] Test Reports & Analytics with new consistent data
+
+## Version 1.0.32 - Fix Reports Filtering & Add Diverse Sample Data
+- [x] Fix Reports & Analytics filtering bug (shows all data regardless of selected company/division/department)
+- [x] Update filtering logic to properly filter through organizational hierarchy
+- [x] Filter clients by company → divisions → departments chain
+- [x] Filter clients by division → departments chain
+- [x] Update totalCompanies, totalDivisions, totalDepartments to respect selected filters
+- [x] Remove duplicate filteredDivisions and filteredDepartments definitions
+- [x] Add more diverse sample clients across multiple departments
+- [x] Add 3 Primary Care clients with cases and 9 sessions
+- [x] Add 2 Patient Services clients with cases and 4 sessions
+- [x] Add 2 Tech Solutions clients with cases and 6 sessions
+- [x] Add 2 Education clients with cases and 2 sessions
+- [x] Total: 15 clients, 15 cases, 45 sessions across 5 departments
+- [x] Clear database and re-seed with expanded diverse data
+- [x] Test filtering with company selection (should show only that company's data)
+- [x] Test filtering with division selection (should show only that division's data)
+- [x] Test filtering with department selection (should show only that department's data)

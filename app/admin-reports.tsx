@@ -81,12 +81,20 @@ export default function AdminReportsScreen() {
   const filteredClients = useMemo(() => {
     let filtered = clients || [];
 
-    // Filter by organization
+    // Filter by organization hierarchy
     if (selectedCompanyId > 0) {
-      filtered = filtered.filter((c: any) => c.companyId === selectedCompanyId);
+      // Get all divisions in the selected company
+      const companyDivisionIds = divisions?.filter((d: any) => d.companyId === selectedCompanyId).map((d: any) => d.id) || [];
+      // Get all departments in those divisions
+      const companyDepartmentIds = departments?.filter((d: any) => companyDivisionIds.includes(d.divisionId)).map((d: any) => d.id) || [];
+      // Filter clients by those departments
+      filtered = filtered.filter((c: any) => companyDepartmentIds.includes(c.departmentId));
     }
     if (selectedDivisionId > 0) {
-      filtered = filtered.filter((c: any) => c.divisionId === selectedDivisionId);
+      // Get all departments in the selected division
+      const divisionDepartmentIds = departments?.filter((d: any) => d.divisionId === selectedDivisionId).map((d: any) => d.id) || [];
+      // Filter clients by those departments
+      filtered = filtered.filter((c: any) => divisionDepartmentIds.includes(c.departmentId));
     }
     if (selectedDepartmentId > 0) {
       filtered = filtered.filter((c: any) => c.departmentId === selectedDepartmentId);
@@ -99,7 +107,7 @@ export default function AdminReportsScreen() {
     });
 
     return filtered;
-  }, [clients, selectedCompanyId, selectedDivisionId, selectedDepartmentId, dateRange]);
+  }, [clients, divisions, departments, selectedCompanyId, selectedDivisionId, selectedDepartmentId, dateRange]);
 
   const filteredSessions = useMemo(() => {
     let filtered = sessions || [];
@@ -116,9 +124,29 @@ export default function AdminReportsScreen() {
   // Calculate analytics from filtered data
   const totalClients = filteredClients.length;
   const totalSessions = filteredSessions.length;
-  const totalCompanies = companies?.length || 0;
-  const totalDivisions = divisions?.length || 0;
-  const totalDepartments = departments?.length || 0;
+  
+  // Filter organizational counts based on selected filters
+  const filteredDivisions = useMemo(() => {
+    if (selectedCompanyId > 0) {
+      return divisions?.filter((d: any) => d.companyId === selectedCompanyId) || [];
+    }
+    return divisions || [];
+  }, [divisions, selectedCompanyId]);
+
+  const filteredDepartments = useMemo(() => {
+    if (selectedDivisionId > 0) {
+      return departments?.filter((d: any) => d.divisionId === selectedDivisionId) || [];
+    }
+    if (selectedCompanyId > 0) {
+      const companyDivisionIds = divisions?.filter((d: any) => d.companyId === selectedCompanyId).map((d: any) => d.id) || [];
+      return departments?.filter((d: any) => companyDivisionIds.includes(d.divisionId)) || [];
+    }
+    return departments || [];
+  }, [departments, divisions, selectedCompanyId, selectedDivisionId]);
+
+  const totalCompanies = selectedCompanyId > 0 ? 1 : (companies?.length || 0);
+  const totalDivisions = filteredDivisions.length;
+  const totalDepartments = filteredDepartments.length;
   const totalFsms = fsms?.length || 0;
   const totalStaff = staff?.length || 0;
 
@@ -347,17 +375,7 @@ export default function AdminReportsScreen() {
     Alert.alert("Export PDF", "PDF export functionality will generate a formatted report with charts and metrics.");
   };
 
-  // Filter divisions based on selected company
-  const filteredDivisions = useMemo(() => {
-    if (selectedCompanyId === 0) return divisions || [];
-    return divisions?.filter((d: any) => d.companyId === selectedCompanyId) || [];
-  }, [divisions, selectedCompanyId]);
-
-  // Filter departments based on selected division
-  const filteredDepartments = useMemo(() => {
-    if (selectedDivisionId === 0) return departments || [];
-    return departments?.filter((d: any) => d.divisionId === selectedDivisionId) || [];
-  }, [departments, selectedDivisionId]);
+  // Divisions and departments are already filtered above for analytics
 
   return (
     <ScreenContainer className="flex-1">

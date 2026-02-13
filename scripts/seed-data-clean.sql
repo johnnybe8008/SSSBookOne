@@ -115,15 +115,31 @@ INSERT INTO clients (departmentId, name, email, phone, address, dateOfBirth, gen
 (6, 'Richard Thomas', 'richard.thomas@email.com', '617-555-6003', '80 Willow Rd, Boston, MA', '1972-08-09', 'Male', 'Nancy Thomas', '617-555-6004', 'Self-Referral', 'Active', 'Chronic condition management', 1, 1),
 (6, 'Susan Jackson', 'susan.jackson@email.com', '617-555-6005', '90 Ash Ave, Boston, MA', '1980-12-03', 'Female', 'David Jackson', '617-555-6006', 'Doctor Referral', 'Active', 'Preventive care', 1, 1);
 
--- Other departments (1 client each for variety)
+-- Primary Care Department (DEPT-006) - Additional medical clients
 INSERT INTO clients (departmentId, name, email, phone, address, dateOfBirth, gender, emergencyContact, emergencyPhone, referralSource, status, notes, createdBy, updatedBy) VALUES
-(1, 'Tech Client A', 'clienta@email.com', '415-555-7001', '100 Tech St, SF, CA', '1992-06-15', 'Male', 'Contact A', '415-555-7002', 'Self-Referral', 'Active', 'Frontend consultation', 1, 1),
-(2, 'Tech Client B', 'clientb@email.com', '415-555-7003', '110 Tech St, SF, CA', '1987-10-20', 'Female', 'Contact B', '415-555-7004', 'Self-Referral', 'Active', 'Backend consultation', 1, 1),
-(7, 'Patient Services Client', 'psclient@email.com', '617-555-7005', '120 Med Ave, Boston, MA', '1975-02-28', 'Male', 'Contact C', '617-555-7006', 'Insurance Provider', 'Active', 'Patient coordination', 1, 1);
+(6, 'Margaret Johnson', 'margaret.johnson@email.com', '617-555-6007', '95 Oak St, Boston, MA', '1968-06-14', 'Female', 'Paul Johnson', '617-555-6008', 'Self-Referral', 'Active', 'Diabetes management', 1, 1),
+(6, 'George Williams', 'george.williams@email.com', '617-555-6009', '105 Maple Ave, Boston, MA', '1955-11-22', 'Male', 'Helen Williams', '617-555-6010', 'Doctor Referral', 'Active', 'Hypertension treatment', 1, 1),
+(6, 'Carol Martinez', 'carol.martinez@email.com', '617-555-6011', '115 Pine Rd, Boston, MA', '1973-03-08', 'Female', 'Jose Martinez', '617-555-6012', 'Insurance Provider', 'Active', 'Annual physical', 1, 1);
+
+-- Patient Services Department (DEPT-007) - Intake and coordination clients
+INSERT INTO clients (departmentId, name, email, phone, address, dateOfBirth, gender, emergencyContact, emergencyPhone, referralSource, status, notes, createdBy, updatedBy) VALUES
+(7, 'Steven Davis', 'steven.davis@email.com', '617-555-7001', '125 Elm St, Boston, MA', '1981-09-17', 'Male', 'Amy Davis', '617-555-7002', 'Self-Referral', 'Active', 'New patient intake', 1, 1),
+(7, 'Nancy Brown', 'nancy.brown@email.com', '617-555-7003', '135 Birch Ln, Boston, MA', '1992-12-05', 'Female', 'Tom Brown', '617-555-7004', 'Doctor Referral', 'Active', 'Insurance coordination', 1, 1);
+
+-- Frontend Development Department (DEPT-001) - Tech Solutions clients
+INSERT INTO clients (departmentId, name, email, phone, address, dateOfBirth, gender, emergencyContact, emergencyPhone, referralSource, status, notes, createdBy, updatedBy) VALUES
+(1, 'Kevin Lee', 'kevin.lee@email.com', '415-555-8001', '200 Tech St, SF, CA', '1989-04-20', 'Male', 'Lisa Lee', '415-555-8002', 'Self-Referral', 'Active', 'UI/UX consultation', 1, 1),
+(1, 'Rachel Green', 'rachel.green@email.com', '415-555-8003', '210 Tech St, SF, CA', '1994-07-15', 'Female', 'Ross Green', '415-555-8004', 'Self-Referral', 'Active', 'Web development support', 1, 1);
+
+-- Elementary Education Department (DEPT-009) - Education First clients
+INSERT INTO clients (departmentId, name, email, phone, address, dateOfBirth, gender, emergencyContact, emergencyPhone, referralSource, status, notes, createdBy, updatedBy) VALUES
+(9, 'Emily Parker', 'emily.parker@email.com', '512-555-9001', '300 Learning Blvd, Austin, TX', '2015-08-10', 'Female', 'Sarah Parker', '512-555-9002', 'Self-Referral', 'Active', 'Elementary student - Grade 3', 1, 1),
+(9, 'Jacob Thompson', 'jacob.thompson@email.com', '512-555-9003', '310 Learning Blvd, Austin, TX', '2016-02-28', 'Male', 'Mike Thompson', '512-555-9004', 'Self-Referral', 'Active', 'Elementary student - Grade 2', 1, 1);
 
 -- ============================================================================
--- CASES (1 per Mental Health client = 6 cases)
+-- CASES (15 total: 6 Mental Health + 3 Primary Care + 2 Patient Services + 2 Tech + 2 Education)
 -- ============================================================================
+-- Mental Health cases (clients 1-6)
 INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
 (1, 'CASE-2026-0001', 5, '2026-01-15', NULL, 'Active', 'Anxiety treatment plan - weekly sessions', 1, 1),
 (2, 'CASE-2026-0002', 5, '2026-01-16', NULL, 'Active', 'Depression treatment - bi-weekly sessions', 1, 1),
@@ -131,6 +147,27 @@ INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, s
 (4, 'CASE-2026-0004', 5, '2026-01-18', NULL, 'Active', 'Work stress management - weekly sessions', 1, 1),
 (5, 'CASE-2026-0005', 5, '2026-01-19', NULL, 'Active', 'Grief counseling - weekly sessions', 1, 1),
 (6, 'CASE-2026-0006', 5, '2026-01-20', '2026-02-10', 'Closed', 'Relationship counseling - completed successfully', 1, 1);
+
+-- Primary Care cases (clients 10-12)
+INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(10, 'CASE-2026-0007', 6, '2026-01-21', NULL, 'Active', 'Diabetes management program', 1, 1),
+(11, 'CASE-2026-0008', 6, '2026-01-22', NULL, 'Active', 'Hypertension treatment plan', 1, 1),
+(12, 'CASE-2026-0009', 6, '2026-01-23', '2026-02-05', 'Closed', 'Annual physical - completed', 1, 1);
+
+-- Patient Services cases (clients 13-14)
+INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(13, 'CASE-2026-0010', 7, '2026-01-24', NULL, 'Active', 'New patient intake process', 1, 1),
+(14, 'CASE-2026-0011', 7, '2026-01-25', NULL, 'Active', 'Insurance coordination and verification', 1, 1);
+
+-- Tech Solutions cases (clients 15-16)
+INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(15, 'CASE-2026-0012', 1, '2026-01-26', NULL, 'Active', 'UI/UX design consultation project', 1, 1),
+(16, 'CASE-2026-0013', 1, '2026-01-27', '2026-02-08', 'Closed', 'Web development support - project completed', 1, 1);
+
+-- Education First cases (clients 17-18)
+INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(17, 'CASE-2026-0014', 9, '2026-01-28', NULL, 'Active', 'Grade 3 academic support program', 1, 1),
+(18, 'CASE-2026-0015', 9, '2026-01-29', NULL, 'Active', 'Grade 2 reading improvement plan', 1, 1);
 
 -- ============================================================================
 -- SESSION LOOKUP TABLES
@@ -158,7 +195,12 @@ INSERT INTO sessionResults (name, description, createdBy, updatedBy) VALUES
 ('Needs Follow-up', 'Client needs additional follow-up', 1, 1);
 
 -- ============================================================================
--- SESSIONS (4 sessions per case = 24 total)
+-- SESSIONS (2-4 sessions per case = 45 total)
+-- Mental Health: 24 sessions (6 cases × 4 sessions)
+-- Primary Care: 9 sessions (3 cases × 3 sessions)
+-- Patient Services: 4 sessions (2 cases × 2 sessions)
+-- Tech Solutions: 6 sessions (2 cases × 3 sessions)
+-- Education: 2 sessions (2 cases × 1 session each)
 -- ============================================================================
 -- Case 1: Jennifer Adams - Anxiety (4 sessions, all completed)
 INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
@@ -201,3 +243,51 @@ INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId,
 (6, 6, 5, 1, 2, 2, '2026-02-01 13:00:00', '2026-02-01 14:00:00', 60, '1.0', 'Worked on conflict resolution techniques.', '2026-02-01 14:00:00', 1, 1),
 (6, 6, 5, 1, 2, 1, '2026-02-08 13:00:00', '2026-02-08 14:00:00', 60, '1.0', 'Couple showing excellent progress. Relationship improving.', '2026-02-08 14:00:00', 1, 1),
 (6, 6, 5, 1, 2, 1, '2026-02-10 13:00:00', '2026-02-10 14:00:00', 60, '1.0', 'Final session. Case successfully closed.', '2026-02-10 14:00:00', 1, 1);
+
+-- Case 7: Margaret Johnson - Diabetes Management (3 sessions)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(7, 10, 6, 1, 2, 2, '2026-01-22 09:00:00', '2026-01-22 10:00:00', 60, '1.0', 'Initial diabetes assessment and blood sugar monitoring plan.', '2026-01-22 10:00:00', 1, 1),
+(7, 10, 6, 1, 2, 2, '2026-01-29 09:00:00', '2026-01-29 10:00:00', 60, '1.0', 'Reviewed diet plan and medication adjustments.', '2026-01-29 10:00:00', 1, 1),
+(7, 10, 6, 1, 1, NULL, '2026-02-19 09:00:00', NULL, NULL, NULL, 'Follow-up appointment scheduled.', NULL, 1, 1);
+
+-- Case 8: George Williams - Hypertension Treatment (3 sessions)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(8, 11, 6, 1, 2, 2, '2026-01-23 10:00:00', '2026-01-23 11:00:00', 60, '1.0', 'Blood pressure monitoring and medication review.', '2026-01-23 11:00:00', 1, 1),
+(8, 11, 6, 1, 2, 1, '2026-01-30 10:00:00', '2026-01-30 11:00:00', 60, '1.0', 'Excellent progress. BP readings within normal range.', '2026-01-30 11:00:00', 1, 1),
+(8, 11, 6, 1, 1, NULL, '2026-02-20 10:00:00', NULL, NULL, NULL, 'Quarterly check-up scheduled.', NULL, 1, 1);
+
+-- Case 9: Carol Martinez - Annual Physical (3 sessions, case closed)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(9, 12, 6, 5, 2, 1, '2026-01-24 14:00:00', '2026-01-24 15:30:00', 90, '1.5', 'Complete physical examination and lab work ordered.', '2026-01-24 15:30:00', 1, 1),
+(9, 12, 6, 6, 2, 1, '2026-01-31 14:00:00', '2026-01-31 14:30:00', 30, '0.5', 'Lab results review. All tests normal.', '2026-01-31 14:30:00', 1, 1),
+(9, 12, 6, 6, 2, 1, '2026-02-05 14:00:00', '2026-02-05 14:30:00', 30, '0.5', 'Final consultation. Annual physical complete.', '2026-02-05 14:30:00', 1, 1);
+
+-- Case 10: Steven Davis - New Patient Intake (2 sessions)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(10, 13, 7, 5, 2, 1, '2026-01-25 11:00:00', '2026-01-25 12:00:00', 60, '1.0', 'New patient registration and medical history intake.', '2026-01-25 12:00:00', 1, 1),
+(10, 13, 7, 6, 1, NULL, '2026-02-15 11:00:00', NULL, NULL, NULL, 'Follow-up appointment scheduled.', NULL, 1, 1);
+
+-- Case 11: Nancy Brown - Insurance Coordination (2 sessions)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(11, 14, 7, 5, 2, 2, '2026-01-26 13:00:00', '2026-01-26 14:00:00', 60, '1.0', 'Insurance verification and benefits coordination.', '2026-01-26 14:00:00', 1, 1),
+(11, 14, 7, 6, 1, NULL, '2026-02-16 13:00:00', NULL, NULL, NULL, 'Insurance approval follow-up scheduled.', NULL, 1, 1);
+
+-- Case 12: Kevin Lee - UI/UX Consultation (3 sessions)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(12, 15, 1, 1, 2, 2, '2026-01-27 10:00:00', '2026-01-27 12:00:00', 120, '2.0', 'Initial UI/UX design review and requirements gathering.', '2026-01-27 12:00:00', 1, 1),
+(12, 15, 1, 1, 2, 2, '2026-02-03 10:00:00', '2026-02-03 12:00:00', 120, '2.0', 'Wireframe review and design iterations.', '2026-02-03 12:00:00', 1, 1),
+(12, 15, 1, 1, 1, NULL, '2026-02-24 10:00:00', NULL, NULL, NULL, 'Final design review scheduled.', NULL, 1, 1);
+
+-- Case 13: Rachel Green - Web Development Support (3 sessions, case closed)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(13, 16, 1, 1, 2, 2, '2026-01-28 14:00:00', '2026-01-28 16:00:00', 120, '2.0', 'Web development project kickoff and requirements.', '2026-01-28 16:00:00', 1, 1),
+(13, 16, 1, 1, 2, 1, '2026-02-04 14:00:00', '2026-02-04 16:00:00', 120, '2.0', 'Development progress review. Excellent progress.', '2026-02-04 16:00:00', 1, 1),
+(13, 16, 1, 1, 2, 1, '2026-02-08 14:00:00', '2026-02-08 16:00:00', 120, '2.0', 'Project completion and handoff. Case closed.', '2026-02-08 16:00:00', 1, 1);
+
+-- Case 14: Emily Parker - Grade 3 Academic Support (1 session)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(14, 17, 9, 1, 2, 2, '2026-01-29 15:00:00', '2026-01-29 16:00:00', 60, '1.0', 'Initial academic assessment for Grade 3 student.', '2026-01-29 16:00:00', 1, 1);
+
+-- Case 15: Jacob Thompson - Grade 2 Reading Improvement (1 session)
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+(15, 18, 9, 1, 2, 2, '2026-01-30 15:00:00', '2026-01-30 16:00:00', 60, '1.0', 'Reading skills assessment for Grade 2 student.', '2026-01-30 16:00:00', 1, 1);

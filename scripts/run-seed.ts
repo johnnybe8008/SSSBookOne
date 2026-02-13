@@ -60,14 +60,24 @@ async function runSeedSQL() {
 
     console.log("\n✨ Data seeding completed successfully!");
     console.log("\n📊 Summary:");
-    console.log("   - 3 Companies");
-    console.log("   - 6 Divisions");
+    console.log("   - 3 Companies (Tech Solutions, Healthcare Partners, Education First)");
+    console.log("   - 6 Divisions (2 per company)");
     console.log("   - 12 Departments (2 per division)");
     console.log("   - 12 Company Teams (1 per department)");
     console.log("   - 12 Staff members (1 per team)");
-    console.log("   - 12 Clients (6 Mental Health + 3 Primary Care + 3 Other)");
-    console.log("   - 6 Cases (all Mental Health counseling)");
-    console.log("   - 24 Sessions (4 per case with consistent relationships)");
+    console.log("   - 15 Clients across 5 departments:");
+    console.log("     • 6 Mental Health clients");
+    console.log("     • 3 Primary Care clients");
+    console.log("     • 2 Patient Services clients");
+    console.log("     • 2 Tech Solutions clients");
+    console.log("     • 2 Education clients");
+    console.log("   - 15 Cases (1 per client)");
+    console.log("   - 45 Sessions total:");
+    console.log("     • 24 Mental Health sessions");
+    console.log("     • 9 Primary Care sessions");
+    console.log("     • 4 Patient Services sessions");
+    console.log("     • 6 Tech Solutions sessions");
+    console.log("     • 2 Education sessions");
     console.log("\n🎉 Your database is now populated with sample data!");
     console.log("   You can now view the Reports & Analytics dashboard with real data.");
 
