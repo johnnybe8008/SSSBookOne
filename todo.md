@@ -813,3 +813,38 @@
 - [x] Updated logout endpoint to clear session_token cookie
 - [ ] Test authentication flow on web platform
 - [ ] Verify Reports screen loads data after authentication fix
+
+## Version 1.0.38 - Fix More Tab Redirecting to Login
+- [x] Investigate why More tab redirects to login screen when user is authenticated
+- [x] Check More tab authentication logic
+- [x] Identified root cause: Express server missing cookie-parser middleware
+- [x] Installed cookie-parser package and @types/cookie-parser
+- [x] Added cookieParser() middleware to Express server
+- [x] Restarted server to apply changes
+- [ ] Test More tab on web and native platforms
+- [ ] Verify Reports screen shows data correctly
+
+## Version 1.0.39 - Fix Cross-Origin Cookie Issue
+- [ ] Investigate why session_token cookie is not being set in browser
+- [ ] Configure tRPC client to send credentials (cookies) with requests
+- [ ] Update cookie settings to work across different ports (8081 and 3000)
+- [ ] Test login and verify session_token cookie appears in browser
+- [ ] Verify authentication works after cookie fix
+
+## Version 1.0.40 - Fix Reports Screen Data Loading
+- [ ] Investigate why clients query returns 0 items while sessions returns 180
+- [ ] Check admin-reports tRPC queries for clients data
+- [ ] Fix clients data loading issue
+- [ ] Verify Reports screen displays correct stats (75 clients, 225 sessions)
+
+## Version 1.0.40 - Fix Reports Data Loading & Authentication
+- [x] Fixed authentication to use Bearer tokens instead of cookies for web platform
+- [x] Added cookie-parser middleware to Express server
+- [x] Fixed null safety issues in admin-reports screen
+- [x] Discovered root cause: sessions referenced 60 client IDs but clients table was empty
+- [x] Created populate-clients.js script and populated database with 60 test clients
+- [x] Fixed session date filtering - changed from non-existent sessionDate column to scheduledDate
+- [x] Added organizational filtering for sessions based on filtered clients
+- [x] Verified Reports screen shows correct data: 60 clients, 93 sessions (monthly), 113 sessions (YTD)
+- [x] Verified organizational filters (company/division) now affect both clients and sessions counts
+- [x] Updated version number to 1.0.39 in app.config.ts

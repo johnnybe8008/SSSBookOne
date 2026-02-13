@@ -119,14 +119,19 @@ export default function AdminReportsScreen() {
   const filteredSessions = useMemo(() => {
     let filtered = sessions || [];
 
-    // Filter by date (sessionDate)
+    // Filter by date (use scheduledDate, or sessionStartTime if scheduled date is null)
     filtered = filtered.filter((s: any) => {
-      const sessionDate = new Date(s.sessionDate);
+      const sessionDate = s.scheduledDate ? new Date(s.scheduledDate) : (s.sessionStartTime ? new Date(s.sessionStartTime) : null);
+      if (!sessionDate) return false; // Skip sessions with no date
       return sessionDate >= dateRange.startDate && sessionDate <= dateRange.endDate;
     });
 
+    // Filter by organizational hierarchy (only include sessions for filtered clients)
+    const filteredClientIds = new Set(filteredClients.map((c: any) => c.id));
+    filtered = filtered.filter((s: any) => filteredClientIds.has(s.clientId));
+
     return filtered;
-  }, [sessions, dateRange]);
+  }, [sessions, dateRange, filteredClients]);
 
   // Calculate analytics from filtered data
   const totalClients = filteredClients.length;
@@ -158,15 +163,15 @@ export default function AdminReportsScreen() {
   const totalStaff = staff?.length || 0;
 
   // Client distribution by department
-  const clientsByDepartment = departments?.map((dept: any) => ({
+  const clientsByDepartment = (departments?.map((dept: any) => ({
     departmentId: dept.id,
     departmentName: dept.name,
     divisionId: dept.divisionId,
     clientCount: filteredClients.filter((c: any) => c.departmentId === dept.id).length,
-  })).sort((a, b) => b.clientCount - a.clientCount) || [];
+  })) || []).sort((a, b) => b.clientCount - a.clientCount);
 
   // Session completion rates by FSM
-  const sessionsByFsm = fsms?.map((fsm: any) => {
+  const sessionsByFsm = (fsms?.map((fsm: any) => {
     const fsmSessions = filteredSessions.filter((s: any) => s.fsmId === fsm.id);
     const completedSessions = fsmSessions.filter((s: any) => s.status === "Completed").length;
     const totalFsmSessions = fsmSessions.length;
@@ -178,7 +183,7 @@ export default function AdminReportsScreen() {
       completedSessions,
       completionRate: completionRate.toFixed(1),
     };
-  }).sort((a, b) => b.totalSessions - a.totalSessions) || [];
+  }) || []).sort((a, b) => b.totalSessions - a.totalSessions);
 
   // Client referral sources
   const clientsByReferralSource = {
