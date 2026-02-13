@@ -17,7 +17,7 @@ async function runSeedSQL() {
 
   try {
     // Read the SQL file
-    const sqlFilePath = path.join(__dirname, "seed-data.sql");
+    const sqlFilePath = path.join(__dirname, "seed-data-clean.sql");
     const sqlContent = fs.readFileSync(sqlFilePath, "utf-8");
 
     // Remove comments and split by semicolons
@@ -62,12 +62,12 @@ async function runSeedSQL() {
     console.log("\n📊 Summary:");
     console.log("   - 3 Companies");
     console.log("   - 6 Divisions");
-    console.log("   - 8 Departments");
-    console.log("   - 9 Company Teams");
-    console.log("   - 10 Staff members");
-    console.log("   - 12 Clients");
-    console.log("   - 12 Cases");
-    console.log("   - 35+ Sessions");
+    console.log("   - 12 Departments (2 per division)");
+    console.log("   - 12 Company Teams (1 per department)");
+    console.log("   - 12 Staff members (1 per team)");
+    console.log("   - 12 Clients (6 Mental Health + 3 Primary Care + 3 Other)");
+    console.log("   - 6 Cases (all Mental Health counseling)");
+    console.log("   - 24 Sessions (4 per case with consistent relationships)");
     console.log("\n🎉 Your database is now populated with sample data!");
     console.log("   You can now view the Reports & Analytics dashboard with real data.");
 

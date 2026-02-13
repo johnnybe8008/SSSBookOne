@@ -707,3 +707,18 @@
 - [x] Add 18 sample session records linked to cases
 - [x] Ensure Reports & Analytics displays all data correctly
 - [x] Test on both Mac and phone after fixes
+
+## Version 1.0.31 - Database Cleanup & Consistent Sample Data
+- [x] Clear all existing data from database tables
+- [x] Create fresh seed data with properly aligned relationships
+- [x] Create seed-data-clean.sql with 3 companies, 6 divisions, 12 departments, 12 teams, 12 staff
+- [x] Add 6 Mental Health clients linked to correct department
+- [x] Add 6 cases linked to the 6 clients
+- [x] Add 24 sessions (4 per case) with proper relationships
+- [x] Ensure clients are linked to correct departments
+- [x] Ensure cases are linked to correct clients
+- [x] Ensure sessions are linked to correct cases and clients
+- [x] Ensure staff are linked to correct company teams
+- [x] Verify all foreign key relationships are consistent
+- [x] Run seed script and verify data integrity
+- [x] Test Reports & Analytics with new consistent data
