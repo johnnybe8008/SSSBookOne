@@ -640,3 +640,25 @@
 - [x] Ensure counts update in real-time
 - [x] Fix Reports & Analytics showing zero departments
 - [x] Fix Reports & Analytics not displaying divisions
+
+
+## v1.0.27 Features - Advanced Reports & Analytics
+- [ ] Add organizational hierarchy chart visualization showing Company → Division → Department → Team structure
+- [ ] Display client counts at each organizational level in hierarchy chart
+- [ ] Implement date range filters: Weekly (last 7 days), Monthly (last 30 days), YTD (Year to Date), Custom (user-selected dates)
+- [ ] Add date picker component for custom date range selection
+- [ ] Add organizational filters: Company, Division, Department (cascading dropdowns)
+- [ ] Filter all analytics data based on selected date range and organizational filters
+- [ ] Add PDF export functionality for Reports & Analytics
+- [ ] Add CSV export functionality for Reports & Analytics
+- [ ] Include all charts and metrics in exported reports
+
+## Version 1.0.27 - Reports & Analytics Enhancements
+- [x] Add date range filters to Reports & Analytics (Weekly, Monthly, YTD, Custom)
+- [x] Add custom date picker for custom date range selection
+- [x] Add organizational filters with cascading dropdowns (Company → Division → Department)
+- [x] Implement filtered analytics based on date range and organizational selection
+- [x] Create organizational hierarchy chart modal showing full tree structure
+- [x] Display client counts at each organizational level in hierarchy chart
+- [x] Add export buttons for CSV and PDF (placeholders ready for implementation)
+- [x] Install @react-native-picker/picker package for dropdown selectors
