@@ -193,7 +193,12 @@ export default function AdminReportsScreen() {
   const hierarchyData = useMemo(() => {
     return companies?.map((company: any) => {
       const companyDivisions = divisions?.filter((d: any) => d.companyId === company.id) || [];
-      const companyClientCount = filteredClients.filter((c: any) => c.companyId === company.id).length;
+      
+      // Count clients by traversing: company -> divisions -> departments -> clients
+      const companyDepartmentIds = companyDivisions.flatMap((div: any) => 
+        departments?.filter((dept: any) => dept.divisionId === div.id).map((dept: any) => dept.id) || []
+      );
+      const companyClientCount = filteredClients.filter((c: any) => companyDepartmentIds.includes(c.departmentId)).length;
 
       return {
         id: company.id,
@@ -201,7 +206,10 @@ export default function AdminReportsScreen() {
         clientCount: companyClientCount,
         divisions: companyDivisions.map((division: any) => {
           const divisionDepartments = departments?.filter((d: any) => d.divisionId === division.id) || [];
-          const divisionClientCount = filteredClients.filter((c: any) => c.divisionId === division.id).length;
+          
+          // Count clients by traversing: division -> departments -> clients
+          const divisionDepartmentIds = divisionDepartments.map((dept: any) => dept.id);
+          const divisionClientCount = filteredClients.filter((c: any) => divisionDepartmentIds.includes(c.departmentId)).length;
 
           return {
             id: division.id,

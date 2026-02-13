@@ -740,3 +740,14 @@
 - [x] Test filtering with company selection (should show only that company's data)
 - [x] Test filtering with division selection (should show only that division's data)
 - [x] Test filtering with department selection (should show only that department's data)
+
+## Version 1.0.33 - Fix App Crash (EXC_BAD_ACCESS)
+- [x] Investigate app crash with segmentation fault on Mac
+- [x] Review admin-reports.tsx for null pointer access
+- [x] Identified issue: hierarchy data calculation accessing non-existent companyId/divisionId on clients
+- [x] Fix memory access violations in hierarchyData calculation
+- [x] Update company client count to traverse: company → divisions → departments → clients
+- [x] Update division client count to traverse: division → departments → clients
+- [x] Keep department client count as direct departmentId filter
+- [x] Test TypeScript compilation (no errors)
+- [x] Verify no crashes on Mac and phone
