@@ -22,16 +22,18 @@ export default function AdminReportsScreen() {
   const { data: clients, isLoading: loadingClients } = trpc.clients.list.useQuery({ departmentId: 0 });
   const { data: sessions, isLoading: loadingSessions } = trpc.sessions.listByCase.useQuery({ caseId: 0 });
   const { data: companies, isLoading: loadingCompanies } = trpc.companies.list.useQuery();
+  const { data: divisions, isLoading: loadingDivisions } = trpc.divisions.list.useQuery({ companyId: 0 });
   const { data: departments, isLoading: loadingDepartments } = trpc.departments.list.useQuery({ divisionId: 0 });
   const { data: fsms, isLoading: loadingFsms } = trpc.fsms.list.useQuery();
   const { data: staff, isLoading: loadingStaff } = trpc.staff.list.useQuery({ teamId: 0 });
 
-  const isLoading = loadingClients || loadingSessions || loadingCompanies || loadingDepartments || loadingFsms || loadingStaff;
+  const isLoading = loadingClients || loadingSessions || loadingCompanies || loadingDivisions || loadingDepartments || loadingFsms || loadingStaff;
 
   // Calculate analytics
   const totalClients = clients?.length || 0;
   const totalSessions = sessions?.length || 0;
   const totalCompanies = companies?.length || 0;
+  const totalDivisions = divisions?.length || 0;
   const totalDepartments = departments?.length || 0;
   const totalFsms = fsms?.length || 0;
   const totalStaff = staff?.length || 0;
@@ -108,6 +110,10 @@ export default function AdminReportsScreen() {
                 <View className="flex-1 min-w-[45%] bg-surface border border-border rounded-2xl p-4">
                   <Text className="text-3xl font-bold text-foreground">{totalCompanies}</Text>
                   <Text className="text-sm text-muted mt-1">Companies</Text>
+                </View>
+                <View className="flex-1 min-w-[45%] bg-surface border border-border rounded-2xl p-4">
+                  <Text className="text-3xl font-bold text-foreground">{totalDivisions}</Text>
+                  <Text className="text-sm text-muted mt-1">Divisions</Text>
                 </View>
                 <View className="flex-1 min-w-[45%] bg-surface border border-border rounded-2xl p-4">
                   <Text className="text-3xl font-bold text-foreground">{totalDepartments}</Text>

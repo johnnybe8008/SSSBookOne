@@ -634,7 +634,9 @@
 - [x] Add navigation to specific entities from search results
 
 
-## v1.0.26 Bug Fix - Org Lookup Tables Zero Counts
+## v1.0.26 Bug Fixes - Org Lookup Tables & Reports
 - [x] Fix Org Lookup Tables showing zero counts for Divisions, Departments, and Company Teams
 - [x] Verify data queries are fetching correctly
 - [x] Ensure counts update in real-time
+- [x] Fix Reports & Analytics showing zero departments
+- [x] Fix Reports & Analytics not displaying divisions
