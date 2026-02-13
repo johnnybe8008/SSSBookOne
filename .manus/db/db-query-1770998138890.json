@@ -1,0 +1,175 @@
+{
+  "query": "\nSELECT 'Companies' as table_name, id, name FROM companies\nUNION ALL\nSELECT 'Divisions', id, CONCAT(name, ' (companyId: ', companyId, ')') FROM divisions\nUNION ALL\nSELECT 'Departments', id, CONCAT(name, ' (divisionId: ', divisionId, ')') FROM departments\nUNION ALL\nSELECT 'Teams', id, CONCAT(name, ' (departmentId: ', departmentId, ')') FROM companyTeams\nLIMIT 50;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nSELECT 'Companies' as table_name, id, name FROM companies\nUNION ALL\nSELECT 'Divisions', id, CONCAT(name, ' (companyId: ', companyId, ')') FROM divisions\nUNION ALL\nSELECT 'Departments', id, CONCAT(name, ' (divisionId: ', divisionId, ')') FROM departments\nUNION ALL\nSELECT 'Teams', id, CONCAT(name, ' (departmentId: ', departmentId, ')') FROM companyTeams\nLIMIT 50;\n",
+  "rows": [
+    {
+      "table_name": "Teams",
+      "id": "120001",
+      "name": "React Team (departmentId: 1)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120002",
+      "name": "Node.js Team (departmentId: 2)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120003",
+      "name": "Support Team A (departmentId: 3)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120004",
+      "name": "Infrastructure Team (departmentId: 4)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120005",
+      "name": "Counseling Team (departmentId: 5)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120006",
+      "name": "Medical Team (departmentId: 6)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120007",
+      "name": "Intake Team (departmentId: 7)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120008",
+      "name": "Billing Team (departmentId: 8)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120009",
+      "name": "Elementary Teachers (departmentId: 9)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120010",
+      "name": "Secondary Teachers (departmentId: 10)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120011",
+      "name": "Career Trainers (departmentId: 11)"
+    },
+    {
+      "table_name": "Teams",
+      "id": "120012",
+      "name": "Adult Educators (departmentId: 12)"
+    },
+    {
+      "table_name": "Companies",
+      "id": "120001",
+      "name": "Tech Solutions Inc"
+    },
+    {
+      "table_name": "Companies",
+      "id": "120002",
+      "name": "Healthcare Partners"
+    },
+    {
+      "table_name": "Companies",
+      "id": "120003",
+      "name": "Education First"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210002",
+      "name": "Frontend Development (divisionId: 1)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210003",
+      "name": "Backend Development (divisionId: 1)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210004",
+      "name": "Customer Support (divisionId: 2)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210005",
+      "name": "IT Infrastructure (divisionId: 2)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210006",
+      "name": "Mental Health (divisionId: 3)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210007",
+      "name": "Primary Care (divisionId: 3)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210008",
+      "name": "Patient Services (divisionId: 4)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210009",
+      "name": "Billing (divisionId: 4)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210010",
+      "name": "Elementary Education (divisionId: 5)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210011",
+      "name": "Secondary Education (divisionId: 5)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210012",
+      "name": "Professional Development (divisionId: 6)"
+    },
+    {
+      "table_name": "Departments",
+      "id": "210013",
+      "name": "Continuing Education (divisionId: 6)"
+    },
+    {
+      "table_name": "Divisions",
+      "id": "180001",
+      "name": "Engineering (companyId: 1)"
+    },
+    {
+      "table_name": "Divisions",
+      "id": "180002",
+      "name": "Operations (companyId: 1)"
+    },
+    {
+      "table_name": "Divisions",
+      "id": "180003",
+      "name": "Clinical Services (companyId: 2)"
+    },
+    {
+      "table_name": "Divisions",
+      "id": "180004",
+      "name": "Administration (companyId: 2)"
+    },
+    {
+      "table_name": "Divisions",
+      "id": "180005",
+      "name": "K-12 Programs (companyId: 3)"
+    },
+    {
+      "table_name": "Divisions",
+      "id": "180006",
+      "name": "Adult Learning (companyId: 3)"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\tid\tname\nTeams\t120001\tReact Team (departmentId: 1)\nTeams\t120002\tNode.js Team (departmentId: 2)\nTeams\t120003\tSupport Team A (departmentId: 3)\nTeams\t120004\tInfrastructure Team (departmentId: 4)\nTeams\t120005\tCounseling Team (departmentId: 5)\nTeams\t120006\tMedical Team (departmentId: 6)\nTeams\t120007\tIntake Team (departmentId: 7)\nTeams\t120008\tBilling Team (departmentId: 8)\nTeams\t120009\tElementary Teachers (departmentId: 9)\nTeams\t120010\tSecondary Teachers (departmentId: 10)\nTeams\t120011\tCareer Trainers (departmentId: 11)\nTeams\t120012\tAdult Educators (departmentId: 12)\nCompanies\t120001\tTech Solutions Inc\nCompanies\t120002\tHealthcare Partners\nCompanies\t120003\tEducation First\nDepartments\t210002\tFrontend Development (divisionId: 1)\nDepartments\t210003\tBackend Development (divisionId: 1)\nDepartments\t210004\tCustomer Support (divisionId: 2)\nDepartments\t210005\tIT Infrastructure (divisionId: 2)\nDepartments\t210006\tMental Health (divisionId: 3)\nDepartments\t210007\tPrimary Care (divisionId: 3)\nDepartments\t210008\tPatient Services (divisionId: 4)\nDepartments\t210009\tBilling (divisionId: 4)\nDepartments\t210010\tElementary Education (divisionId: 5)\nDepartments\t210011\tSecondary Education (divisionId: 5)\nDepartments\t210012\tProfessional Development (divisionId: 6)\nDepartments\t210013\tContinuing Education (divisionId: 6)\nDivisions\t180001\tEngineering (companyId: 1)\nDivisions\t180002\tOperations (companyId: 1)\nDivisions\t180003\tClinical Services (companyId: 2)\nDivisions\t180004\tAdministration (companyId: 2)\nDivisions\t180005\tK-12 Programs (companyId: 3)\nDivisions\t180006\tAdult Learning (companyId: 3)\n",
+  "stderr": "",
+  "execution_time_ms": 103
+}

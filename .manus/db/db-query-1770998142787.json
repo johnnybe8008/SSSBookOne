@@ -1,0 +1,43 @@
+{
+  "query": "\nSELECT id, name FROM companies;\nSELECT id, name, companyId FROM divisions;\nSELECT id, name, divisionId FROM departments LIMIT 15;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nSELECT id, name FROM companies;\nSELECT id, name, companyId FROM divisions;\nSELECT id, name, divisionId FROM departments LIMIT 15;\n",
+  "rows": [
+    {
+      "id": "120001",
+      "name": "Tech Solutions Inc"
+    },
+    {
+      "id": "120002",
+      "name": "Healthcare Partners"
+    },
+    {
+      "id": "120003",
+      "name": "Education First"
+    }
+  ],
+  "messages": [
+    "id\tname\tcompanyId",
+    "180001\tEngineering\t1",
+    "180002\tOperations\t1",
+    "180003\tClinical Services\t2",
+    "180004\tAdministration\t2",
+    "180005\tK-12 Programs\t3",
+    "180006\tAdult Learning\t3",
+    "id\tname\tdivisionId",
+    "210002\tFrontend Development\t1",
+    "210003\tBackend Development\t1",
+    "210004\tCustomer Support\t2",
+    "210005\tIT Infrastructure\t2",
+    "210006\tMental Health\t3",
+    "210007\tPrimary Care\t3",
+    "210008\tPatient Services\t4",
+    "210009\tBilling\t4",
+    "210010\tElementary Education\t5",
+    "210011\tSecondary Education\t5",
+    "210012\tProfessional Development\t6",
+    "210013\tContinuing Education\t6"
+  ],
+  "stdout": "id\tname\n120001\tTech Solutions Inc\n120002\tHealthcare Partners\n120003\tEducation First\nid\tname\tcompanyId\n180001\tEngineering\t1\n180002\tOperations\t1\n180003\tClinical Services\t2\n180004\tAdministration\t2\n180005\tK-12 Programs\t3\n180006\tAdult Learning\t3\nid\tname\tdivisionId\n210002\tFrontend Development\t1\n210003\tBackend Development\t1\n210004\tCustomer Support\t2\n210005\tIT Infrastructure\t2\n210006\tMental Health\t3\n210007\tPrimary Care\t3\n210008\tPatient Services\t4\n210009\tBilling\t4\n210010\tElementary Education\t5\n210011\tSecondary Education\t5\n210012\tProfessional Development\t6\n210013\tContinuing Education\t6\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

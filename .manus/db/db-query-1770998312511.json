@@ -1,0 +1,47 @@
+{
+  "query": "\nSELECT 'Companies' as entity, COUNT(*) as count FROM companies\nUNION ALL SELECT 'Divisions', COUNT(*) FROM divisions\nUNION ALL SELECT 'Departments', COUNT(*) FROM departments\nUNION ALL SELECT 'Company Teams', COUNT(*) FROM companyTeams\nUNION ALL SELECT 'Staff', COUNT(*) FROM staff\nUNION ALL SELECT 'Clients', COUNT(*) FROM clients\nUNION ALL SELECT 'Cases', COUNT(*) FROM cases\nUNION ALL SELECT 'Sessions', COUNT(*) FROM sessions;\n\nSELECT c.id, c.name, COUNT(DISTINCT d.id) as divisions_count\nFROM companies c\nLEFT JOIN divisions d ON d.companyId = c.id\nGROUP BY c.id, c.name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nSELECT 'Companies' as entity, COUNT(*) as count FROM companies\nUNION ALL SELECT 'Divisions', COUNT(*) FROM divisions\nUNION ALL SELECT 'Departments', COUNT(*) FROM departments\nUNION ALL SELECT 'Company Teams', COUNT(*) FROM companyTeams\nUNION ALL SELECT 'Staff', COUNT(*) FROM staff\nUNION ALL SELECT 'Clients', COUNT(*) FROM clients\nUNION ALL SELECT 'Cases', COUNT(*) FROM cases\nUNION ALL SELECT 'Sessions', COUNT(*) FROM sessions;\n\nSELECT c.id, c.name, COUNT(DISTINCT d.id) as divisions_count\nFROM companies c\nLEFT JOIN divisions d ON d.companyId = c.id\nGROUP BY c.id, c.name;\n",
+  "rows": [
+    {
+      "entity": "Departments",
+      "count": "12"
+    },
+    {
+      "entity": "Company Teams",
+      "count": "12"
+    },
+    {
+      "entity": "Divisions",
+      "count": "6"
+    },
+    {
+      "entity": "Companies",
+      "count": "3"
+    },
+    {
+      "entity": "Staff",
+      "count": "0"
+    },
+    {
+      "entity": "Sessions",
+      "count": "0"
+    },
+    {
+      "entity": "Cases",
+      "count": "0"
+    },
+    {
+      "entity": "Clients",
+      "count": "0"
+    }
+  ],
+  "messages": [
+    "id\tname\tdivisions_count",
+    "1\tTech Solutions Inc\t2",
+    "2\tHealthcare Partners\t2",
+    "3\tEducation First\t2"
+  ],
+  "stdout": "entity\tcount\nDepartments\t12\nCompany Teams\t12\nDivisions\t6\nCompanies\t3\nStaff\t0\nSessions\t0\nCases\t0\nClients\t0\nid\tname\tdivisions_count\n1\tTech Solutions Inc\t2\n2\tHealthcare Partners\t2\n3\tEducation First\t2\n",
+  "stderr": "",
+  "execution_time_ms": 84
+}

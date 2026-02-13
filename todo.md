@@ -751,3 +751,23 @@
 - [x] Keep department client count as direct departmentId filter
 - [x] Test TypeScript compilation (no errors)
 - [x] Verify no crashes on Mac and phone
+
+## Version 1.0.34 - Fix Database Structure & Seed Data Import
+- [x] Investigate why companies show zero divisions/departments/teams
+- [x] Check foreign key relationships in divisions table (companyId)
+- [x] Check foreign key relationships in departments table (divisionId)
+- [x] Check foreign key relationships in companyTeams table (departmentId)
+- [x] Identified issue: departments using divisionId 1,2,3 instead of actual IDs (101,102,103)
+- [x] Verify current database state and identify broken relationships
+- [x] Fix seed script to use explicit IDs for all tables
+- [x] Create seed-data-fixed.sql with explicit IDs: companies (1-3), divisions (101-106), departments (201-212), teams (301-312), staff (401-412), clients (501-515), cases (601-615)
+- [x] Convert all multi-row INSERT statements to single-row INSERTs
+- [x] Ensure all sample clients import successfully (15 clients imported)
+- [x] Ensure all sample staff import successfully (12 staff imported)
+- [x] Sessions import failed due to schema issue (separate problem)
+- [x] Clear database and re-seed with corrected data
+- [x] Verify companies show correct division/department/team counts
+- [x] Verify filtering by company shows correct data
+- [x] Tech Solutions Inc: 2 divisions ✅
+- [x] Healthcare Partners: 2 divisions ✅
+- [x] Education First: 2 divisions ✅

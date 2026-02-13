@@ -17,7 +17,7 @@ async function runSeedSQL() {
 
   try {
     // Read the SQL file
-    const sqlFilePath = path.join(__dirname, "seed-data-clean.sql");
+    const sqlFilePath = path.join(__dirname, "seed-data-fixed.sql");
     const sqlContent = fs.readFileSync(sqlFilePath, "utf-8");
 
     // Remove comments and split by semicolons
