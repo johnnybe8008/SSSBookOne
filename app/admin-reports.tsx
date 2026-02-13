@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator, Modal, Alert, Platform } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -199,8 +201,146 @@ export default function AdminReportsScreen() {
   }, [companies, divisions, departments, companyTeams, filteredClients]);
 
   // Export functions
-  const handleExportCSV = () => {
-    Alert.alert("Export CSV", "CSV export functionality will generate a downloadable file with all analytics data.");
+  const handleExportCSV = async () => {
+    try {
+      // Generate CSV content
+      const csvLines: string[] = [];
+
+      // Header with filter information
+      csvLines.push("DoH Book One - Reports & Analytics Export");
+      csvLines.push(`Generated: ${new Date().toLocaleString()}`);
+      csvLines.push("");
+      csvLines.push("Filter Settings:");
+      csvLines.push(`Date Range: ${dateRangeType.toUpperCase()}`);
+      csvLines.push(`Start Date: ${dateRange.startDate.toLocaleDateString()}`);
+      csvLines.push(`End Date: ${dateRange.endDate.toLocaleDateString()}`);
+      
+      const selectedCompany = companies?.find((c: any) => c.id === selectedCompanyId);
+      const selectedDivision = divisions?.find((d: any) => d.id === selectedDivisionId);
+      const selectedDepartment = departments?.find((d: any) => d.id === selectedDepartmentId);
+      
+      csvLines.push(`Company: ${selectedCompany?.name || "All Companies"}`);
+      csvLines.push(`Division: ${selectedDivision?.name || "All Divisions"}`);
+      csvLines.push(`Department: ${selectedDepartment?.name || "All Departments"}`);
+      csvLines.push("");
+      csvLines.push("");
+
+      // Overview metrics
+      csvLines.push("OVERVIEW METRICS");
+      csvLines.push("Metric,Value");
+      csvLines.push(`Total Clients,${totalClients}`);
+      csvLines.push(`Total Sessions,${totalSessions}`);
+      csvLines.push(`Total Companies,${totalCompanies}`);
+      csvLines.push(`Total Divisions,${totalDivisions}`);
+      csvLines.push(`Total Departments,${totalDepartments}`);
+      csvLines.push(`Total FSMs,${totalFsms}`);
+      csvLines.push(`Total Staff,${totalStaff}`);
+      csvLines.push("");
+      csvLines.push("");
+
+      // Client distribution by department
+      csvLines.push("CLIENT DISTRIBUTION BY DEPARTMENT");
+      csvLines.push("Department,Client Count,Percentage");
+      clientsByDepartment.forEach((dept) => {
+        const percentage = totalClients > 0 ? ((dept.clientCount / totalClients) * 100).toFixed(1) : "0";
+        csvLines.push(`"${dept.departmentName}",${dept.clientCount},${percentage}%`);
+      });
+      csvLines.push("");
+      csvLines.push("");
+
+      // Session completion rates by FSM
+      csvLines.push("SESSION COMPLETION RATES BY FSM");
+      csvLines.push("FSM Name,Total Sessions,Completed Sessions,Completion Rate");
+      sessionsByFsm.forEach((fsm) => {
+        csvLines.push(`"${fsm.fsmName}",${fsm.totalSessions},${fsm.completedSessions},${fsm.completionRate}%`);
+      });
+      csvLines.push("");
+      csvLines.push("");
+
+      // Client referral sources
+      csvLines.push("CLIENT REFERRAL SOURCES");
+      csvLines.push("Referral Source,Count");
+      csvLines.push(`Referred by FSM,${clientsByReferralSource.fsm}`);
+      csvLines.push(`Referred by Staff,${clientsByReferralSource.staff}`);
+      csvLines.push(`Referred by Client,${clientsByReferralSource.client}`);
+      csvLines.push(`No Referral Source,${clientsByReferralSource.none}`);
+      csvLines.push("");
+      csvLines.push("");
+
+      // Session status distribution
+      csvLines.push("SESSION STATUS DISTRIBUTION");
+      csvLines.push("Status,Count");
+      csvLines.push(`Scheduled,${sessionsByStatus.scheduled}`);
+      csvLines.push(`Completed,${sessionsByStatus.completed}`);
+      csvLines.push(`Cancelled,${sessionsByStatus.cancelled}`);
+      csvLines.push(`No Show,${sessionsByStatus.noShow}`);
+      csvLines.push("");
+      csvLines.push("");
+
+      // Organizational utilization
+      csvLines.push("ORGANIZATIONAL UTILIZATION");
+      csvLines.push("Metric,Value");
+      csvLines.push(`Avg Clients per Department,${totalDepartments > 0 ? (totalClients / totalDepartments).toFixed(1) : "0"}`);
+      csvLines.push(`Avg Sessions per FSM,${totalFsms > 0 ? (totalSessions / totalFsms).toFixed(1) : "0"}`);
+      csvLines.push(`Avg Clients per Company,${totalCompanies > 0 ? (totalClients / totalCompanies).toFixed(1) : "0"}`);
+      csvLines.push("");
+      csvLines.push("");
+
+      // Organizational hierarchy
+      csvLines.push("ORGANIZATIONAL HIERARCHY");
+      csvLines.push("Company,Division,Department,Company Team,Client Count");
+      hierarchyData.forEach((company) => {
+        company.divisions.forEach((division) => {
+          division.departments.forEach((department) => {
+            if (department.teams.length > 0) {
+              department.teams.forEach((team) => {
+                csvLines.push(`"${company.name}","${division.name}","${department.name}","${team.name}",${department.clientCount}`);
+              });
+            } else {
+              csvLines.push(`"${company.name}","${division.name}","${department.name}",,${department.clientCount}`);
+            }
+          });
+        });
+      });
+
+      // Join all lines with newline
+      const csvContent = csvLines.join("\n");
+
+      // Create file path
+      const fileName = `DoH_Analytics_${dateRangeType}_${new Date().toISOString().split('T')[0]}.csv`;
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+
+      // Write CSV file
+      await FileSystem.writeAsStringAsync(fileUri, csvContent);
+
+      // Share the file
+      if (Platform.OS === "web") {
+        // For web, create a download link
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(url);
+        Alert.alert("Success", "CSV file downloaded successfully!");
+      } else {
+        // For mobile, use sharing
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: "text/csv",
+            dialogTitle: "Export Analytics Report",
+            UTI: "public.comma-separated-values-text",
+          });
+        } else {
+          Alert.alert("Success", `CSV file saved to: ${fileUri}`);
+        }
+      }
+    } catch (error) {
+      console.error("CSV Export Error:", error);
+      Alert.alert("Export Failed", "Failed to export CSV file. Please try again.");
+    }
   };
 
   const handleExportPDF = () => {
