@@ -1,0 +1,19 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM clients) as clients,\n  (SELECT COUNT(*) FROM divisions) as divisions,\n  (SELECT COUNT(*) FROM departments) as departments,\n  (SELECT COUNT(*) FROM companyTeams) as company_teams,\n  (SELECT COUNT(*) FROM companies) as companies,\n  (SELECT COUNT(*) FROM staff) as staff,\n  (SELECT COUNT(*) FROM cases) as cases;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT \n  (SELECT COUNT(*) FROM clients) as clients,\n  (SELECT COUNT(*) FROM divisions) as divisions,\n  (SELECT COUNT(*) FROM departments) as departments,\n  (SELECT COUNT(*) FROM companyTeams) as company_teams,\n  (SELECT COUNT(*) FROM companies) as companies,\n  (SELECT COUNT(*) FROM staff) as staff,\n  (SELECT COUNT(*) FROM cases) as cases;",
+  "rows": [
+    {
+      "clients": "14",
+      "divisions": "11",
+      "departments": "13",
+      "company_teams": "6",
+      "companies": "10",
+      "staff": "2",
+      "cases": "12"
+    }
+  ],
+  "messages": [],
+  "stdout": "clients\tdivisions\tdepartments\tcompany_teams\tcompanies\tstaff\tcases\n14\t11\t13\t6\t10\t2\t12\n",
+  "stderr": "",
+  "execution_time_ms": 148
+}

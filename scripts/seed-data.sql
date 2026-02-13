@@ -85,43 +85,59 @@ INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, s
 (11, 'CASE-2026-0011', 10, '2026-01-25', NULL, 'On Hold', 'Initial case assessment for Ava Thompson', 1, 1),
 (12, 'CASE-2026-0012', 10, '2026-01-26', '2026-02-26', 'Closed', 'Initial case assessment for Ethan White', 1, 1);
 
+-- Insert Session Types
+INSERT INTO sessionTypes (name, description, createdBy, updatedBy) VALUES
+('Individual Counseling', 'One-on-one counseling session', 1, 1),
+('Group Therapy', 'Group counseling session', 1, 1),
+('Family Counseling', 'Family therapy session', 1, 1),
+('Crisis Intervention', 'Emergency mental health support', 1, 1),
+('Assessment', 'Initial client assessment', 1, 1),
+('Follow-up', 'Follow-up session', 1, 1);
+
+-- Insert Session Statuses
+INSERT INTO sessionStatuses (name, description, createdBy, updatedBy) VALUES
+('Scheduled', 'Session is scheduled', 1, 1),
+('Completed', 'Session was completed', 1, 1),
+('Cancelled', 'Session was cancelled', 1, 1),
+('No Show', 'Client did not attend', 1, 1),
+('Rescheduled', 'Session was rescheduled', 1, 1);
+
+-- Insert Session Results
+INSERT INTO sessionResults (name, description, createdBy, updatedBy) VALUES
+('Excellent Progress', 'Client showed excellent progress', 1, 1),
+('Good Progress', 'Client showed good progress', 1, 1),
+('Some Progress', 'Client showed some progress', 1, 1),
+('No Progress', 'No significant progress', 1, 1),
+('Needs Follow-up', 'Client needs additional follow-up', 1, 1);
+
 -- Insert Sessions
-INSERT INTO sessions (caseId, sessionNumber, sessionDate, duration, location, status, notes, conductedByStaffId, createdBy, updatedBy) VALUES
--- Case 1 sessions
-(1, 1, '2026-01-20', 60, 'Room 101', 'Completed', 'Session 1 completed successfully. Client Alice Johnson showed good progress.', 1, 1, 1),
-(1, 2, '2026-01-27', 60, 'Room 101', 'Completed', 'Session 2 completed successfully. Client Alice Johnson showed good progress.', 1, 1, 1),
-(1, 3, '2026-02-03', 60, 'Room 101', 'Completed', 'Session 3 completed successfully. Client Alice Johnson showed good progress.', 1, 1, 1),
-(1, 4, '2026-02-10', 60, 'Room 101', 'Scheduled', 'Upcoming session 4 scheduled for Alice Johnson.', 1, 1, 1),
--- Case 2 sessions
-(2, 1, '2026-01-21', 60, 'Room 102', 'Completed', 'Session 1 completed successfully. Client Robert Chen showed good progress.', 2, 1, 1),
-(2, 2, '2026-01-28', 60, 'Room 102', 'Cancelled', 'Session 2 cancelled.', 2, 1, 1),
-(2, 3, '2026-02-04', 60, 'Room 102', 'Completed', 'Session 3 completed successfully. Client Robert Chen showed good progress.', 2, 1, 1),
-(2, 4, '2026-02-11', 60, 'Room 102', 'Scheduled', 'Upcoming session 4 scheduled for Robert Chen.', 2, 1, 1),
--- Case 3 sessions
-(3, 1, '2026-01-22', 60, 'Room 103', 'Completed', 'Session 1 completed successfully. Client Maria Garcia showed good progress.', 3, 1, 1),
-(3, 2, '2026-01-29', 60, 'Room 103', 'Completed', 'Session 2 completed successfully. Client Maria Garcia showed good progress.', 3, 1, 1),
-(3, 3, '2026-02-05', 60, 'Room 103', 'No Show', 'Session 3 no show.', 3, 1, 1),
-(3, 4, '2026-02-12', 60, 'Room 103', 'Completed', 'Session 4 completed successfully. Client Maria Garcia showed good progress.', 3, 1, 1),
--- Case 4 sessions
-(4, 1, '2026-01-23', 60, 'Room 104', 'Completed', 'Session 1 completed successfully. Client David Smith showed good progress.', 4, 1, 1),
-(4, 2, '2026-01-30', 60, 'Room 104', 'Completed', 'Session 2 completed successfully. Client David Smith showed good progress.', 4, 1, 1),
-(4, 3, '2026-02-06', 60, 'Room 104', 'Completed', 'Session 3 completed successfully. Client David Smith showed good progress.', 4, 1, 1),
-(4, 4, '2026-02-13', 60, 'Room 104', 'Scheduled', 'Upcoming session 4 scheduled for David Smith.', 4, 1, 1),
--- Additional sessions for other cases (abbreviated)
-(5, 1, '2026-01-24', 60, 'Room 105', 'Completed', 'Session completed.', 6, 1, 1),
-(5, 2, '2026-01-31', 60, 'Room 105', 'Cancelled', 'Session cancelled.', 6, 1, 1),
-(5, 3, '2026-02-07', 60, 'Room 105', 'Scheduled', 'Upcoming session.', 6, 1, 1),
-(6, 1, '2026-01-25', 60, 'Room 101', 'Completed', 'Session completed.', 6, 1, 1),
-(6, 2, '2026-02-01', 60, 'Room 101', 'Completed', 'Session completed.', 6, 1, 1),
-(7, 1, '2026-01-26', 60, 'Room 102', 'Completed', 'Session completed.', 7, 1, 1),
-(7, 2, '2026-02-02', 60, 'Room 102', 'Scheduled', 'Upcoming session.', 7, 1, 1),
-(8, 1, '2026-01-27', 60, 'Room 103', 'Completed', 'Session completed.', 8, 1, 1),
-(8, 2, '2026-02-03', 60, 'Room 103', 'No Show', 'Session no show.', 8, 1, 1),
-(9, 1, '2026-01-28', 60, 'Room 104', 'Completed', 'Session completed.', 9, 1, 1),
-(9, 2, '2026-02-04', 60, 'Room 104', 'Completed', 'Session completed.', 9, 1, 1),
-(10, 1, '2026-01-29', 60, 'Room 105', 'Completed', 'Session completed.', 10, 1, 1),
-(10, 2, '2026-02-05', 60, 'Room 105', 'Scheduled', 'Upcoming session.', 10, 1, 1),
-(11, 1, '2026-01-30', 60, 'Room 101', 'Completed', 'Session completed.', 10, 1, 1),
-(11, 2, '2026-02-06', 60, 'Room 101', 'Cancelled', 'Session cancelled.', 10, 1, 1),
-(12, 1, '2026-01-31', 60, 'Room 102', 'Completed', 'Session completed.', 10, 1, 1),
-(12, 2, '2026-02-07', 60, 'Room 102', 'Completed', 'Session completed.', 10, 1, 1);
+INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Case 1 sessions (Alice Johnson - Individual Counseling)
+(1, 1, 1, 1, 2, 2, '2026-01-20 10:00:00', '2026-01-20 11:00:00', 60, '1.0', 'Session 1 completed successfully. Client showed good progress.', '2026-01-20 11:00:00', 1, 1),
+(1, 1, 1, 1, 2, 2, '2026-01-27 10:00:00', '2026-01-27 11:00:00', 60, '1.0', 'Session 2 completed successfully. Client showed good progress.', '2026-01-27 11:00:00', 1, 1),
+(1, 1, 1, 1, 2, 2, '2026-02-03 10:00:00', '2026-02-03 11:00:00', 60, '1.0', 'Session 3 completed successfully. Client showed good progress.', '2026-02-03 11:00:00', 1, 1),
+(1, 1, 1, 1, 1, NULL, '2026-02-10 10:00:00', NULL, NULL, NULL, 'Upcoming session 4 scheduled.', NULL, 1, 1),
+-- Case 2 sessions (Robert Chen)
+(2, 2, 2, 1, 2, 2, '2026-01-21 14:00:00', '2026-01-21 15:00:00', 60, '1.0', 'Session completed successfully.', '2026-01-21 15:00:00', 1, 1),
+(2, 2, 2, 1, 3, NULL, '2026-01-28 14:00:00', NULL, NULL, NULL, 'Session cancelled.', NULL, 1, 1),
+(2, 2, 2, 1, 2, 2, '2026-02-04 14:00:00', '2026-02-04 15:00:00', 60, '1.0', 'Session completed successfully.', '2026-02-04 15:00:00', 1, 1),
+-- Case 3 sessions (Maria Garcia)
+(3, 3, 3, 1, 2, 2, '2026-01-22 09:00:00', '2026-01-22 10:00:00', 60, '1.0', 'Session completed successfully.', '2026-01-22 10:00:00', 1, 1),
+(3, 3, 3, 1, 4, NULL, '2026-02-05 09:00:00', NULL, NULL, NULL, 'Client did not show up.', NULL, 1, 1),
+-- Case 4 sessions (David Smith - Crisis)
+(4, 4, 4, 4, 2, 1, '2026-01-23 16:00:00', '2026-01-23 17:30:00', 90, '1.5', 'Crisis intervention session. Excellent progress.', '2026-01-23 17:30:00', 1, 1),
+(4, 4, 4, 1, 2, 2, '2026-01-30 16:00:00', '2026-01-30 17:00:00', 60, '1.0', 'Follow-up session completed.', '2026-01-30 17:00:00', 1, 1),
+-- Case 5 sessions (Emma Wilson)
+(5, 5, 6, 1, 2, 2, '2026-01-24 11:00:00', '2026-01-24 12:00:00', 60, '1.0', 'Session completed.', '2026-01-24 12:00:00', 1, 1),
+(5, 5, 6, 1, 3, NULL, '2026-01-31 11:00:00', NULL, NULL, NULL, 'Session cancelled by client.', NULL, 1, 1),
+-- Case 6 sessions (James Brown)
+(6, 6, 6, 1, 2, 2, '2026-01-25 13:00:00', '2026-01-25 14:00:00', 60, '1.0', 'Session completed.', '2026-01-25 14:00:00', 1, 1),
+(6, 6, 6, 1, 2, 1, '2026-02-01 13:00:00', '2026-02-01 14:00:00', 60, '1.0', 'Excellent progress shown.', '2026-02-01 14:00:00', 1, 1),
+-- Case 7 sessions (Sophia Martinez - Group Therapy)
+(7, 7, 7, 2, 2, 2, '2026-01-26 15:00:00', '2026-01-26 16:30:00', 90, '1.5', 'Group therapy session completed.', '2026-01-26 16:30:00', 1, 1),
+-- Case 8 sessions (Michael Lee - Family Counseling)
+(8, 8, 8, 3, 2, 3, '2026-01-27 10:00:00', '2026-01-27 11:30:00', 90, '1.5', 'Family counseling session. Some progress.', '2026-01-27 11:30:00', 1, 1),
+-- Case 9 sessions (Olivia Taylor)
+(9, 9, 9, 1, 2, 2, '2026-01-28 14:00:00', '2026-01-28 15:00:00', 60, '1.0', 'Session completed.', '2026-01-28 15:00:00', 1, 1),
+-- Case 10 sessions (William Anderson)
+(10, 10, 10, 1, 2, 2, '2026-01-29 09:00:00', '2026-01-29 10:00:00', 60, '1.0', 'Session completed.', '2026-01-29 10:00:00', 1, 1);

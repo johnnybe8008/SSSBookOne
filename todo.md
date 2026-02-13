@@ -692,3 +692,18 @@
 - [x] Add 10 staff members and 9 company teams
 - [x] Create 12 cases for clients
 - [x] Ensure all organizational data displays correctly in reports
+
+## Version 1.0.30 - Debug Reports Data Loading & Add Session Data
+- [x] Investigate why seeded data not appearing in Reports & Analytics
+- [x] Verify database contains the seeded data
+- [x] Check API endpoints that Reports screen uses
+- [x] Verify tRPC queries are fetching correct data
+- [x] Add getAllClients, getAllDivisions, getAllDepartments, getAllCompanyTeams, getAllStaff, getAllSessions functions to db.ts
+- [x] Add listAll endpoints to divisions, departments, companyTeams, clients, staff, and sessions routers
+- [x] Update admin-reports.tsx to use listAll queries instead of filtered ones
+- [x] Add sessionTypes lookup table and data to seed script
+- [x] Add sessionStatuses lookup table and data to seed script
+- [x] Add sessionResults lookup table and data to seed script
+- [x] Add 18 sample session records linked to cases
+- [x] Ensure Reports & Analytics displays all data correctly
+- [x] Test on both Mac and phone after fixes

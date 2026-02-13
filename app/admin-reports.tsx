@@ -39,14 +39,14 @@ export default function AdminReportsScreen() {
   const [showHierarchyChart, setShowHierarchyChart] = useState(false);
 
   // Fetch all data for analytics
-  const { data: clients, isLoading: loadingClients } = trpc.clients.list.useQuery({ departmentId: 0 });
-  const { data: sessions, isLoading: loadingSessions } = trpc.sessions.listByCase.useQuery({ caseId: 0 });
+  const { data: clients, isLoading: loadingClients } = trpc.clients.listAll.useQuery();
+  const { data: sessions, isLoading: loadingSessions } = trpc.sessions.listAll.useQuery();
   const { data: companies, isLoading: loadingCompanies } = trpc.companies.list.useQuery();
-  const { data: divisions, isLoading: loadingDivisions } = trpc.divisions.list.useQuery({ companyId: 0 });
-  const { data: departments, isLoading: loadingDepartments } = trpc.departments.list.useQuery({ divisionId: 0 });
-  const { data: companyTeams, isLoading: loadingCompanyTeams } = trpc.companyTeams.list.useQuery({ departmentId: 0 });
+  const { data: divisions, isLoading: loadingDivisions } = trpc.divisions.listAll.useQuery();
+  const { data: departments, isLoading: loadingDepartments } = trpc.departments.listAll.useQuery();
+  const { data: companyTeams, isLoading: loadingCompanyTeams } = trpc.companyTeams.listAll.useQuery();
   const { data: fsms, isLoading: loadingFsms } = trpc.fsms.list.useQuery();
-  const { data: staff, isLoading: loadingStaff } = trpc.staff.list.useQuery({ teamId: 0 });
+  const { data: staff, isLoading: loadingStaff } = trpc.staff.listAll.useQuery();
 
   const isLoading = loadingClients || loadingSessions || loadingCompanies || loadingDivisions || loadingDepartments || loadingCompanyTeams || loadingFsms || loadingStaff;
 

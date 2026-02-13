@@ -216,6 +216,12 @@ export async function deleteTeam(id: number) {
   await db.delete(teams).where(eq(teams.id, id));
 }
 
+export async function getAllStaff() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(staff).orderBy(asc(staff.name));
+}
+
 export async function getStaffByTeamId(teamId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -291,6 +297,12 @@ export async function deleteCompany(id: number) {
   await db.delete(companies).where(eq(companies.id, id));
 }
 
+export async function getAllDivisions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(divisions).orderBy(asc(divisions.name));
+}
+
 export async function getDivisionsByCompanyId(companyId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -322,6 +334,12 @@ export async function deleteDivision(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(divisions).where(eq(divisions.id, id));
+}
+
+export async function getAllDepartments() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(departments).orderBy(asc(departments.name));
 }
 
 export async function getDepartmentsByDivisionId(divisionId: number) {
@@ -360,6 +378,12 @@ export async function deleteDepartment(id: number) {
 // ============================================================================
 // COMPANY TEAMS
 // ============================================================================
+
+export async function getAllCompanyTeams() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(companyTeams).orderBy(asc(companyTeams.name));
+}
 
 export async function getCompanyTeamsByDepartmentId(departmentId: number) {
   const db = await getDb();
@@ -433,6 +457,12 @@ export async function deleteFSM(id: number) {
 // ============================================================================
 // CLIENTS
 // ============================================================================
+
+export async function getAllClients() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(clients).orderBy(asc(clients.name));
+}
 
 export async function getClientsByDepartmentId(departmentId: number) {
   const db = await getDb();
@@ -605,6 +635,12 @@ export async function updateSessionResult(id: number, data: Partial<InsertSessio
 // ============================================================================
 // SESSIONS
 // ============================================================================
+
+export async function getAllSessions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sessions).orderBy(desc(sessions.createdAt));
+}
 
 export async function getSessionsByCaseId(caseId: number) {
   const db = await getDb();

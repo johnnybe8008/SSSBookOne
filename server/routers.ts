@@ -259,6 +259,7 @@ export const appRouter = router({
   }),
 
   staff: router({
+    listAll: protectedProcedure.query(() => db.getAllStaff()),
     list: protectedProcedure.input(z.object({ teamId: z.number() })).query(({ input }) => db.getStaffByTeamId(input.teamId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getStaffById(input.id)),
     getByUserId: protectedProcedure.input(z.object({ userId: z.number() })).query(({ input }) => db.getStaffByUserId(input.userId)),
@@ -337,6 +338,7 @@ export const appRouter = router({
   }),
 
   divisions: router({
+    listAll: protectedProcedure.query(() => db.getAllDivisions()),
     list: protectedProcedure.input(z.object({ companyId: z.number() })).query(({ input }) => db.getDivisionsByCompanyId(input.companyId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getDivisionById(input.id)),
     create: protectedProcedure
@@ -367,6 +369,7 @@ export const appRouter = router({
   }),
 
   departments: router({
+    listAll: protectedProcedure.query(() => db.getAllDepartments()),
     list: protectedProcedure.input(z.object({ divisionId: z.number() })).query(({ input }) => db.getDepartmentsByDivisionId(input.divisionId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getDepartmentById(input.id)),
     create: protectedProcedure
@@ -397,6 +400,7 @@ export const appRouter = router({
   }),
 
   companyTeams: router({
+    listAll: protectedProcedure.query(() => db.getAllCompanyTeams()),
     list: protectedProcedure.input(z.object({ departmentId: z.number() })).query(({ input }) => db.getCompanyTeamsByDepartmentId(input.departmentId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getCompanyTeamById(input.id)),
     create: protectedProcedure
@@ -468,6 +472,7 @@ export const appRouter = router({
 
   // Clients
   clients: router({
+    listAll: protectedProcedure.query(() => db.getAllClients()),
     list: protectedProcedure.input(z.object({ departmentId: z.number() })).query(({ input }) => db.getClientsByDepartmentId(input.departmentId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getClientById(input.id)),
     search: protectedProcedure.input(z.object({ searchTerm: z.string() })).query(({ input }) => db.searchClients(input.searchTerm)),
@@ -681,6 +686,7 @@ export const appRouter = router({
 
   // Sessions
   sessions: router({
+    listAll: protectedProcedure.query(() => db.getAllSessions()),
     listByCase: protectedProcedure.input(z.object({ caseId: z.number() })).query(({ input }) => db.getSessionsByCaseId(input.caseId)),
     listByStaff: protectedProcedure
       .input(z.object({ staffId: z.number(), limit: z.number().optional() }))
