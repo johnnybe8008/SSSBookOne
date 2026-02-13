@@ -1,0 +1,67 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "authSessions"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "cases"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "clients"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "companies"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "companyTeams"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "companyTemplates"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "departments"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "divisions"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "fsms"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "groups"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "notifications"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "sessionResults"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "sessionStatuses"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "sessionTypes"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "sessions"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "staff"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "teams"
+    },
+    {
+      "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_Jg9gbm3tYHVyWYyJYNbUAr\n__drizzle_migrations\nauthSessions\ncases\nclients\ncompanies\ncompanyTeams\ncompanyTemplates\ndepartments\ndivisions\nfsms\ngroups\nnotifications\nsessionResults\nsessionStatuses\nsessionTypes\nsessions\nstaff\nteams\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

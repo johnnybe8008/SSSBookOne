@@ -1,0 +1,15 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM sessionTypes) as sessionTypes,\n  (SELECT COUNT(*) FROM sessionStatuses) as sessionStatuses,\n  (SELECT COUNT(*) FROM sessionResults) as sessionResults;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT \n  (SELECT COUNT(*) FROM sessionTypes) as sessionTypes,\n  (SELECT COUNT(*) FROM sessionStatuses) as sessionStatuses,\n  (SELECT COUNT(*) FROM sessionResults) as sessionResults;",
+  "rows": [
+    {
+      "sessionTypes": "2",
+      "sessionStatuses": "0",
+      "sessionResults": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "sessionTypes\tsessionStatuses\tsessionResults\n2\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

@@ -673,3 +673,22 @@
 - [x] Handle file download/sharing on mobile devices
 - [x] Install expo-file-system and expo-sharing packages
 - [x] Generate comprehensive CSV with all analytics sections
+
+## Future Build - Reports & Analytics Enhancements
+- [ ] Implement PDF export with charts and visual formatting
+- [ ] Add email report delivery functionality (send reports directly from app)
+- [ ] Create scheduled auto-export feature for weekly/monthly reports
+- [ ] Add data visualization charts (bar charts, pie charts, trend lines)
+- [ ] Implement report templates for common report types
+- [ ] Add comparison view (compare current period vs previous period)
+
+## Version 1.0.29 - Fix Reports Data Display Issue
+- [x] Investigate why reports show zero clients, divisions, departments
+- [x] Check database for existing data
+- [x] Verify data loading queries in admin-reports.tsx
+- [x] Add test data if database is empty
+- [x] Create SQL seed data script with organizational structure
+- [x] Populate database with 12 clients, 8 departments, 6 divisions, 3 companies
+- [x] Add 10 staff members and 9 company teams
+- [x] Create 12 cases for clients
+- [x] Ensure all organizational data displays correctly in reports

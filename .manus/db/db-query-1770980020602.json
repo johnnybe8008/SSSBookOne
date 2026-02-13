@@ -1,0 +1,20 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM clients) as clients,\n  (SELECT COUNT(*) FROM divisions) as divisions,\n  (SELECT COUNT(*) FROM departments) as departments,\n  (SELECT COUNT(*) FROM companyteams) as company_teams,\n  (SELECT COUNT(*) FROM companies) as companies,\n  (SELECT COUNT(*) FROM fsms) as fsms,\n  (SELECT COUNT(*) FROM staff) as staff,\n  (SELECT COUNT(*) FROM sessions) as sessions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT \n  (SELECT COUNT(*) FROM clients) as clients,\n  (SELECT COUNT(*) FROM divisions) as divisions,\n  (SELECT COUNT(*) FROM departments) as departments,\n  (SELECT COUNT(*) FROM companyteams) as company_teams,\n  (SELECT COUNT(*) FROM companies) as companies,\n  (SELECT COUNT(*) FROM fsms) as fsms,\n  (SELECT COUNT(*) FROM staff) as staff,\n  (SELECT COUNT(*) FROM sessions) as sessions;",
+  "rows": [
+    {
+      "clients": "2",
+      "divisions": "11",
+      "departments": "13",
+      "company_teams": "6",
+      "companies": "10",
+      "fsms": "1",
+      "staff": "2",
+      "sessions": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "clients\tdivisions\tdepartments\tcompany_teams\tcompanies\tfsms\tstaff\tsessions\n2\t11\t13\t6\t10\t1\t2\t0\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}
