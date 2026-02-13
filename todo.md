@@ -801,3 +801,15 @@
 - [x] Add debug logging to track data loading
 - [x] Fix data loading issues in Reports screen
 - [x] Verify Reports screen displays correct counts after fix
+
+## Version 1.0.37 - Fix Authentication Session Persistence
+- [x] Investigate authentication session persistence issue
+- [x] Check why API returns 401 "Not authenticated" errors after login
+- [x] Check use-auth hook implementation for web platform
+- [x] Check cookie handling and session token storage
+- [x] Fix session persistence so users stay logged in after login
+- [x] Updated tRPC context to check for session_token cookie (for web users)
+- [x] Updated login endpoint to set session_token cookie with httpOnly flag
+- [x] Updated logout endpoint to clear session_token cookie
+- [ ] Test authentication flow on web platform
+- [ ] Verify Reports screen loads data after authentication fix

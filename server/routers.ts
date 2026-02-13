@@ -33,6 +33,15 @@ export const appRouter = router({
         // Create custom session token for email/password users
         const sessionToken = await createSession(user.id);
         
+        // Set session token as HTTP-only cookie for web platform
+        ctx.res.cookie('session_token', sessionToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+          path: '/'
+        });
+        
         return { user, sessionToken, success: true };
       }),
     changePassword: protectedProcedure
@@ -51,6 +60,8 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      // Also clear custom session token cookie
+      ctx.res.clearCookie('session_token', { path: '/', maxAge: -1 });
       return {
         success: true,
       } as const;

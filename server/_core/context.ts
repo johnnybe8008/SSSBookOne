@@ -17,10 +17,19 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
     user = await sdk.authenticateRequest(opts.req);
   } catch (error) {
     // If OAuth fails, try custom session token (for email/password users)
+    // Check Authorization header first (for native apps)
     const authHeader = opts.req.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.substring(7);
       user = await validateSession(token);
+    }
+    
+    // If no Authorization header, check for session token in cookies (for web)
+    if (!user && opts.req.cookies) {
+      const sessionToken = opts.req.cookies['session_token'];
+      if (sessionToken) {
+        user = await validateSession(sessionToken);
+      }
     }
   }
 
