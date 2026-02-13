@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT 'sessionTypes' as table_name, COUNT(*) as count FROM sessionTypes\nUNION ALL SELECT 'sessionStatuses', COUNT(*) FROM sessionStatuses\nUNION ALL SELECT 'sessionResults', COUNT(*) FROM sessionResults;\n\nSELECT * FROM sessionTypes LIMIT 5;\nSELECT * FROM sessionStatuses LIMIT 5;\nSELECT * FROM sessionResults LIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nSELECT 'sessionTypes' as table_name, COUNT(*) as count FROM sessionTypes\nUNION ALL SELECT 'sessionStatuses', COUNT(*) FROM sessionStatuses\nUNION ALL SELECT 'sessionResults', COUNT(*) FROM sessionResults;\n\nSELECT * FROM sessionTypes LIMIT 5;\nSELECT * FROM sessionStatuses LIMIT 5;\nSELECT * FROM sessionResults LIMIT 5;\n",
+  "rows": [
+    {
+      "table_name": "sessionTypes",
+      "count": "0"
+    },
+    {
+      "table_name": "sessionResults",
+      "count": "0"
+    },
+    {
+      "table_name": "sessionStatuses",
+      "count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\tcount\nsessionTypes\t0\nsessionResults\t0\nsessionStatuses\t0\n",
+  "stderr": "",
+  "execution_time_ms": 70
+}

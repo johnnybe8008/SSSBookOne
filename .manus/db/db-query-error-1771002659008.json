@@ -1,0 +1,12 @@
+{
+  "query": "\nSELECT \n  c.name as company,\n  COUNT(DISTINCT div.id) as divisions,\n  COUNT(DISTINCT dept.id) as departments,\n  COUNT(DISTINCT cl.id) as clients\nFROM companies c\nLEFT JOIN divisions div ON div.companyId = c.id\nLEFT JOIN departments dept ON dept.divisionId = div.id\nLEFT JOIN clients cl ON cl.departmentId = dept.id\nGROUP BY c.id, c.name\nORDER BY c.name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nSELECT \n  c.name as company,\n  COUNT(DISTINCT div.id) as divisions,\n  COUNT(DISTINCT dept.id) as departments,\n  COUNT(DISTINCT cl.id) as clients\nFROM companies c\nLEFT JOIN divisions div ON div.companyId = c.id\nLEFT JOIN departments dept ON dept.divisionId = div.id\nLEFT JOIN clients cl ON cl.departmentId = dept.id\nGROUP BY c.id, c.name\nORDER BY c.name;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 2: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 7 column 24 near \"div ON div.companyId = c.id",
+    "LEFT JOIN departments dept ON dept.divisionId = div.id",
+    "LEFT JOIN clients cl ON cl.departmentId = dept.id",
+    "GROUP BY c.id, c.name",
+    "ORDER BY c.name\""
+  ]
+}

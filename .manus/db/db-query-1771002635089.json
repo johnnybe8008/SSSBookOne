@@ -1,0 +1,42 @@
+{
+  "query": "\nSELECT 'Companies' as entity, COUNT(*) as count FROM companies\nUNION ALL SELECT 'Divisions', COUNT(*) FROM divisions\nUNION ALL SELECT 'Departments', COUNT(*) FROM departments\nUNION ALL SELECT 'Company Teams', COUNT(*) FROM companyTeams\nUNION ALL SELECT 'Staff', COUNT(*) FROM staff\nUNION ALL SELECT 'Clients', COUNT(*) FROM clients\nUNION ALL SELECT 'Cases', COUNT(*) FROM cases\nUNION ALL SELECT 'Sessions', COUNT(*) FROM sessions;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nSELECT 'Companies' as entity, COUNT(*) as count FROM companies\nUNION ALL SELECT 'Divisions', COUNT(*) FROM divisions\nUNION ALL SELECT 'Departments', COUNT(*) FROM departments\nUNION ALL SELECT 'Company Teams', COUNT(*) FROM companyTeams\nUNION ALL SELECT 'Staff', COUNT(*) FROM staff\nUNION ALL SELECT 'Clients', COUNT(*) FROM clients\nUNION ALL SELECT 'Cases', COUNT(*) FROM cases\nUNION ALL SELECT 'Sessions', COUNT(*) FROM sessions;\n",
+  "rows": [
+    {
+      "entity": "Companies",
+      "count": "3"
+    },
+    {
+      "entity": "Company Teams",
+      "count": "12"
+    },
+    {
+      "entity": "Staff",
+      "count": "0"
+    },
+    {
+      "entity": "Divisions",
+      "count": "6"
+    },
+    {
+      "entity": "Sessions",
+      "count": "180"
+    },
+    {
+      "entity": "Clients",
+      "count": "0"
+    },
+    {
+      "entity": "Cases",
+      "count": "0"
+    },
+    {
+      "entity": "Departments",
+      "count": "12"
+    }
+  ],
+  "messages": [],
+  "stdout": "entity\tcount\nCompanies\t3\nCompany Teams\t12\nStaff\t0\nDivisions\t6\nSessions\t180\nClients\t0\nCases\t0\nDepartments\t12\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

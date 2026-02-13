@@ -771,3 +771,21 @@
 - [x] Tech Solutions Inc: 2 divisions ✅
 - [x] Healthcare Partners: 2 divisions ✅
 - [x] Education First: 2 divisions ✅
+
+## Version 1.0.35 - Fix Sessions Import, Expand Sample Data & Verify Client Creation
+- [x] Investigate sessions table schema to identify why inserts are failing
+- [x] Check sessions table column definitions and required fields (sessionTypeId, sessionStatusId, sessionResultId, timestamps)
+- [x] Fix session seed data to match schema requirements
+- [x] Add sessionTypes, sessionStatuses, sessionResults lookup tables
+- [x] Create Python script to generate corrected session INSERT statements
+- [x] Import 45 sample sessions successfully (all 45 sessions imported)
+- [x] Verify all 15 sample clients are accessible in the app's client list
+- [x] Test client creation form - uses Picker component with cascading dropdowns
+- [x] Verify company name dropdown works (Picker provides scroll-down menu with type-to-jump)
+- [x] Expand seed script to include 60 additional clients (75 total = 5 per department across all 12 departments)
+- [x] Create generate_expanded_data.py script for realistic client names, emails, phone numbers, DOB
+- [x] Add 60 cases and 180 sessions for expanded clients
+- [x] Import expanded data successfully (75 clients, 75 cases, 225 sessions total)
+- [x] Test organizational filters with expanded data - each department now has 5+ clients
+- [x] Verify Reports & Analytics displays correct counts with filters
+- [x] Verify CSV export includes filtered data only

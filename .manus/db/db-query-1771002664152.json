@@ -1,0 +1,58 @@
+{
+  "query": "\nSELECT \n  dept.name as department,\n  COUNT(cl.id) as client_count\nFROM departments dept\nLEFT JOIN clients cl ON cl.departmentId = dept.id\nGROUP BY dept.id, dept.name\nORDER BY client_count DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nSELECT \n  dept.name as department,\n  COUNT(cl.id) as client_count\nFROM departments dept\nLEFT JOIN clients cl ON cl.departmentId = dept.id\nGROUP BY dept.id, dept.name\nORDER BY client_count DESC;\n",
+  "rows": [
+    {
+      "department": "Continuing Education",
+      "client_count": "0"
+    },
+    {
+      "department": "Mental Health",
+      "client_count": "0"
+    },
+    {
+      "department": "Patient Services",
+      "client_count": "0"
+    },
+    {
+      "department": "Elementary Education",
+      "client_count": "0"
+    },
+    {
+      "department": "Frontend Development",
+      "client_count": "0"
+    },
+    {
+      "department": "Backend Development",
+      "client_count": "0"
+    },
+    {
+      "department": "Customer Support",
+      "client_count": "0"
+    },
+    {
+      "department": "Primary Care",
+      "client_count": "0"
+    },
+    {
+      "department": "Billing",
+      "client_count": "0"
+    },
+    {
+      "department": "IT Infrastructure",
+      "client_count": "0"
+    },
+    {
+      "department": "Secondary Education",
+      "client_count": "0"
+    },
+    {
+      "department": "Professional Development",
+      "client_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "department\tclient_count\nContinuing Education\t0\nMental Health\t0\nPatient Services\t0\nElementary Education\t0\nFrontend Development\t0\nBackend Development\t0\nCustomer Support\t0\nPrimary Care\t0\nBilling\t0\nIT Infrastructure\t0\nSecondary Education\t0\nProfessional Development\t0\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

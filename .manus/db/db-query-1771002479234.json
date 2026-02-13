@@ -1,0 +1,54 @@
+{
+  "query": "\nSELECT 'Companies' as entity, COUNT(*) as count FROM companies\nUNION ALL SELECT 'Divisions', COUNT(*) FROM divisions\nUNION ALL SELECT 'Departments', COUNT(*) FROM departments\nUNION ALL SELECT 'Company Teams', COUNT(*) FROM companyTeams\nUNION ALL SELECT 'Staff', COUNT(*) FROM staff\nUNION ALL SELECT 'Clients', COUNT(*) FROM clients\nUNION ALL SELECT 'Cases', COUNT(*) FROM cases\nUNION ALL SELECT 'Sessions', COUNT(*) FROM sessions\nUNION ALL SELECT 'Session Types', COUNT(*) FROM sessionTypes\nUNION ALL SELECT 'Session Statuses', COUNT(*) FROM sessionStatuses\nUNION ALL SELECT 'Session Results', COUNT(*) FROM sessionResults;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nSELECT 'Companies' as entity, COUNT(*) as count FROM companies\nUNION ALL SELECT 'Divisions', COUNT(*) FROM divisions\nUNION ALL SELECT 'Departments', COUNT(*) FROM departments\nUNION ALL SELECT 'Company Teams', COUNT(*) FROM companyTeams\nUNION ALL SELECT 'Staff', COUNT(*) FROM staff\nUNION ALL SELECT 'Clients', COUNT(*) FROM clients\nUNION ALL SELECT 'Cases', COUNT(*) FROM cases\nUNION ALL SELECT 'Sessions', COUNT(*) FROM sessions\nUNION ALL SELECT 'Session Types', COUNT(*) FROM sessionTypes\nUNION ALL SELECT 'Session Statuses', COUNT(*) FROM sessionStatuses\nUNION ALL SELECT 'Session Results', COUNT(*) FROM sessionResults;\n",
+  "rows": [
+    {
+      "entity": "Company Teams",
+      "count": "12"
+    },
+    {
+      "entity": "Staff",
+      "count": "0"
+    },
+    {
+      "entity": "Companies",
+      "count": "3"
+    },
+    {
+      "entity": "Departments",
+      "count": "12"
+    },
+    {
+      "entity": "Divisions",
+      "count": "6"
+    },
+    {
+      "entity": "Cases",
+      "count": "0"
+    },
+    {
+      "entity": "Session Types",
+      "count": "0"
+    },
+    {
+      "entity": "Clients",
+      "count": "0"
+    },
+    {
+      "entity": "Sessions",
+      "count": "45"
+    },
+    {
+      "entity": "Session Statuses",
+      "count": "0"
+    },
+    {
+      "entity": "Session Results",
+      "count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "entity\tcount\nCompany Teams\t12\nStaff\t0\nCompanies\t3\nDepartments\t12\nDivisions\t6\nCases\t0\nSession Types\t0\nClients\t0\nSessions\t45\nSession Statuses\t0\nSession Results\t0\n",
+  "stderr": "",
+  "execution_time_ms": 107
+}
