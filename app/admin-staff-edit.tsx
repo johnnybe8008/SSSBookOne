@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 
 export default function AdminStaffEditScreen() {
+  const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const staffId = id ? parseInt(id) : 0;
 
@@ -115,6 +118,15 @@ export default function AdminStaffEditScreen() {
   return (
     <ScreenContainer className="p-4">
       <ScrollView>
+        {/* Back Button */}
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="flex-row items-center gap-2 mb-4"
+        >
+          <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+          <Text className="text-primary text-base font-semibold">Back</Text>
+        </TouchableOpacity>
+
         {/* Header */}
         <View className="mb-6">
           <Text className="text-3xl font-bold text-foreground">Edit Staff</Text>

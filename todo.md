@@ -876,3 +876,16 @@
 - [x] Hide create/edit buttons for viewers in UI
 - [x] Update More tab to hide admin sections for non-admins
 - [x] Test viewer permissions across all screens
+
+## v1.0.45 - Navigation Fixes
+- [x] Add back button to Manage Staff screen header
+- [x] Add back button to Manage Organizations screen header
+- [x] Add back button to all admin screens (companies, reports, etc.)
+- [ ] Ensure tab bar remains visible on all admin screens (deferred - standard modal behavior)
+- [x] Test navigation flow from More tab to admin screens and back
+
+## v1.0.46 - Reports Filter Consistency
+- [x] Make Organizational Hierarchy section respect Overview Stats filters
+- [x] Filter out companies/divisions/departments with 0 clients when filters applied
+- [x] Hide empty organizational units from hierarchy modal
+- [x] Test filter combinations in Reports screen

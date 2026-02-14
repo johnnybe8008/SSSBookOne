@@ -204,7 +204,8 @@ export default function AdminReportsScreen() {
   // Build hierarchy data
   const hierarchyData = useMemo(() => {
     if (!companies || !divisions || !departments || !companyTeams) return [];
-    return companies.map((company: any) => {
+    
+    const hierarchy = companies.map((company: any) => {
       const companyDivisions = divisions?.filter((d: any) => d.companyId === company.id) || [];
       
       // Count clients by traversing: company -> divisions -> departments -> clients
@@ -247,7 +248,25 @@ export default function AdminReportsScreen() {
         }),
       };
     });
-  }, [companies, divisions, departments, companyTeams, filteredClients]);
+
+    // Filter out companies with 0 clients when filters are applied
+    const hasFilters = selectedCompanyId > 0 || selectedDivisionId > 0 || selectedDepartmentId > 0;
+    if (hasFilters) {
+      return hierarchy
+        .filter(company => company.clientCount > 0)
+        .map(company => ({
+          ...company,
+          divisions: company.divisions
+            .filter(division => division.clientCount > 0)
+            .map(division => ({
+              ...division,
+              departments: division.departments.filter(dept => dept.clientCount > 0)
+            }))
+        }));
+    }
+
+    return hierarchy;
+  }, [companies, divisions, departments, companyTeams, filteredClients, selectedCompanyId, selectedDivisionId, selectedDepartmentId]);
 
   // Export functions
   const handleExportCSV = async () => {

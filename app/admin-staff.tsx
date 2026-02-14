@@ -1,9 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 
 export default function AdminStaffScreen() {
+  const colors = useColors();
   const { data: allStaff, isLoading } = trpc.staff.listAll.useQuery();
 
   if (isLoading) {
@@ -20,6 +23,15 @@ export default function AdminStaffScreen() {
   return (
     <ScreenContainer className="p-4">
       <ScrollView>
+        {/* Back Button */}
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="flex-row items-center gap-2 mb-4"
+        >
+          <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+          <Text className="text-primary text-base font-semibold">Back</Text>
+        </TouchableOpacity>
+
         {/* Header */}
         <View className="mb-6">
           <Text className="text-3xl font-bold text-foreground">Manage Staff</Text>
