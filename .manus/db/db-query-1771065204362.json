@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, name, companyId, divisionId, departmentId FROM clients LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT id, name, companyId, divisionId, departmentId FROM clients LIMIT 5;",
+  "rows": [
+    {
+      "id": "501",
+      "name": "John Smith",
+      "companyId": "NULL",
+      "divisionId": "NULL",
+      "departmentId": "201"
+    },
+    {
+      "id": "502",
+      "name": "Maria Garcia",
+      "companyId": "NULL",
+      "divisionId": "NULL",
+      "departmentId": "202"
+    },
+    {
+      "id": "503",
+      "name": "James Johnson",
+      "companyId": "NULL",
+      "divisionId": "NULL",
+      "departmentId": "203"
+    },
+    {
+      "id": "504",
+      "name": "Patricia Brown",
+      "companyId": "NULL",
+      "divisionId": "NULL",
+      "departmentId": "204"
+    },
+    {
+      "id": "505",
+      "name": "Robert Jones",
+      "companyId": "NULL",
+      "divisionId": "NULL",
+      "departmentId": "205"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcompanyId\tdivisionId\tdepartmentId\n501\tJohn Smith\tNULL\tNULL\t201\n502\tMaria Garcia\tNULL\tNULL\t202\n503\tJames Johnson\tNULL\tNULL\t203\n504\tPatricia Brown\tNULL\tNULL\t204\n505\tRobert Jones\tNULL\tNULL\t205\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

@@ -187,6 +187,10 @@ export async function importClientsFromCSV(
 
       // Create client
       await dbInstance.insert(clients).values({
+        companyId: companyId!,
+        divisionId: divisionId!,
+        departmentId: departmentId,
+        companyTeamId: null, // Optional field
         name: row.Name.trim(),
         email: row.Email && row.Email.trim() ? row.Email.trim() : null,
         homePhone: row.HomePhone && row.HomePhone.trim() ? row.HomePhone.trim() : null,
@@ -196,7 +200,6 @@ export async function importClientsFromCSV(
         occupation: row.Occupation && row.Occupation.trim() ? row.Occupation.trim() : null,
         title: row.Title && row.Title.trim() ? row.Title.trim() : null,
         dateOfBirth: dateOfBirth,
-        departmentId: departmentId,
         referralSourceType: referralSourceType,
         referralSourceId: referralSourceId,
         createdBy,

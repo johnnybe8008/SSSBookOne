@@ -897,3 +897,23 @@
 - [x] Update CSV export to include staff filter information
 - [x] Hierarchy already exports only filtered data (hierarchyData respects filters)
 - [x] Test all filter combinations (date + company + division + department + staff)
+
+## v1.1.0 - Organizational Structure Fixes (Major Release)
+- [x] Analyze current database schema for organizational tables
+- [x] Verify companyId foreign key exists in divisions table
+- [x] Verify divisionId foreign key exists in departments table
+- [x] Verify departmentId foreign key exists in company_teams table
+- [x] Add organizational fields to clients table (companyId, divisionId, companyTeamId)
+- [x] Add organizational fields to staff table (companyId, divisionId, departmentId, companyTeamId)
+- [x] Divisions/departments/teams already have proper foreign keys (no migration needed)
+- [x] Migrate 60 existing clients with full organizational path from their departments
+- [ ] Update staff records with organizational assignments (optional - for client-facing work)
+- [ ] Update Manage Organizations UI for hierarchical creation
+- [ ] Update Manage Staff UI with organizational assignment fields
+- [x] Move "Manage Staff" menu item below "Manage Organizations"
+- [x] Update client creation form with organizational selectors (company/division/department/team)
+- [x] Client edit form already displays organizational hierarchy
+- [x] Update client create/update API endpoints with organizational fields
+- [x] Update staff create/update API endpoints with organizational fields
+- [x] Reports already use organizational structure correctly
+- [ ] Test organizational hierarchy integrity end-to-end

@@ -278,6 +278,10 @@ export const appRouter = router({
       .input(
         z.object({
           teamId: z.number(),
+          companyId: z.number().optional(),
+          divisionId: z.number().optional(),
+          departmentId: z.number().optional(),
+          companyTeamId: z.number().optional(),
           userId: z.number().optional(),
           name: z.string().min(1).max(255),
           address: z.string().optional(),
@@ -295,6 +299,10 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          companyId: z.number().optional(),
+          divisionId: z.number().optional(),
+          departmentId: z.number().optional(),
+          companyTeamId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
           address: z.string().optional(),
           phone: z.string().max(50).optional(),
@@ -492,7 +500,10 @@ export const appRouter = router({
     create: writeAccessProcedure
       .input(
         z.object({
+          companyId: z.number(),
+          divisionId: z.number(),
           departmentId: z.number(),
+          companyTeamId: z.number().optional(),
           referralSourceId: z.number().optional(),
           referralSourceType: z.enum(["fsm", "staff", "client"]).optional(),
           name: z.string().min(1).max(255),
@@ -525,6 +536,10 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          companyId: z.number().optional(),
+          divisionId: z.number().optional(),
+          departmentId: z.number().optional(),
+          companyTeamId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
           address: z.string().optional(),
           homePhone: z.string().max(50).optional(),

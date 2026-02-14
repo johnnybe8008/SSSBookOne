@@ -103,6 +103,14 @@ export default function AddClientScreen() {
       Alert.alert("Validation Error", "Please enter client email");
       return;
     }
+    if (!companyId) {
+      Alert.alert("Validation Error", "Please select a company");
+      return;
+    }
+    if (!divisionId) {
+      Alert.alert("Validation Error", "Please select a division");
+      return;
+    }
     if (!departmentId) {
       Alert.alert("Validation Error", "Please select a department");
       return;
@@ -113,7 +121,10 @@ export default function AddClientScreen() {
     }
 
     createClient.mutate({
+      companyId: companyId!,
+      divisionId: divisionId!,
       departmentId: departmentId!,
+      companyTeamId: companyTeamId || undefined,
       referralSourceId: referralSourceId || undefined,
       referralSourceType: referralSourceType || undefined,
       name: name.trim(),

@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as count FROM clients WHERE companyId IS NULL OR divisionId IS NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT COUNT(*) as count FROM clients WHERE companyId IS NULL OR divisionId IS NULL;",
+  "rows": [
+    {
+      "count": "60"
+    }
+  ],
+  "messages": [],
+  "stdout": "count\n60\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}
