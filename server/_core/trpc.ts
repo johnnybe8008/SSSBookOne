@@ -43,3 +43,56 @@ export const adminProcedure = t.procedure.use(
     });
   }),
 );
+
+// Middleware to check if user can write (admin or counselor, not viewer)
+const requireWriteAccess = t.middleware(async (opts) => {
+  const { ctx, next } = opts;
+
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+
+  if (ctx.staffRole === "viewer") {
+    throw new TRPCError({ 
+      code: "FORBIDDEN", 
+      message: "Viewers do not have permission to create or edit data" 
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+      staffRole: ctx.staffRole,
+    },
+  });
+});
+
+// Middleware to check if user is admin or counselor (blocks viewers)
+export const writeAccessProcedure = t.procedure.use(requireUser).use(requireWriteAccess);
+
+// Middleware to check if user is admin only (blocks counselors and viewers)
+const requireAdminRole = t.middleware(async (opts) => {
+  const { ctx, next } = opts;
+
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+
+  if (ctx.staffRole !== "admin") {
+    throw new TRPCError({ 
+      code: "FORBIDDEN", 
+      message: "Only administrators can perform this action" 
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+      staffRole: ctx.staffRole,
+    },
+  });
+});
+
+export const adminOnlyProcedure = t.procedure.use(requireUser).use(requireAdminRole);

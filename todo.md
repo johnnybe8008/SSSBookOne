@@ -864,3 +864,15 @@
 - [x] Replace Admin toggle with Role dropdown in staff edit screen
 - [x] Update staff list to show role badges (Admin, Counselor, View Only)
 - [x] Test role migration with existing staff data
+
+## v1.0.44 - Role Permission Enforcement
+- [x] Create role permission middleware for backend
+- [x] Protect session create/update/delete endpoints (viewers blocked)
+- [x] Protect client create/update/delete endpoints (viewers blocked)
+- [x] Protect case create/update/delete endpoints (viewers blocked)
+- [x] Protect staff create/update/delete endpoints (viewers and counselors blocked)
+- [x] Protect organization endpoints (viewers and counselors blocked)
+- [x] Add useStaffRole hook to expose staff role and permissions
+- [x] Hide create/edit buttons for viewers in UI
+- [x] Update More tab to hide admin sections for non-admins
+- [x] Test viewer permissions across all screens

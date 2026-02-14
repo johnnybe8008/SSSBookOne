@@ -7,6 +7,7 @@ export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
   res: CreateExpressContextOptions["res"];
   user: User | null;
+  staffRole: "admin" | "counselor" | "viewer" | null;
 };
 
 export async function createContext(opts: CreateExpressContextOptions): Promise<TrpcContext> {
@@ -33,9 +34,22 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
     }
   }
 
+  // Fetch staff role if user is authenticated
+  let staffRole: "admin" | "counselor" | "viewer" | null = null;
+  if (user) {
+    try {
+      const { getStaffByUserId } = await import("../db");
+      const staff = await getStaffByUserId(user.id);
+      staffRole = (staff as any)?.role || null;
+    } catch (error) {
+      // Staff record not found, leave role as null
+    }
+  }
+
   return {
     req: opts.req,
     res: opts.res,
     user,
+    staffRole,
   };
 }

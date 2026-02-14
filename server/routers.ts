@@ -2,7 +2,7 @@ import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router, writeAccessProcedure, adminOnlyProcedure } from "./_core/trpc";
 import * as db from "./db";
 import { authenticateUser, changePassword } from "./auth";
 import { fixAdminAccount } from "./fix-admin";
@@ -213,7 +213,7 @@ export const appRouter = router({
   groups: router({
     list: protectedProcedure.query(() => db.getAllGroups()),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getGroupById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           name: z.string().min(1).max(255),
@@ -223,7 +223,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createGroup(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -236,13 +236,13 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateGroup(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteGroup(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteGroup(input.id)),
   }),
 
   teams: router({
     list: protectedProcedure.input(z.object({ groupId: z.number() })).query(({ input }) => db.getTeamsByGroupId(input.groupId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getTeamById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           groupId: z.number(),
@@ -253,7 +253,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createTeam(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -266,7 +266,7 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateTeam(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteTeam(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteTeam(input.id)),
   }),
 
   staff: router({
@@ -274,7 +274,7 @@ export const appRouter = router({
     list: protectedProcedure.input(z.object({ teamId: z.number() })).query(({ input }) => db.getStaffByTeamId(input.teamId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getStaffById(input.id)),
     getByUserId: protectedProcedure.input(z.object({ userId: z.number() })).query(({ input }) => db.getStaffByUserId(input.userId)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           teamId: z.number(),
@@ -291,7 +291,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createStaff(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -309,14 +309,14 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateStaff(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteStaff(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteStaff(input.id)),
   }),
 
   // Client Organization
   companies: router({
     list: protectedProcedure.query(() => db.getAllCompanies()),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getCompanyById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           name: z.string().min(1).max(255),
@@ -330,7 +330,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createCompany(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -347,14 +347,14 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateCompany(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCompany(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCompany(input.id)),
   }),
 
   divisions: router({
     listAll: protectedProcedure.query(() => db.getAllDivisions()),
     list: protectedProcedure.input(z.object({ companyId: z.number() })).query(({ input }) => db.getDivisionsByCompanyId(input.companyId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getDivisionById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           companyId: z.number(),
@@ -365,7 +365,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createDivision(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -378,14 +378,14 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateDivision(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteDivision(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteDivision(input.id)),
   }),
 
   departments: router({
     listAll: protectedProcedure.query(() => db.getAllDepartments()),
     list: protectedProcedure.input(z.object({ divisionId: z.number() })).query(({ input }) => db.getDepartmentsByDivisionId(input.divisionId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getDepartmentById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           divisionId: z.number(),
@@ -396,7 +396,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createDepartment(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -409,14 +409,14 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateDepartment(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteDepartment(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteDepartment(input.id)),
   }),
 
   companyTeams: router({
     listAll: protectedProcedure.query(() => db.getAllCompanyTeams()),
     list: protectedProcedure.input(z.object({ departmentId: z.number() })).query(({ input }) => db.getCompanyTeamsByDepartmentId(input.departmentId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getCompanyTeamById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           departmentId: z.number(),
@@ -427,7 +427,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createCompanyTeam(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -440,14 +440,14 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateCompanyTeam(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCompanyTeam(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCompanyTeam(input.id)),
   }),
 
   // Referral Sources
   fsms: router({
     list: protectedProcedure.query(() => db.getAllFSMs()),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getFSMById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           name: z.string().min(1).max(255),
@@ -462,7 +462,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createFSM(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -480,7 +480,7 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateFSM(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteFSM(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteFSM(input.id)),
   }),
 
   // Clients
@@ -489,7 +489,7 @@ export const appRouter = router({
     list: protectedProcedure.input(z.object({ departmentId: z.number() })).query(({ input }) => db.getClientsByDepartmentId(input.departmentId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getClientById(input.id)),
     search: protectedProcedure.input(z.object({ searchTerm: z.string() })).query(({ input }) => db.searchClients(input.searchTerm)),
-    create: protectedProcedure
+    create: writeAccessProcedure
       .input(
         z.object({
           departmentId: z.number(),
@@ -521,7 +521,7 @@ export const appRouter = router({
         }
         return db.createClient(clientData);
       }),
-    update: protectedProcedure
+    update: writeAccessProcedure
       .input(
         z.object({
           id: z.number(),
@@ -550,8 +550,8 @@ export const appRouter = router({
         }
         return db.updateClient(id, updates);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteClient(input.id)),
-    bulkUpdate: protectedProcedure
+    delete: writeAccessProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteClient(input.id)),
+    bulkUpdate: writeAccessProcedure
       .input(
         z.object({
           clientIds: z.array(z.number()),
@@ -580,7 +580,7 @@ export const appRouter = router({
     list: protectedProcedure.input(z.object({ clientId: z.number() })).query(({ input }) => db.getCasesByClientId(input.clientId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getCaseById(input.id)),
     getByCaseNumber: protectedProcedure.input(z.object({ caseNumber: z.string() })).query(({ input }) => db.getCaseByCaseNumber(input.caseNumber)),
-    create: protectedProcedure
+    create: writeAccessProcedure
       .input(
         z.object({
           caseNumber: z.string().max(100),
@@ -595,7 +595,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createCase(input)),
-    update: protectedProcedure
+    update: writeAccessProcedure
       .input(
         z.object({
           id: z.number(),
@@ -609,14 +609,14 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateCase(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCase(input.id)),
+    delete: writeAccessProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCase(input.id)),
   }),
 
   // Session Lookup Tables
   sessionTypes: router({
     list: protectedProcedure.query(() => db.getAllSessionTypes()),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getSessionTypeById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           name: z.string().min(1).max(100),
@@ -626,7 +626,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createSessionType(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -644,7 +644,7 @@ export const appRouter = router({
   sessionStatuses: router({
     list: protectedProcedure.query(() => db.getAllSessionStatuses()),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getSessionStatusById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           name: z.string().min(1).max(100),
@@ -654,7 +654,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createSessionStatus(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -672,7 +672,7 @@ export const appRouter = router({
   sessionResults: router({
     list: protectedProcedure.query(() => db.getAllSessionResults()),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getSessionResultById(input.id)),
-    create: protectedProcedure
+    create: adminOnlyProcedure
       .input(
         z.object({
           name: z.string().min(1).max(100),
@@ -682,7 +682,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createSessionResult(input)),
-    update: protectedProcedure
+    update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
@@ -714,7 +714,7 @@ export const appRouter = router({
     canEdit: protectedProcedure
       .input(z.object({ sessionId: z.number(), isAdmin: z.boolean() }))
       .query(({ input }) => db.canEditSession(input.sessionId, input.isAdmin)),
-    create: protectedProcedure
+    create: writeAccessProcedure
       .input(
         z.object({
           caseId: z.number(),
@@ -738,7 +738,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createSession(input)),
-    update: protectedProcedure
+    update: writeAccessProcedure
       .input(
         z.object({
           id: z.number(),
@@ -761,14 +761,14 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateSession(id, data);
       }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteSession(input.id)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteSession(input.id)),
   }),
 
   // Notifications
   notifications: router({
     listBySession: protectedProcedure.input(z.object({ sessionId: z.number() })).query(({ input }) => db.getNotificationsBySessionId(input.sessionId)),
     pending: protectedProcedure.query(() => db.getPendingNotifications()),
-    create: protectedProcedure
+    create: writeAccessProcedure
       .input(
         z.object({
           sessionId: z.number(),
@@ -781,7 +781,7 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createNotification(input)),
-    update: protectedProcedure
+    update: writeAccessProcedure
       .input(
         z.object({
           id: z.number(),

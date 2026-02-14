@@ -3,6 +3,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
+import { useStaffRole } from "@/hooks/use-staff-role";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
@@ -20,6 +21,7 @@ export default function MoreScreen() {
   const colors = useColors();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
+  const { role, isAdmin, canManageStaff, canManageOrganizations } = useStaffRole();
 
   // Get staff record for current user
   const { data: staffRecord, refetch: refetchStaff } = trpc.staff.getByUserId.useQuery(
@@ -65,7 +67,6 @@ export default function MoreScreen() {
     );
   }
 
-  const isAdmin = staffRecord?.isAdmin === 1;
   const isVipRated = staffRecord?.isVipRated === 1;
 
   return (

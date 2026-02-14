@@ -4,6 +4,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
+import { useStaffRole } from "@/hooks/use-staff-role";
 import { useRouter } from "expo-router";
 
 /**
@@ -19,6 +20,7 @@ import { useRouter } from "expo-router";
 export default function DashboardScreen() {
   const colors = useColors();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { canWrite } = useStaffRole();
   const router = useRouter();
 
   // Get staff record for current user
@@ -180,19 +182,19 @@ export default function DashboardScreen() {
           </View>
 
           {/* Quick Action Button */}
-          <TouchableOpacity
-            className="bg-primary py-4 rounded-full items-center"
-            style={{ shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-            onPress={() => {
-              // Navigate to session recording screen
-              router.push("/record-session" as any);
-            }}
-          >
-            <View className="flex-row items-center gap-2">
-              <IconSymbol name="plus.circle.fill" size={24} color={colors.background} />
-              <Text className="text-background text-lg font-semibold">Record New Session</Text>
-            </View>
-          </TouchableOpacity>
+          {canWrite && (
+            <TouchableOpacity
+              className="bg-primary rounded-xl p-4 active:opacity-80"
+              onPress={() => {
+                router.push("/record-session" as any);
+              }}
+            >
+              <View className="flex-row items-center gap-2">
+                <IconSymbol name="plus.circle.fill" size={24} color={colors.background} />
+                <Text className="text-background text-lg font-semibold">Record New Session</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </ScreenContainer>
