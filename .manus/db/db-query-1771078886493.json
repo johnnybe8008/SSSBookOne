@@ -1,0 +1,9 @@
+{
+  "query": "-- Add contact info columns to divisions table\nALTER TABLE divisions ADD COLUMN IF NOT EXISTS address TEXT;\nALTER TABLE divisions ADD COLUMN IF NOT EXISTS phone VARCHAR(50);\nALTER TABLE divisions ADD COLUMN IF NOT EXISTS email VARCHAR(255);\n\n-- Add contact info columns to departments table (client org departments)\nALTER TABLE departments ADD COLUMN IF NOT EXISTS address TEXT;\nALTER TABLE departments ADD COLUMN IF NOT EXISTS phone VARCHAR(50);\nALTER TABLE departments ADD COLUMN IF NOT EXISTS email VARCHAR(255);\n\n-- Add contact info columns to companyTeams table\nALTER TABLE companyTeams ADD COLUMN IF NOT EXISTS address TEXT;\nALTER TABLE companyTeams ADD COLUMN IF NOT EXISTS phone VARCHAR(50);\nALTER TABLE companyTeams ADD COLUMN IF NOT EXISTS email VARCHAR(255);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute -- Add contact info columns to divisions table\nALTER TABLE divisions ADD COLUMN IF NOT EXISTS address TEXT;\nALTER TABLE divisions ADD COLUMN IF NOT EXISTS phone VARCHAR(50);\nALTER TABLE divisions ADD COLUMN IF NOT EXISTS email VARCHAR(255);\n\n-- Add contact info columns to departments table (client org departments)\nALTER TABLE departments ADD COLUMN IF NOT EXISTS address TEXT;\nALTER TABLE departments ADD COLUMN IF NOT EXISTS phone VARCHAR(50);\nALTER TABLE departments ADD COLUMN IF NOT EXISTS email VARCHAR(255);\n\n-- Add contact info columns to companyTeams table\nALTER TABLE companyTeams ADD COLUMN IF NOT EXISTS address TEXT;\nALTER TABLE companyTeams ADD COLUMN IF NOT EXISTS phone VARCHAR(50);\nALTER TABLE companyTeams ADD COLUMN IF NOT EXISTS email VARCHAR(255);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 4195
+}

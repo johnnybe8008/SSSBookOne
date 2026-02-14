@@ -47,6 +47,9 @@ export const groups = mysqlTable("groups", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  address: text("address"),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -59,6 +62,9 @@ export const staffDepartments = mysqlTable("staffDepartments", {
   organizationId: int("organizationId").notNull(), // Link to organization (group)
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  address: text("address"),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -74,6 +80,9 @@ export const teams = mysqlTable("teams", {
   staffDepartmentId: int("staffDepartmentId"), // Link to staff department
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  address: text("address"),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -87,6 +96,9 @@ export const companyTeams = mysqlTable("companyTeams", {
   code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., CTEAM-001)
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(), // Mandatory description
+  address: text("address"),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -139,6 +151,9 @@ export const divisions = mysqlTable("divisions", {
   code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., DIV-001)
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(), // Mandatory description
+  address: text("address"),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -151,6 +166,9 @@ export const departments = mysqlTable("departments", {
   code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., DEPT-001)
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(), // Mandatory description
+  address: text("address"),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

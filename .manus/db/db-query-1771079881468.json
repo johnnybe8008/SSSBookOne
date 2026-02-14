@@ -1,0 +1,9 @@
+{
+  "query": "-- Add contact info columns to groups table (staff organizations) - TiDB doesn't support IF NOT EXISTS\nALTER TABLE `groups` ADD COLUMN address TEXT;\nALTER TABLE `groups` ADD COLUMN phone VARCHAR(50);\nALTER TABLE `groups` ADD COLUMN email VARCHAR(255);\n\n-- Add contact info columns to staffDepartments table\nALTER TABLE staffDepartments ADD COLUMN address TEXT;\nALTER TABLE staffDepartments ADD COLUMN phone VARCHAR(50);\nALTER TABLE staffDepartments ADD COLUMN email VARCHAR(255);\n\n-- Add contact info columns to teams table (staff org teams)\nALTER TABLE teams ADD COLUMN address TEXT;\nALTER TABLE teams ADD COLUMN phone VARCHAR(50);\nALTER TABLE teams ADD COLUMN email VARCHAR(255);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute -- Add contact info columns to groups table (staff organizations) - TiDB doesn't support IF NOT EXISTS\nALTER TABLE `groups` ADD COLUMN address TEXT;\nALTER TABLE `groups` ADD COLUMN phone VARCHAR(50);\nALTER TABLE `groups` ADD COLUMN email VARCHAR(255);\n\n-- Add contact info columns to staffDepartments table\nALTER TABLE staffDepartments ADD COLUMN address TEXT;\nALTER TABLE staffDepartments ADD COLUMN phone VARCHAR(50);\nALTER TABLE staffDepartments ADD COLUMN email VARCHAR(255);\n\n-- Add contact info columns to teams table (staff org teams)\nALTER TABLE teams ADD COLUMN address TEXT;\nALTER TABLE teams ADD COLUMN phone VARCHAR(50);\nALTER TABLE teams ADD COLUMN email VARCHAR(255);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3778
+}

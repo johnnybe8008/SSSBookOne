@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -16,6 +16,9 @@ export default function AdminOrganizationsScreen() {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { data: user } = trpc.auth.me.useQuery();
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Organization state
   const [isAddingOrganization, setIsAddingOrganization] = useState(false);
@@ -36,6 +39,21 @@ export default function AdminOrganizationsScreen() {
 
   // Queries
   const { data: organizations, isLoading } = trpc.groups.list.useQuery();
+
+  // Filtered organizations based on search query
+  const filteredOrganizations = useMemo(() => {
+    if (!organizations) return [];
+    if (!searchQuery.trim()) return organizations;
+    
+    const query = searchQuery.toLowerCase();
+    return organizations.filter(org => 
+      org.name.toLowerCase().includes(query) ||
+      org.description?.toLowerCase().includes(query) ||
+      org.address?.toLowerCase().includes(query) ||
+      org.phone?.toLowerCase().includes(query) ||
+      org.email?.toLowerCase().includes(query)
+    );
+  }, [organizations, searchQuery]);
   const { data: departments } = trpc.staffDepartments.list.useQuery(
     { organizationId: expandedOrgId || 0 },
     { enabled: expandedOrgId !== null }
@@ -172,13 +190,23 @@ export default function AdminOrganizationsScreen() {
     <ScreenContainer>
       <ScrollView className="flex-1 p-4">
         {/* Header */}
-        <View className="flex-row items-center justify-between mb-6">
+        <View className="flex-row items-center justify-between mb-4">
           <TouchableOpacity onPress={() => router.back()}>
             <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-foreground">Manage Staff Organizations</Text>
           <View style={{ width: 24 }} />
         </View>
+
+        {/* Search Bar */}
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search organizations, addresses, contacts..."
+          placeholderTextColor={colors.muted}
+          style={{ backgroundColor: colors.surface, color: colors.foreground }}
+          className="px-4 py-3 rounded-lg mb-4"
+        />
 
         {/* Add Organization */}
         {!isAddingOrganization ? (
@@ -233,7 +261,7 @@ export default function AdminOrganizationsScreen() {
         )}
 
         {/* Organizations List */}
-        {organizations?.map((org) => (
+        {filteredOrganizations?.map((org) => (
           <View key={org.id} style={{ backgroundColor: colors.surface }} className="rounded-lg mb-3 p-4">
             <View className="flex-row items-center justify-between">
               <TouchableOpacity
@@ -242,6 +270,13 @@ export default function AdminOrganizationsScreen() {
               >
                 <Text className="text-foreground font-bold text-lg">{org.name}</Text>
                 {org.description && <Text className="text-muted text-sm mt-1">{org.description}</Text>}
+                {(org.address || org.phone || org.email) && (
+                  <View className="mt-2 gap-1">
+                    {org.address && <Text className="text-muted text-xs">📍 {org.address}</Text>}
+                    {org.phone && <Text className="text-muted text-xs">📞 {org.phone}</Text>}
+                    {org.email && <Text className="text-muted text-xs">✉️ {org.email}</Text>}
+                  </View>
+                )}
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteOrg(org.id)} className="ml-2">
                 <Text className="text-error">Delete</Text>
@@ -310,6 +345,13 @@ export default function AdminOrganizationsScreen() {
                       >
                         <Text className="text-foreground font-semibold">{dept.name}</Text>
                         {dept.description && <Text className="text-muted text-xs mt-1">{dept.description}</Text>}
+                        {(dept.address || dept.phone || dept.email) && (
+                          <View className="mt-1 gap-0.5">
+                            {dept.address && <Text className="text-muted text-xs">📍 {dept.address}</Text>}
+                            {dept.phone && <Text className="text-muted text-xs">📞 {dept.phone}</Text>}
+                            {dept.email && <Text className="text-muted text-xs">✉️ {dept.email}</Text>}
+                          </View>
+                        )}
                       </TouchableOpacity>
                       <TouchableOpacity onPress={() => handleDeleteDept(dept.id)} className="ml-2">
                         <Text className="text-error text-sm">Delete</Text>
@@ -378,6 +420,13 @@ export default function AdminOrganizationsScreen() {
                             <View className="flex-1">
                               <Text className="text-foreground">{team.name}</Text>
                               {team.description && <Text className="text-muted text-xs">{team.description}</Text>}
+                              {(team.address || team.phone || team.email) && (
+                                <View className="mt-0.5 gap-0.5">
+                                  {team.address && <Text className="text-muted text-xs">📍 {team.address}</Text>}
+                                  {team.phone && <Text className="text-muted text-xs">📞 {team.phone}</Text>}
+                                  {team.email && <Text className="text-muted text-xs">✉️ {team.email}</Text>}
+                                </View>
+                              )}
                             </View>
                             <TouchableOpacity onPress={() => handleDeleteTeam(team.id)}>
                               <Text className="text-error text-xs">Delete</Text>

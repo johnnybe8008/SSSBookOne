@@ -229,6 +229,9 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
           updatedBy: z.number(),
         })
       )
@@ -262,6 +265,9 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
           updatedBy: z.number(),
         })
       )
@@ -295,6 +301,9 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
           updatedBy: z.number(),
         })
       )
@@ -436,6 +445,9 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
           updatedBy: z.number(),
         })
       )
@@ -470,6 +482,9 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
           updatedBy: z.number(),
         })
       )
@@ -504,6 +519,9 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
           updatedBy: z.number(),
         })
       )
