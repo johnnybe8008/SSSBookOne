@@ -12,3 +12,15 @@
 - [x] Investigate Companies dropdown implementation for memory issues
 - [x] Replace native Picker with Modal-based searchable selector
 - [x] Test client add screen thoroughly after fix
+
+## v1.4.0 - Enhanced Client Add Screen
+- [x] Replace Divisions Picker with modal selector
+- [x] Replace Departments Picker with modal selector
+- [x] Replace Teams Picker with modal selector
+- [x] Add search functionality to all new modal selectors
+- [x] Add "Create New Company" button in company selector modal
+- [x] Implement company creation form in modal
+- [x] Add recent selections tracking for companies (AsyncStorage)
+- [x] Display recent companies at top of selector modal
+- [x] Add visual "Recent" badge to recently selected companies
+- [x] Test all modal selectors and quick actions

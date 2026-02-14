@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform, Modal, FlatList } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -40,38 +41,127 @@ export default function AddClientScreen() {
   
   const [isVip, setIsVip] = useState(false);
   
-  // Modal state for company selection
+  // Modal states for all selectors
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [companySearchQuery, setCompanySearchQuery] = useState("");
+  const [showCreateCompany, setShowCreateCompany] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState("");
+  const [newCompanyAddress, setNewCompanyAddress] = useState("");
+  const [newCompanyPhone, setNewCompanyPhone] = useState("");
+  const [newCompanyEmail, setNewCompanyEmail] = useState("");
+  const [newCompanyContact, setNewCompanyContact] = useState("");
+  const [recentCompanyIds, setRecentCompanyIds] = useState<number[]>([]);
+  const [showDivisionModal, setShowDivisionModal] = useState(false);
+  const [divisionSearchQuery, setDivisionSearchQuery] = useState("");
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [teamSearchQuery, setTeamSearchQuery] = useState("");
   
   const { data: user } = trpc.auth.me.useQuery();
+
+  // Load recent company selections from AsyncStorage
+  useEffect(() => {
+    const loadRecentCompanies = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('recentCompanyIds');
+        if (stored) {
+          setRecentCompanyIds(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error('Failed to load recent companies:', error);
+      }
+    };
+    loadRecentCompanies();
+  }, []);
 
   // Fetch dropdown data
   const { data: companies, isLoading: companiesLoading } = trpc.companies.list.useQuery();
   
-  // Filtered companies for search
+  // Save recent company selection
+  const saveRecentCompany = async (id: number) => {
+    try {
+      const updated = [id, ...recentCompanyIds.filter(cid => cid !== id)].slice(0, 5); // Keep last 5
+      setRecentCompanyIds(updated);
+      await AsyncStorage.setItem('recentCompanyIds', JSON.stringify(updated));
+    } catch (error) {
+      console.error('Failed to save recent company:', error);
+    }
+  };
+
+  // Filtered companies for search, with recent ones at top
   const filteredCompanies = useMemo(() => {
     if (!companies) return [];
-    if (!companySearchQuery.trim()) return companies;
-    const query = companySearchQuery.toLowerCase();
-    return companies.filter(c => 
-      c.name.toLowerCase().includes(query) ||
-      c.address?.toLowerCase().includes(query) ||
-      c.contactPerson?.toLowerCase().includes(query)
-    );
-  }, [companies, companySearchQuery]);
+    
+    let filtered = companies;
+    if (companySearchQuery.trim()) {
+      const query = companySearchQuery.toLowerCase();
+      filtered = companies.filter(c => 
+        c.name.toLowerCase().includes(query) ||
+        c.address?.toLowerCase().includes(query) ||
+        c.contactPerson?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Sort: recent companies first, then alphabetically
+    return filtered.sort((a, b) => {
+      const aRecent = recentCompanyIds.indexOf(a.id);
+      const bRecent = recentCompanyIds.indexOf(b.id);
+      
+      if (aRecent !== -1 && bRecent !== -1) return aRecent - bRecent; // Both recent: sort by recency
+      if (aRecent !== -1) return -1; // Only a is recent
+      if (bRecent !== -1) return 1; // Only b is recent
+      return a.name.localeCompare(b.name); // Neither recent: alphabetical
+    });
+  }, [companies, companySearchQuery, recentCompanyIds]);
+  
   const { data: divisions } = trpc.divisions.list.useQuery(
     { companyId: companyId || 0 },
     { enabled: !!companyId }
   );
+  
+  // Filtered divisions for search
+  const filteredDivisions = useMemo(() => {
+    if (!divisions) return [];
+    if (!divisionSearchQuery.trim()) return divisions;
+    const query = divisionSearchQuery.toLowerCase();
+    return divisions.filter(d => 
+      d.name.toLowerCase().includes(query) ||
+      d.description?.toLowerCase().includes(query)
+    );
+  }, [divisions, divisionSearchQuery]);
+  
   const { data: departments } = trpc.departments.list.useQuery(
     { divisionId: divisionId || 0 },
     { enabled: !!divisionId }
   );
+  
+  // Filtered departments for search
+  const filteredDepartments = useMemo(() => {
+    if (!departments) return [];
+    if (!departmentSearchQuery.trim()) return departments;
+    const query = departmentSearchQuery.toLowerCase();
+    return departments.filter(d => 
+      d.name.toLowerCase().includes(query) ||
+      d.description?.toLowerCase().includes(query)
+    );
+  }, [departments, departmentSearchQuery]);
+  
   const { data: companyTeams } = trpc.companyTeams.list.useQuery(
     { departmentId: departmentId || 0 },
     { enabled: !!departmentId }
   );
+  
+  // Filtered teams for search
+  const filteredTeams = useMemo(() => {
+    if (!companyTeams) return [];
+    if (!teamSearchQuery.trim()) return companyTeams;
+    const query = teamSearchQuery.toLowerCase();
+    return companyTeams.filter(t => 
+      t.name.toLowerCase().includes(query) ||
+      t.description?.toLowerCase().includes(query)
+    );
+  }, [companyTeams, teamSearchQuery]);
   
   // Fetch referral source options based on type
   const { data: allClients } = trpc.clients.list.useQuery({ departmentId: 0 }, { enabled: referralSourceType === "client" });
@@ -108,6 +198,26 @@ export default function AddClientScreen() {
     },
     onError: (error) => {
       Alert.alert("Error", error.message || "Failed to create client");
+    },
+  });
+
+  // Create company mutation
+  const createCompany = trpc.companies.create.useMutation({
+    onSuccess: (newCompanyId) => {
+      utils.companies.invalidate();
+      setCompanyId(newCompanyId);
+      setShowCreateCompany(false);
+      setShowCompanyModal(false);
+      // Clear form
+      setNewCompanyName("");
+      setNewCompanyAddress("");
+      setNewCompanyPhone("");
+      setNewCompanyEmail("");
+      setNewCompanyContact("");
+      Alert.alert("Success", "Company created successfully");
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message || "Failed to create company");
     },
   });
 
@@ -291,18 +401,15 @@ export default function AddClientScreen() {
             {companyId && divisions && divisions.length > 0 && (
               <View className="mb-4">
                 <Text className="text-sm font-medium text-foreground mb-2">Division</Text>
-                <View className="bg-background border border-border rounded-xl overflow-hidden">
-                  <Picker
-                    selectedValue={divisionId}
-                    onValueChange={(value) => setDivisionId(value)}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select a division..." value={null} />
-                    {divisions.map((division: any) => (
-                      <Picker.Item key={division.id} label={division.name} value={division.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowDivisionModal(true)}
+                  style={{ backgroundColor: colors.background, borderColor: colors.border }}
+                  className="border rounded-xl px-4 py-3"
+                >
+                  <Text style={{ color: divisionId ? colors.foreground : colors.muted }}>
+                    {divisionId ? divisions?.find(d => d.id === divisionId)?.name : "Select a division..."}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -310,18 +417,15 @@ export default function AddClientScreen() {
             {divisionId && departments && departments.length > 0 && (
               <View className="mb-4">
                 <Text className="text-sm font-medium text-foreground mb-2">Department *</Text>
-                <View className="bg-background border border-border rounded-xl overflow-hidden">
-                  <Picker
-                    selectedValue={departmentId}
-                    onValueChange={(value) => setDepartmentId(value)}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select a department..." value={null} />
-                    {departments.map((department: any) => (
-                      <Picker.Item key={department.id} label={department.name} value={department.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowDepartmentModal(true)}
+                  style={{ backgroundColor: colors.background, borderColor: colors.border }}
+                  className="border rounded-xl px-4 py-3"
+                >
+                  <Text style={{ color: departmentId ? colors.foreground : colors.muted }}>
+                    {departmentId ? departments?.find(d => d.id === departmentId)?.name : "Select a department..."}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -329,18 +433,15 @@ export default function AddClientScreen() {
             {departmentId && companyTeams && companyTeams.length > 0 && (
               <View>
                 <Text className="text-sm font-medium text-foreground mb-2">Company Team</Text>
-                <View className="bg-background border border-border rounded-xl overflow-hidden">
-                  <Picker
-                    selectedValue={companyTeamId}
-                    onValueChange={(value) => setCompanyTeamId(value)}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select a team..." value={null} />
-                    {companyTeams.map((team: any) => (
-                      <Picker.Item key={team.id} label={team.name} value={team.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowTeamModal(true)}
+                  style={{ backgroundColor: colors.background, borderColor: colors.border }}
+                  className="border rounded-xl px-4 py-3"
+                >
+                  <Text style={{ color: companyTeamId ? colors.foreground : colors.muted }}>
+                    {companyTeamId ? companyTeams?.find(t => t.id === companyTeamId)?.name : "Select a team..."}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -495,49 +596,336 @@ export default function AddClientScreen() {
               </TouchableOpacity>
             </View>
             
+            {!showCreateCompany ? (
+              <>
+                <TextInput
+                  value={companySearchQuery}
+                  onChangeText={setCompanySearchQuery}
+                  placeholder="Search companies..."
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-4 py-3 rounded-lg mb-4"
+                />
+                
+                <TouchableOpacity
+                  onPress={() => setShowCreateCompany(true)}
+                  style={{ backgroundColor: colors.primary }}
+                  className="rounded-lg py-3 mb-4 flex-row items-center justify-center"
+                >
+                  <Text className="text-white font-semibold">+ Create New Company</Text>
+                </TouchableOpacity>
+                
+                <FlatList
+                  data={filteredCompanies}
+                  keyExtractor={(item) => `company-modal-${item.id}`}
+                  style={{ maxHeight: 400 }}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setCompanyId(item.id);
+                        saveRecentCompany(item.id);
+                        setShowCompanyModal(false);
+                        setCompanySearchQuery("");
+                      }}
+                      style={{ 
+                        backgroundColor: companyId === item.id ? colors.primary + '20' : 'transparent',
+                        borderBottomColor: colors.border 
+                      }}
+                      className="py-3 px-2 border-b"
+                    >
+                      <View className="flex-row items-center">
+                        <Text 
+                          style={{ color: colors.foreground }} 
+                          className="font-medium flex-1"
+                        >
+                          {item.name}
+                        </Text>
+                        {recentCompanyIds.includes(item.id) && (
+                          <View style={{ backgroundColor: colors.primary + '30' }} className="px-2 py-1 rounded">
+                            <Text style={{ color: colors.primary }} className="text-xs font-semibold">Recent</Text>
+                          </View>
+                        )}
+                      </View>
+                      {item.contactPerson && (
+                        <Text style={{ color: colors.muted }} className="text-sm mt-1">
+                          {item.contactPerson}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={
+                    <Text style={{ color: colors.muted }} className="text-center py-8">
+                      No companies found
+                    </Text>
+                  }
+                />
+              </>
+            ) : (
+              <View className="mb-4">
+                <Text className="text-sm font-medium text-foreground mb-2">Company Name *</Text>
+                <TextInput
+                  value={newCompanyName}
+                  onChangeText={setNewCompanyName}
+                  placeholder="Enter company name"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-4 py-3 rounded-lg mb-3"
+                />
+                
+                <Text className="text-sm font-medium text-foreground mb-2">Address</Text>
+                <TextInput
+                  value={newCompanyAddress}
+                  onChangeText={setNewCompanyAddress}
+                  placeholder="Enter address"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-4 py-3 rounded-lg mb-3"
+                />
+                
+                <Text className="text-sm font-medium text-foreground mb-2">Phone</Text>
+                <TextInput
+                  value={newCompanyPhone}
+                  onChangeText={setNewCompanyPhone}
+                  placeholder="Enter phone number"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-4 py-3 rounded-lg mb-3"
+                />
+                
+                <Text className="text-sm font-medium text-foreground mb-2">Email</Text>
+                <TextInput
+                  value={newCompanyEmail}
+                  onChangeText={setNewCompanyEmail}
+                  placeholder="Enter email"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-4 py-3 rounded-lg mb-3"
+                />
+                
+                <Text className="text-sm font-medium text-foreground mb-2">Contact Person</Text>
+                <TextInput
+                  value={newCompanyContact}
+                  onChangeText={setNewCompanyContact}
+                  placeholder="Enter contact person name"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-4 py-3 rounded-lg mb-4"
+                />
+                
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowCreateCompany(false);
+                      setNewCompanyName("");
+                      setNewCompanyAddress("");
+                      setNewCompanyPhone("");
+                      setNewCompanyEmail("");
+                      setNewCompanyContact("");
+                    }}
+                    style={{ backgroundColor: colors.border }}
+                    className="flex-1 rounded-lg py-3 items-center"
+                  >
+                    <Text style={{ color: colors.foreground }} className="font-semibold">Cancel</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!newCompanyName.trim()) {
+                        Alert.alert("Validation Error", "Please enter company name");
+                        return;
+                      }
+                      createCompany.mutate({
+                        name: newCompanyName,
+                        address: newCompanyAddress || undefined,
+                        phone: newCompanyPhone || undefined,
+                        email: newCompanyEmail || undefined,
+                        contactPerson: newCompanyContact || undefined,
+                        createdBy: user?.id || 0,
+                        updatedBy: user?.id || 0,
+                      });
+                    }}
+                    style={{ backgroundColor: colors.primary }}
+                    className="flex-1 rounded-lg py-3 items-center"
+                    disabled={createCompany.isPending}
+                  >
+                    {createCompany.isPending ? (
+                      <ActivityIndicator color="#ffffff" />
+                    ) : (
+                      <Text className="text-white font-semibold">Create</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Division Selection Modal */}
+      <Modal
+        visible={showDivisionModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDivisionModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-foreground">Select Division</Text>
+              <TouchableOpacity onPress={() => {
+                setShowDivisionModal(false);
+                setDivisionSearchQuery("");
+              }}>
+                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
             <TextInput
-              value={companySearchQuery}
-              onChangeText={setCompanySearchQuery}
-              placeholder="Search companies..."
+              value={divisionSearchQuery}
+              onChangeText={setDivisionSearchQuery}
+              placeholder="Search divisions..."
               placeholderTextColor={colors.muted}
               style={{ backgroundColor: colors.surface, color: colors.foreground }}
               className="px-4 py-3 rounded-lg mb-4"
             />
-            
             <FlatList
-              data={filteredCompanies}
-              keyExtractor={(item) => `company-modal-${item.id}`}
+              data={filteredDivisions}
+              keyExtractor={(item) => `division-modal-${item.id}`}
               style={{ maxHeight: 400 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
-                    setCompanyId(item.id);
-                    setShowCompanyModal(false);
-                    setCompanySearchQuery("");
+                    setDivisionId(item.id);
+                    setShowDivisionModal(false);
+                    setDivisionSearchQuery("");
                   }}
                   style={{ 
-                    backgroundColor: companyId === item.id ? colors.primary + '20' : 'transparent',
+                    backgroundColor: divisionId === item.id ? colors.primary + '20' : 'transparent',
                     borderBottomColor: colors.border 
                   }}
                   className="py-3 px-2 border-b"
                 >
-                  <Text 
-                    style={{ color: colors.foreground }} 
-                    className="font-medium"
-                  >
-                    {item.name}
-                  </Text>
-                  {item.contactPerson && (
-                    <Text style={{ color: colors.muted }} className="text-sm mt-1">
-                      {item.contactPerson}
-                    </Text>
+                  <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
+                  {item.description && (
+                    <Text style={{ color: colors.muted }} className="text-sm mt-1">{item.description}</Text>
                   )}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                <Text style={{ color: colors.muted }} className="text-center py-8">
-                  No companies found
-                </Text>
+                <Text style={{ color: colors.muted }} className="text-center py-8">No divisions found</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Department Selection Modal */}
+      <Modal
+        visible={showDepartmentModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDepartmentModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-foreground">Select Department</Text>
+              <TouchableOpacity onPress={() => {
+                setShowDepartmentModal(false);
+                setDepartmentSearchQuery("");
+              }}>
+                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              value={departmentSearchQuery}
+              onChangeText={setDepartmentSearchQuery}
+              placeholder="Search departments..."
+              placeholderTextColor={colors.muted}
+              style={{ backgroundColor: colors.surface, color: colors.foreground }}
+              className="px-4 py-3 rounded-lg mb-4"
+            />
+            <FlatList
+              data={filteredDepartments}
+              keyExtractor={(item) => `department-modal-${item.id}`}
+              style={{ maxHeight: 400 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setDepartmentId(item.id);
+                    setShowDepartmentModal(false);
+                    setDepartmentSearchQuery("");
+                  }}
+                  style={{ 
+                    backgroundColor: departmentId === item.id ? colors.primary + '20' : 'transparent',
+                    borderBottomColor: colors.border 
+                  }}
+                  className="py-3 px-2 border-b"
+                >
+                  <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
+                  {item.description && (
+                    <Text style={{ color: colors.muted }} className="text-sm mt-1">{item.description}</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ color: colors.muted }} className="text-center py-8">No departments found</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Team Selection Modal */}
+      <Modal
+        visible={showTeamModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTeamModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-foreground">Select Team</Text>
+              <TouchableOpacity onPress={() => {
+                setShowTeamModal(false);
+                setTeamSearchQuery("");
+              }}>
+                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              value={teamSearchQuery}
+              onChangeText={setTeamSearchQuery}
+              placeholder="Search teams..."
+              placeholderTextColor={colors.muted}
+              style={{ backgroundColor: colors.surface, color: colors.foreground }}
+              className="px-4 py-3 rounded-lg mb-4"
+            />
+            <FlatList
+              data={filteredTeams}
+              keyExtractor={(item) => `team-modal-${item.id}`}
+              style={{ maxHeight: 400 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setCompanyTeamId(item.id);
+                    setShowTeamModal(false);
+                    setTeamSearchQuery("");
+                  }}
+                  style={{ 
+                    backgroundColor: companyTeamId === item.id ? colors.primary + '20' : 'transparent',
+                    borderBottomColor: colors.border 
+                  }}
+                  className="py-3 px-2 border-b"
+                >
+                  <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
+                  {item.description && (
+                    <Text style={{ color: colors.muted }} className="text-sm mt-1">{item.description}</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ color: colors.muted }} className="text-center py-8">No teams found</Text>
               }
             />
           </View>
