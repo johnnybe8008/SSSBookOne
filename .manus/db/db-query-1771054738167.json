@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, email FROM staff ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT id, name, email FROM staff ORDER BY id;",
+  "rows": [
+    {
+      "id": "150001",
+      "name": "Admin",
+      "email": "admin@dohbookone.com"
+    },
+    {
+      "id": "180001",
+      "name": "John Bee",
+      "email": "john@boshoff.us"
+    },
+    {
+      "id": "180002",
+      "name": "Jack Black",
+      "email": "jack@black.net"
+    },
+    {
+      "id": "180003",
+      "name": "Jane Doe",
+      "email": "jane@doe.us"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\n150001\tAdmin\tadmin@dohbookone.com\n180001\tJohn Bee\tjohn@boshoff.us\n180002\tJack Black\tjack@black.net\n180003\tJane Doe\tjane@doe.us\n",
+  "stderr": "",
+  "execution_time_ms": 290
+}

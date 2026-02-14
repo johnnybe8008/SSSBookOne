@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE sessions SET staffId = CASE \n  WHEN id % 4 = 0 THEN 150001\n  WHEN id % 4 = 1 THEN 180001\n  WHEN id % 4 = 2 THEN 180002\n  ELSE 180003\nEND\nWHERE staffId NOT IN (SELECT id FROM staff);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute UPDATE sessions SET staffId = CASE \n  WHEN id % 4 = 0 THEN 150001\n  WHEN id % 4 = 1 THEN 180001\n  WHEN id % 4 = 2 THEN 180002\n  ELSE 180003\nEND\nWHERE staffId NOT IN (SELECT id FROM staff);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 123
+}

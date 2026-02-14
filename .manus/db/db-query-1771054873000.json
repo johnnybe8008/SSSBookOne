@@ -1,0 +1,30 @@
+{
+  "query": "SELECT s.id, s.name, COUNT(ses.id) as sessionCount\nFROM staff s\nLEFT JOIN sessions ses ON s.id = ses.staffId\nGROUP BY s.id, s.name\nORDER BY s.id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT s.id, s.name, COUNT(ses.id) as sessionCount\nFROM staff s\nLEFT JOIN sessions ses ON s.id = ses.staffId\nGROUP BY s.id, s.name\nORDER BY s.id;",
+  "rows": [
+    {
+      "id": "150001",
+      "name": "Admin",
+      "sessionCount": "45"
+    },
+    {
+      "id": "180001",
+      "name": "John Bee",
+      "sessionCount": "45"
+    },
+    {
+      "id": "180002",
+      "name": "Jack Black",
+      "sessionCount": "45"
+    },
+    {
+      "id": "180003",
+      "name": "Jane Doe",
+      "sessionCount": "45"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tsessionCount\n150001\tAdmin\t45\n180001\tJohn Bee\t45\n180002\tJack Black\t45\n180003\tJane Doe\t45\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}
