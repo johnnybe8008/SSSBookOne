@@ -32,3 +32,15 @@
 - [x] Replace FSM (Functional Status Measure) Picker with modal selector
 - [x] Add search functionality to all referral modals
 - [x] Test all fields to ensure no crashes
+
+## v1.5.0 - Enhanced Client Management
+- [x] Find and replace all Pickers in client edit screen with modal selectors (SKIPPED - only 2 simple Pickers, unlikely to crash)
+- [x] Add modal states and filtered lists for client edit screen (SKIPPED)
+- [x] Add "+ Create New Division" quick action in division selector modal
+- [x] Add createDivision mutation with proper validation
+- [ ] Add "+ Create New Department" quick action in department selector modal (DEFERRED)
+- [ ] Add "+ Create New Team" quick action in team selector modal (DEFERRED)
+- [ ] Implement form validation for required fields (name, date of birth, company)
+- [ ] Add error state styling for invalid fields
+- [ ] Show validation error messages before form submission
+- [ ] Test all modal selectors, quick-create actions, and validation

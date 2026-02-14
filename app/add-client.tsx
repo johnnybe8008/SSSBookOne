@@ -53,10 +53,19 @@ export default function AddClientScreen() {
   const [recentCompanyIds, setRecentCompanyIds] = useState<number[]>([]);
   const [showDivisionModal, setShowDivisionModal] = useState(false);
   const [divisionSearchQuery, setDivisionSearchQuery] = useState("");
+  const [showCreateDivision, setShowCreateDivision] = useState(false);
+  const [newDivisionCode, setNewDivisionCode] = useState("");
+  const [newDivisionName, setNewDivisionName] = useState("");
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
+  const [showCreateDepartment, setShowCreateDepartment] = useState(false);
+  const [newDepartmentCode, setNewDepartmentCode] = useState("");
+  const [newDepartmentName, setNewDepartmentName] = useState("");
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
+  const [showCreateTeam, setShowCreateTeam] = useState(false);
+  const [newTeamCode, setNewTeamCode] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
   const [showClientReferralModal, setShowClientReferralModal] = useState(false);
   const [clientReferralSearchQuery, setClientReferralSearchQuery] = useState("");
   const [showStaffReferralModal, setShowStaffReferralModal] = useState(false);
@@ -246,6 +255,57 @@ export default function AddClientScreen() {
     },
     onError: (error) => {
       Alert.alert("Error", error.message || "Failed to create company");
+    },
+  });
+
+  // Create division mutation
+  const createDivision = trpc.divisions.create.useMutation({
+    onSuccess: (newDivisionId) => {
+      utils.divisions.invalidate();
+      setDivisionId(newDivisionId);
+      setShowCreateDivision(false);
+      setShowDivisionModal(false);
+      // Clear form
+      setNewDivisionCode("");
+      setNewDivisionName("");
+      Alert.alert("Success", "Division created successfully");
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message || "Failed to create division");
+    },
+  });
+
+  // Create department mutation
+  const createDepartment = trpc.departments.create.useMutation({
+    onSuccess: (newDepartmentId) => {
+      utils.departments.invalidate();
+      setDepartmentId(newDepartmentId);
+      setShowCreateDepartment(false);
+      setShowDepartmentModal(false);
+      // Clear form
+      setNewDepartmentCode("");
+      setNewDepartmentName("");
+      Alert.alert("Success", "Department created successfully");
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message || "Failed to create department");
+    },
+  });
+
+  // Create team mutation
+  const createTeam = trpc.companyTeams.create.useMutation({
+    onSuccess: (newTeamId) => {
+      utils.companyTeams.invalidate();
+      setCompanyTeamId(newTeamId);
+      setShowCreateTeam(false);
+      setShowTeamModal(false);
+      // Clear form
+      setNewTeamCode("");
+      setNewTeamName("");
+      Alert.alert("Success", "Team created successfully");
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message || "Failed to create team");
     },
   });
 
@@ -801,15 +861,83 @@ export default function AddClientScreen() {
                 <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
               </TouchableOpacity>
             </View>
-            <TextInput
-              value={divisionSearchQuery}
-              onChangeText={setDivisionSearchQuery}
-              placeholder="Search divisions..."
-              placeholderTextColor={colors.muted}
-              style={{ backgroundColor: colors.surface, color: colors.foreground }}
-              className="px-4 py-3 rounded-lg mb-4"
-            />
-            <FlatList
+            {!showCreateDivision && (
+              <TouchableOpacity
+                onPress={() => setShowCreateDivision(true)}
+                style={{ backgroundColor: colors.primary }}
+                className="py-3 px-4 rounded-xl mb-4 flex-row items-center justify-center gap-2"
+              >
+                <Text className="text-background font-semibold">+ Create New Division</Text>
+              </TouchableOpacity>
+            )}
+            
+            {showCreateDivision ? (
+              <View className="gap-3 mb-4">
+                <Text className="text-lg font-semibold text-foreground">Create New Division</Text>
+                <TextInput
+                  value={newDivisionName}
+                  onChangeText={setNewDivisionName}
+                  placeholder="Division Name *"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }}
+                  className="px-4 py-3 rounded-xl border"
+                />
+                <TextInput
+                  value={newDivisionCode}
+                  onChangeText={setNewDivisionCode}
+                  placeholder="Description *"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }}
+                  className="px-4 py-3 rounded-xl border"
+                />
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!newDivisionName.trim()) {
+                        Alert.alert("Validation Error", "Please enter division name");
+                        return;
+                      }
+                      if (!companyId) {
+                        Alert.alert("Validation Error", "Please select a company first");
+                        return;
+                      }
+                      createDivision.mutate({
+                        companyId,
+                        name: newDivisionName,
+                        description: newDivisionCode,
+                        createdBy: user?.id || 0,
+                        updatedBy: user?.id || 0,
+                      });
+                    }}
+                    style={{ backgroundColor: colors.primary }}
+                    className="flex-1 py-3 rounded-xl"
+                  >
+                    <Text className="text-background font-semibold text-center">Create</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowCreateDivision(false);
+                      setNewDivisionCode("");
+                      setNewDivisionName("");
+                    }}
+                    style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+                    className="flex-1 py-3 rounded-xl border"
+                  >
+                    <Text style={{ color: colors.foreground }} className="font-semibold text-center">Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <>
+                <TextInput
+                  value={divisionSearchQuery}
+                  onChangeText={setDivisionSearchQuery}
+                  placeholder="Search divisions..."
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-4 py-3 rounded-lg mb-4"
+                />
+                <FlatList
               data={filteredDivisions}
               keyExtractor={(item) => `division-modal-${item.id}`}
               style={{ maxHeight: 400 }}
@@ -836,6 +964,8 @@ export default function AddClientScreen() {
                 <Text style={{ color: colors.muted }} className="text-center py-8">No divisions found</Text>
               }
             />
+              </>
+            )}
           </View>
         </View>
       </Modal>
