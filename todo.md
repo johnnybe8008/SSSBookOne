@@ -848,3 +848,9 @@
 - [x] Verified Reports screen shows correct data: 60 clients, 93 sessions (monthly), 113 sessions (YTD)
 - [x] Verified organizational filters (company/division) now affect both clients and sessions counts
 - [x] Updated version number to 1.0.39 in app.config.ts
+
+## v1.0.42 Fixes
+- [x] Change "Manage Users" to "Manage Staff" in More menu
+- [x] Add password field to staff add/edit screens for admin to set/reset passwords
+- [x] Make home screen sessions clickable to view session details
+- [x] Create session detail view screen

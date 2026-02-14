@@ -123,7 +123,7 @@ export default function DashboardScreen() {
                     key={session.id}
                     className="flex-row items-center justify-between py-3 border-b border-border"
                     onPress={() => {
-                      // Navigate to session detail
+                      router.push(`/session-detail?id=${session.id}` as any);
                     }}
                   >
                     <View className="flex-1">
@@ -156,7 +156,7 @@ export default function DashboardScreen() {
                     key={session.id}
                     className="flex-row items-center justify-between py-3 border-b border-border"
                     onPress={() => {
-                      // Navigate to session detail
+                      router.push(`/session-detail?id=${session.id}` as any);
                     }}
                   >
                     <View className="flex-1">

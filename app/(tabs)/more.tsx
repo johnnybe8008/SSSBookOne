@@ -261,7 +261,7 @@ export default function MoreScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="person.2.fill" size={20} color={colors.primary} />
-                <Text className="text-base text-foreground">Manage Users</Text>
+                <Text className="text-base text-foreground">Manage Staff</Text>
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>

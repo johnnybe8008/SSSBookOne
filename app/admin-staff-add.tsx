@@ -91,11 +91,12 @@ export default function AdminStaffAddScreen() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Enter password"
+              placeholder="Enter initial password"
               secureTextEntry
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
               placeholderTextColor="#9BA1A6"
             />
+            <Text className="text-xs text-muted mt-1">Admin can reset this password later if needed</Text>
           </View>
 
           {/* VIP Toggle */}

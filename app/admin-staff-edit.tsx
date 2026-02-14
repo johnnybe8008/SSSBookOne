@@ -12,6 +12,7 @@ export default function AdminStaffEditScreen() {
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isVipRated, setIsVipRated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -153,6 +154,20 @@ export default function AdminStaffEditScreen() {
             <View className="bg-surface border border-border rounded-lg p-3">
               <Text className="text-muted">{staff.id}</Text>
             </View>
+          </View>
+
+          {/* Password Reset */}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Reset Password</Text>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Leave blank to keep current password"
+              secureTextEntry
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+            <Text className="text-xs text-muted mt-1">Only enter a new password if you want to reset it</Text>
           </View>
 
           {/* VIP Toggle */}
