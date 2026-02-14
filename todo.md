@@ -995,3 +995,15 @@
 - [x] Fix crashes in bulk staff reassignment screen related to staff organization queries
 - [x] Investigate staffDepartments.list and teams.list query parameters
 - [x] Ensure proper data fetching for staff organizational hierarchy
+
+## v1.2.0 - Consolidate and Enhance Organizational Management
+- [x] Add contact info fields (address, phone, email) to Company level in Client Organizations screen
+- [x] Add contact info fields to Division level in Client Organizations screen
+- [x] Add contact info fields to Department level in Client Organizations screen
+- [x] Add contact info fields to Team level in Client Organizations screen
+- [x] Update backend mutations to handle contact info for all client org levels
+- [x] Rename "Manage Organizations" to "Manage Staff Organizations" in More menu
+- [x] Rename "Client Organizations" to "Manage Client Organizations" in More menu
+- [x] Remove "Manage Companies" menu item from More tab
+- [x] Update all navigation references to use new naming
+- [x] Test contact info saving and display at all levels

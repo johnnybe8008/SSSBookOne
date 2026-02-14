@@ -207,7 +207,7 @@ export default function MoreScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="person.2.fill" size={20} color={colors.foreground} />
-                <Text className="text-base text-foreground">Manage Organizations</Text>
+                <Text className="text-base text-foreground">Manage Staff Organizations</Text>
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>
@@ -218,7 +218,7 @@ export default function MoreScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="person.2.fill" size={20} color={colors.foreground} />
-                <Text className="text-base text-foreground">Client Organizations</Text>
+                <Text className="text-base text-foreground">Manage Client Organizations</Text>
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>
@@ -252,17 +252,6 @@ export default function MoreScreen() {
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="person.2.fill" size={20} color={colors.foreground} />
                 <Text className="text-base text-foreground">Bulk Reassign Clients</Text>
-              </View>
-              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-              onPress={() => router.push("/admin-companies" as any)}
-            >
-              <View className="flex-row items-center gap-3">
-                <IconSymbol name="house.fill" size={20} color={colors.foreground} />
-                <Text className="text-base text-foreground">Manage Companies</Text>
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>

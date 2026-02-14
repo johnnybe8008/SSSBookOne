@@ -21,24 +21,36 @@ export default function AdminClientOrganizationsScreen() {
   const [isAddingCompany, setIsAddingCompany] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newCompanyDescription, setNewCompanyDescription] = useState("");
+  const [newCompanyAddress, setNewCompanyAddress] = useState("");
+  const [newCompanyPhone, setNewCompanyPhone] = useState("");
+  const [newCompanyEmail, setNewCompanyEmail] = useState("");
   const [expandedCompanyId, setExpandedCompanyId] = useState<number | null>(null);
 
   // Division state
   const [isAddingDivision, setIsAddingDivision] = useState<number | null>(null);
   const [newDivisionName, setNewDivisionName] = useState("");
   const [newDivisionDescription, setNewDivisionDescription] = useState("");
+  const [newDivisionAddress, setNewDivisionAddress] = useState("");
+  const [newDivisionPhone, setNewDivisionPhone] = useState("");
+  const [newDivisionEmail, setNewDivisionEmail] = useState("");
   const [expandedDivisionId, setExpandedDivisionId] = useState<number | null>(null);
 
   // Department state
   const [isAddingDepartment, setIsAddingDepartment] = useState<number | null>(null);
   const [newDeptName, setNewDeptName] = useState("");
   const [newDeptDescription, setNewDeptDescription] = useState("");
+  const [newDeptAddress, setNewDeptAddress] = useState("");
+  const [newDeptPhone, setNewDeptPhone] = useState("");
+  const [newDeptEmail, setNewDeptEmail] = useState("");
   const [expandedDeptId, setExpandedDeptId] = useState<number | null>(null);
 
   // Team state
   const [isAddingTeam, setIsAddingTeam] = useState<number | null>(null);
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamDescription, setNewTeamDescription] = useState("");
+  const [newTeamAddress, setNewTeamAddress] = useState("");
+  const [newTeamPhone, setNewTeamPhone] = useState("");
+  const [newTeamEmail, setNewTeamEmail] = useState("");
 
   // Queries
   const { data: companies, isLoading } = trpc.companies.list.useQuery();
@@ -62,6 +74,9 @@ export default function AdminClientOrganizationsScreen() {
       setIsAddingCompany(false);
       setNewCompanyName("");
       setNewCompanyDescription("");
+      setNewCompanyAddress("");
+      setNewCompanyPhone("");
+      setNewCompanyEmail("");
       Alert.alert("Success", "Company created");
     },
     onError: (error) => Alert.alert("Error", error.message),
@@ -73,6 +88,9 @@ export default function AdminClientOrganizationsScreen() {
       setIsAddingDivision(null);
       setNewDivisionName("");
       setNewDivisionDescription("");
+      setNewDivisionAddress("");
+      setNewDivisionPhone("");
+      setNewDivisionEmail("");
       Alert.alert("Success", "Division created");
     },
     onError: (error) => Alert.alert("Error", error.message),
@@ -84,6 +102,9 @@ export default function AdminClientOrganizationsScreen() {
       setIsAddingDepartment(null);
       setNewDeptName("");
       setNewDeptDescription("");
+      setNewDeptAddress("");
+      setNewDeptPhone("");
+      setNewDeptEmail("");
       Alert.alert("Success", "Department created");
     },
     onError: (error) => Alert.alert("Error", error.message),
@@ -95,6 +116,9 @@ export default function AdminClientOrganizationsScreen() {
       setIsAddingTeam(null);
       setNewTeamName("");
       setNewTeamDescription("");
+      setNewTeamAddress("");
+      setNewTeamPhone("");
+      setNewTeamEmail("");
       Alert.alert("Success", "Team created");
     },
     onError: (error) => Alert.alert("Error", error.message),
@@ -137,6 +161,9 @@ export default function AdminClientOrganizationsScreen() {
     if (!newCompanyName.trim() || !user?.id) return;
     createCompany.mutate({
       name: newCompanyName,
+      address: newCompanyAddress || undefined,
+      phone: newCompanyPhone || undefined,
+      email: newCompanyEmail || undefined,
       createdBy: user.id,
       updatedBy: user.id,
     });
@@ -148,6 +175,9 @@ export default function AdminClientOrganizationsScreen() {
       companyId,
       name: newDivisionName,
       description: newDivisionDescription,
+      address: newDivisionAddress || undefined,
+      phone: newDivisionPhone || undefined,
+      email: newDivisionEmail || undefined,
       createdBy: user.id,
       updatedBy: user.id,
     });
@@ -159,6 +189,9 @@ export default function AdminClientOrganizationsScreen() {
       divisionId,
       name: newDeptName,
       description: newDeptDescription,
+      address: newDeptAddress || undefined,
+      phone: newDeptPhone || undefined,
+      email: newDeptEmail || undefined,
       createdBy: user.id,
       updatedBy: user.id,
     });
@@ -170,6 +203,9 @@ export default function AdminClientOrganizationsScreen() {
       departmentId: deptId,
       name: newTeamName,
       description: newTeamDescription,
+      address: newTeamAddress || undefined,
+      phone: newTeamPhone || undefined,
+      email: newTeamEmail || undefined,
       createdBy: user.id,
       updatedBy: user.id,
     });
@@ -219,7 +255,7 @@ export default function AdminClientOrganizationsScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Client Organizations</Text>
+          <Text className="text-2xl font-bold text-foreground">Manage Client Organizations</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -249,8 +285,34 @@ export default function AdminClientOrganizationsScreen() {
               placeholder="Description (optional)"
               placeholderTextColor={colors.muted}
               style={{ backgroundColor: colors.background, color: colors.foreground }}
-              className="px-3 py-2 rounded mb-3"
+              className="px-3 py-2 rounded mb-2"
               multiline
+            />
+            <TextInput
+              value={newCompanyAddress}
+              onChangeText={setNewCompanyAddress}
+              placeholder="Address (optional)"
+              placeholderTextColor={colors.muted}
+              style={{ backgroundColor: colors.background, color: colors.foreground }}
+              className="px-3 py-2 rounded mb-2"
+            />
+            <TextInput
+              value={newCompanyPhone}
+              onChangeText={setNewCompanyPhone}
+              placeholder="Phone (optional)"
+              placeholderTextColor={colors.muted}
+              style={{ backgroundColor: colors.background, color: colors.foreground }}
+              className="px-3 py-2 rounded mb-2"
+            />
+            <TextInput
+              value={newCompanyEmail}
+              onChangeText={setNewCompanyEmail}
+              placeholder="Email (optional)"
+              placeholderTextColor={colors.muted}
+              style={{ backgroundColor: colors.background, color: colors.foreground }}
+              className="px-3 py-2 rounded mb-3"
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
             <View className="flex-row gap-2">
               <TouchableOpacity
@@ -265,6 +327,9 @@ export default function AdminClientOrganizationsScreen() {
                   setIsAddingCompany(false);
                   setNewCompanyName("");
                   setNewCompanyDescription("");
+                  setNewCompanyAddress("");
+                  setNewCompanyPhone("");
+                  setNewCompanyEmail("");
                 }}
                 style={{ backgroundColor: colors.border }}
                 className="flex-1 px-4 py-2 rounded"
@@ -320,6 +385,32 @@ export default function AdminClientOrganizationsScreen() {
                       className="px-3 py-2 rounded mb-2"
                       multiline
                     />
+                    <TextInput
+                      value={newDivisionAddress}
+                      onChangeText={setNewDivisionAddress}
+                      placeholder="Address (optional)"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-3 py-2 rounded mb-2"
+                    />
+                    <TextInput
+                      value={newDivisionPhone}
+                      onChangeText={setNewDivisionPhone}
+                      placeholder="Phone (optional)"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-3 py-2 rounded mb-2"
+                    />
+                    <TextInput
+                      value={newDivisionEmail}
+                      onChangeText={setNewDivisionEmail}
+                      placeholder="Email (optional)"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-3 py-2 rounded mb-2"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
                     <View className="flex-row gap-2">
                       <TouchableOpacity
                         onPress={() => handleCreateDivision(company.id)}
@@ -333,6 +424,9 @@ export default function AdminClientOrganizationsScreen() {
                           setIsAddingDivision(null);
                           setNewDivisionName("");
                           setNewDivisionDescription("");
+                          setNewDivisionAddress("");
+                          setNewDivisionPhone("");
+                          setNewDivisionEmail("");
                         }}
                         style={{ backgroundColor: colors.border }}
                         className="flex-1 px-3 py-2 rounded"
@@ -388,6 +482,32 @@ export default function AdminClientOrganizationsScreen() {
                               className="px-3 py-2 rounded mb-2"
                               multiline
                             />
+                            <TextInput
+                              value={newDeptAddress}
+                              onChangeText={setNewDeptAddress}
+                              placeholder="Address (optional)"
+                              placeholderTextColor={colors.muted}
+                              style={{ backgroundColor: colors.background, color: colors.foreground }}
+                              className="px-3 py-2 rounded mb-2"
+                            />
+                            <TextInput
+                              value={newDeptPhone}
+                              onChangeText={setNewDeptPhone}
+                              placeholder="Phone (optional)"
+                              placeholderTextColor={colors.muted}
+                              style={{ backgroundColor: colors.background, color: colors.foreground }}
+                              className="px-3 py-2 rounded mb-2"
+                            />
+                            <TextInput
+                              value={newDeptEmail}
+                              onChangeText={setNewDeptEmail}
+                              placeholder="Email (optional)"
+                              placeholderTextColor={colors.muted}
+                              style={{ backgroundColor: colors.background, color: colors.foreground }}
+                              className="px-3 py-2 rounded mb-2"
+                              keyboardType="email-address"
+                              autoCapitalize="none"
+                            />
                             <View className="flex-row gap-2">
                               <TouchableOpacity
                                 onPress={() => handleCreateDept(division.id)}
@@ -401,6 +521,9 @@ export default function AdminClientOrganizationsScreen() {
                                   setIsAddingDepartment(null);
                                   setNewDeptName("");
                                   setNewDeptDescription("");
+                                  setNewDeptAddress("");
+                                  setNewDeptPhone("");
+                                  setNewDeptEmail("");
                                 }}
                                 style={{ backgroundColor: colors.border }}
                                 className="flex-1 px-3 py-2 rounded"
@@ -456,6 +579,32 @@ export default function AdminClientOrganizationsScreen() {
                                       className="px-2 py-1 rounded mb-2 text-xs"
                                       multiline
                                     />
+                                    <TextInput
+                                      value={newTeamAddress}
+                                      onChangeText={setNewTeamAddress}
+                                      placeholder="Address (optional)"
+                                      placeholderTextColor={colors.muted}
+                                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                                      className="px-2 py-1 rounded mb-2 text-xs"
+                                    />
+                                    <TextInput
+                                      value={newTeamPhone}
+                                      onChangeText={setNewTeamPhone}
+                                      placeholder="Phone (optional)"
+                                      placeholderTextColor={colors.muted}
+                                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                                      className="px-2 py-1 rounded mb-2 text-xs"
+                                    />
+                                    <TextInput
+                                      value={newTeamEmail}
+                                      onChangeText={setNewTeamEmail}
+                                      placeholder="Email (optional)"
+                                      placeholderTextColor={colors.muted}
+                                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                                      className="px-2 py-1 rounded mb-2 text-xs"
+                                      keyboardType="email-address"
+                                      autoCapitalize="none"
+                                    />
                                     <View className="flex-row gap-2">
                                       <TouchableOpacity
                                         onPress={() => handleCreateTeam(dept.id)}
@@ -469,6 +618,9 @@ export default function AdminClientOrganizationsScreen() {
                                           setIsAddingTeam(null);
                                           setNewTeamName("");
                                           setNewTeamDescription("");
+                                          setNewTeamAddress("");
+                                          setNewTeamPhone("");
+                                          setNewTeamEmail("");
                                         }}
                                         style={{ backgroundColor: colors.border }}
                                         className="flex-1 px-2 py-1 rounded"

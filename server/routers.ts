@@ -422,6 +422,9 @@ export const appRouter = router({
           companyId: z.number(),
           name: z.string().min(1).max(255),
           description: z.string().min(1), // Mandatory description
+          address: z.string().optional(),
+          phone: z.string().max(50).optional(),
+          email: z.string().email().optional(),
           createdBy: z.number(),
           updatedBy: z.number(),
         })
@@ -453,6 +456,9 @@ export const appRouter = router({
           divisionId: z.number(),
           name: z.string().min(1).max(255),
           description: z.string().min(1), // Mandatory description
+          address: z.string().optional(),
+          phone: z.string().max(50).optional(),
+          email: z.string().email().optional(),
           createdBy: z.number(),
           updatedBy: z.number(),
         })
@@ -484,6 +490,9 @@ export const appRouter = router({
           departmentId: z.number(),
           name: z.string().min(1).max(255),
           description: z.string().min(1), // Mandatory description
+          address: z.string().optional(),
+          phone: z.string().max(50).optional(),
+          email: z.string().email().optional(),
           createdBy: z.number(),
           updatedBy: z.number(),
         })

@@ -176,7 +176,7 @@ export default function AdminOrganizationsScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Manage Organizations</Text>
+          <Text className="text-2xl font-bold text-foreground">Manage Staff Organizations</Text>
           <View style={{ width: 24 }} />
         </View>
 
