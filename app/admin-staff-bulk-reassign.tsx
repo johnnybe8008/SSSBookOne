@@ -26,22 +26,23 @@ export default function AdminStaffBulkReassignScreen() {
 
   // Fetch organizational data
   const { data: organizations } = trpc.groups.list.useQuery();
-  const { data: filterDepartments } = trpc.staffDepartments.list.useQuery(
-    { organizationId: filterOrgId || 0 },
-    { enabled: !!filterOrgId }
-  );
-  const { data: filterTeams } = trpc.teams.list.useQuery(
-    { groupId: filterOrgId || 0 },
-    { enabled: !!filterOrgId }
-  );
-  const { data: destDepartments } = trpc.staffDepartments.list.useQuery(
-    { organizationId: destOrgId || 0 },
-    { enabled: !!destOrgId }
-  );
-  const { data: destTeams } = trpc.teams.list.useQuery(
-    { groupId: destOrgId || 0 },
-    { enabled: !!destOrgId }
-  );
+  // Fetch all staff departments and teams (0 = all)
+  const { data: allStaffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
+  const { data: allTeams } = trpc.teams.list.useQuery({ groupId: 0 });
+  
+  // Filter departments and teams based on selected organizations
+  const filterDepartments = filterOrgId
+    ? allStaffDepartments?.filter((d: any) => d.organizationId === filterOrgId)
+    : allStaffDepartments;
+  const filterTeams = filterOrgId
+    ? allTeams?.filter((t: any) => t.groupId === filterOrgId)
+    : allTeams;
+  const destDepartments = destOrgId
+    ? allStaffDepartments?.filter((d: any) => d.organizationId === destOrgId)
+    : allStaffDepartments;
+  const destTeams = destOrgId
+    ? allTeams?.filter((t: any) => t.groupId === destOrgId)
+    : allTeams;
 
   // Fetch all staff
   const { data: allStaff, isLoading } = trpc.staff.listAll.useQuery();

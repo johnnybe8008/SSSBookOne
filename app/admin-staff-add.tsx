@@ -28,14 +28,18 @@ export default function AdminStaffAddScreen() {
 
   // Fetch staff organizational data
   const { data: organizations } = trpc.groups.list.useQuery();
-  const { data: staffDepartments } = trpc.staffDepartments.list.useQuery(
-    { organizationId: groupId || 0 },
-    { enabled: !!groupId }
-  );
-  const { data: teams } = trpc.teams.list.useQuery(
-    { groupId: groupId || 0 },
-    { enabled: !!groupId }
-  );
+  // Fetch all staff departments (0 = all)
+  const { data: allStaffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
+  // Fetch all teams (0 = all)
+  const { data: allTeams } = trpc.teams.list.useQuery({ groupId: 0 });
+  
+  // Filter departments and teams based on selected organization
+  const staffDepartments = groupId 
+    ? allStaffDepartments?.filter((d: any) => d.organizationId === groupId)
+    : allStaffDepartments;
+  const teams = groupId
+    ? allTeams?.filter((t: any) => t.groupId === groupId)
+    : allTeams;
 
   // Fetch client organizational data
   const { data: companies } = trpc.companies.list.useQuery();

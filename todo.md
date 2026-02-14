@@ -989,3 +989,9 @@
 - [x] Implement bulk staff reassignment mutation
 - [x] Add confirmation dialog before bulk reassignment
 - [x] Add link to bulk reassignment from More tab admin section
+
+## v1.1.5 - Bug Fixes for Staff Organization Hierarchy
+- [x] Fix crashes in staff edit screen related to staff organization queries
+- [x] Fix crashes in bulk staff reassignment screen related to staff organization queries
+- [x] Investigate staffDepartments.list and teams.list query parameters
+- [x] Ensure proper data fetching for staff organizational hierarchy
