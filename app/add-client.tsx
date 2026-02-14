@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from "react-native";
+import { useState, useEffect, useMemo } from "react";
+import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform, Modal, FlatList } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -39,10 +39,27 @@ export default function AddClientScreen() {
   const [referralSourceId, setReferralSourceId] = useState<number | null>(null);
   
   const [isVip, setIsVip] = useState(false);
+  
+  // Modal state for company selection
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [companySearchQuery, setCompanySearchQuery] = useState("");
+  
   const { data: user } = trpc.auth.me.useQuery();
 
   // Fetch dropdown data
   const { data: companies, isLoading: companiesLoading } = trpc.companies.list.useQuery();
+  
+  // Filtered companies for search
+  const filteredCompanies = useMemo(() => {
+    if (!companies) return [];
+    if (!companySearchQuery.trim()) return companies;
+    const query = companySearchQuery.toLowerCase();
+    return companies.filter(c => 
+      c.name.toLowerCase().includes(query) ||
+      c.address?.toLowerCase().includes(query) ||
+      c.contactPerson?.toLowerCase().includes(query)
+    );
+  }, [companies, companySearchQuery]);
   const { data: divisions } = trpc.divisions.list.useQuery(
     { companyId: companyId || 0 },
     { enabled: !!companyId }
@@ -259,18 +276,15 @@ export default function AddClientScreen() {
             {/* Company Selection */}
             <View className="mb-4">
               <Text className="text-sm font-medium text-foreground mb-2">Company *</Text>
-              <View className="bg-background border border-border rounded-xl overflow-hidden">
-                <Picker
-                  selectedValue={companyId}
-                  onValueChange={(value) => setCompanyId(value)}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="Select a company..." value={null} />
-                  {companies?.map((company: any) => (
-                    <Picker.Item key={company.id} label={company.name} value={company.id} />
-                  ))}
-                </Picker>
-              </View>
+              <TouchableOpacity
+                onPress={() => setShowCompanyModal(true)}
+                style={{ backgroundColor: colors.background, borderColor: colors.border }}
+                className="border rounded-xl px-4 py-3"
+              >
+                <Text style={{ color: companyId ? colors.foreground : colors.muted }}>
+                  {companyId ? companies?.find(c => c.id === companyId)?.name : "Select a company..."}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Division Selection */}
@@ -458,6 +472,77 @@ export default function AddClientScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Company Selection Modal */}
+      <Modal
+        visible={showCompanyModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCompanyModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View 
+            style={{ backgroundColor: colors.background }} 
+            className="rounded-t-3xl p-6"
+          >
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-foreground">Select Company</Text>
+              <TouchableOpacity onPress={() => {
+                setShowCompanyModal(false);
+                setCompanySearchQuery("");
+              }}>
+                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+            
+            <TextInput
+              value={companySearchQuery}
+              onChangeText={setCompanySearchQuery}
+              placeholder="Search companies..."
+              placeholderTextColor={colors.muted}
+              style={{ backgroundColor: colors.surface, color: colors.foreground }}
+              className="px-4 py-3 rounded-lg mb-4"
+            />
+            
+            <FlatList
+              data={filteredCompanies}
+              keyExtractor={(item) => `company-modal-${item.id}`}
+              style={{ maxHeight: 400 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setCompanyId(item.id);
+                    setShowCompanyModal(false);
+                    setCompanySearchQuery("");
+                  }}
+                  style={{ 
+                    backgroundColor: companyId === item.id ? colors.primary + '20' : 'transparent',
+                    borderBottomColor: colors.border 
+                  }}
+                  className="py-3 px-2 border-b"
+                >
+                  <Text 
+                    style={{ color: colors.foreground }} 
+                    className="font-medium"
+                  >
+                    {item.name}
+                  </Text>
+                  {item.contactPerson && (
+                    <Text style={{ color: colors.muted }} className="text-sm mt-1">
+                      {item.contactPerson}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ color: colors.muted }} className="text-center py-8">
+                  No companies found
+                </Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
