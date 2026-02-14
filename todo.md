@@ -889,3 +889,11 @@
 - [x] Filter out companies/divisions/departments with 0 clients when filters applied
 - [x] Hide empty organizational units from hierarchy modal
 - [x] Test filter combinations in Reports screen
+
+## v1.0.47 - Admin Reports Enhancements
+- [x] Add staff member filter to Admin Reports filters section
+- [x] Filter sessions by selected staff member
+- [x] Client counts in hierarchy already date-range based (using filteredClients)
+- [x] Update CSV export to include staff filter information
+- [x] Hierarchy already exports only filtered data (hierarchyData respects filters)
+- [x] Test all filter combinations (date + company + division + department + staff)

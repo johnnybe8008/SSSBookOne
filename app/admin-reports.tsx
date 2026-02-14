@@ -36,6 +36,7 @@ export default function AdminReportsScreen() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<number>(0);
   const [selectedDivisionId, setSelectedDivisionId] = useState<number>(0);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number>(0);
+  const [selectedStaffId, setSelectedStaffId] = useState<number>(0);
   const [showHierarchyChart, setShowHierarchyChart] = useState(false);
 
   // Fetch all data for analytics
@@ -130,8 +131,13 @@ export default function AdminReportsScreen() {
     const filteredClientIds = new Set(filteredClients.map((c: any) => c.id));
     filtered = filtered.filter((s: any) => filteredClientIds.has(s.clientId));
 
+    // Filter by staff member
+    if (selectedStaffId > 0) {
+      filtered = filtered.filter((s: any) => s.staffId === selectedStaffId);
+    }
+
     return filtered;
-  }, [sessions, dateRange, filteredClients]);
+  }, [sessions, dateRange, filteredClients, selectedStaffId]);
 
   // Calculate analytics from filtered data
   const totalClients = filteredClients.length;
@@ -250,7 +256,7 @@ export default function AdminReportsScreen() {
     });
 
     // Filter out companies with 0 clients when filters are applied
-    const hasFilters = selectedCompanyId > 0 || selectedDivisionId > 0 || selectedDepartmentId > 0;
+    const hasFilters = selectedCompanyId > 0 || selectedDivisionId > 0 || selectedDepartmentId > 0 || selectedStaffId > 0;
     if (hasFilters) {
       return hierarchy
         .filter(company => company.clientCount > 0)
@@ -286,10 +292,12 @@ export default function AdminReportsScreen() {
       const selectedCompany = companies?.find((c: any) => c.id === selectedCompanyId);
       const selectedDivision = divisions?.find((d: any) => d.id === selectedDivisionId);
       const selectedDepartment = departments?.find((d: any) => d.id === selectedDepartmentId);
+      const selectedStaff = staff?.find((s: any) => s.id === selectedStaffId);
       
       csvLines.push(`Company: ${selectedCompany?.name || "All Companies"}`);
       csvLines.push(`Division: ${selectedDivision?.name || "All Divisions"}`);
       csvLines.push(`Department: ${selectedDepartment?.name || "All Departments"}`);
+      csvLines.push(`Staff Member: ${selectedStaff?.name || "All Staff"}`);
       csvLines.push("");
       csvLines.push("");
 
@@ -588,6 +596,22 @@ export default function AdminReportsScreen() {
                     </Picker>
                   </View>
                 )}
+
+                {/* Staff Filter */}
+                <View className="mt-4">
+                  <Text className="text-xs text-muted mb-2">Staff Member</Text>
+                  <View className="bg-background border border-border rounded-lg overflow-hidden">
+                    <Picker
+                      selectedValue={selectedStaffId}
+                      onValueChange={(value: number) => setSelectedStaffId(value)}
+                    >
+                      <Picker.Item label="All Staff" value={0} />
+                      {staff?.map((s: any) => (
+                        <Picker.Item key={s.id} label={s.name} value={s.id} />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
               </View>
             </View>
           </View>
