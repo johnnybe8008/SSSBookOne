@@ -57,6 +57,12 @@ export default function AddClientScreen() {
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
+  const [showClientReferralModal, setShowClientReferralModal] = useState(false);
+  const [clientReferralSearchQuery, setClientReferralSearchQuery] = useState("");
+  const [showStaffReferralModal, setShowStaffReferralModal] = useState(false);
+  const [staffReferralSearchQuery, setStaffReferralSearchQuery] = useState("");
+  const [showFsmModal, setShowFsmModal] = useState(false);
+  const [fsmSearchQuery, setFsmSearchQuery] = useState("");
   
   const { data: user } = trpc.auth.me.useQuery();
 
@@ -167,6 +173,28 @@ export default function AddClientScreen() {
   const { data: allClients } = trpc.clients.list.useQuery({ departmentId: 0 }, { enabled: referralSourceType === "client" });
   const { data: allStaff } = trpc.staff.list.useQuery({ teamId: 0 }, { enabled: referralSourceType === "staff" });
   const { data: fsms } = trpc.fsms.list.useQuery(undefined, { enabled: referralSourceType === "fsm" });
+
+  // Filtered referral sources for search
+  const filteredClientReferrals = useMemo(() => {
+    if (!allClients) return [];
+    if (!clientReferralSearchQuery.trim()) return allClients;
+    const query = clientReferralSearchQuery.toLowerCase();
+    return allClients.filter(c => c.name.toLowerCase().includes(query));
+  }, [allClients, clientReferralSearchQuery]);
+
+  const filteredStaffReferrals = useMemo(() => {
+    if (!allStaff) return [];
+    if (!staffReferralSearchQuery.trim()) return allStaff;
+    const query = staffReferralSearchQuery.toLowerCase();
+    return allStaff.filter(s => s.name.toLowerCase().includes(query));
+  }, [allStaff, staffReferralSearchQuery]);
+
+  const filteredFsms = useMemo(() => {
+    if (!fsms) return [];
+    if (!fsmSearchQuery.trim()) return fsms;
+    const query = fsmSearchQuery.toLowerCase();
+    return fsms.filter(f => f.name.toLowerCase().includes(query));
+  }, [fsms, fsmSearchQuery]);
 
   // Reset downstream selections when parent changes
   useEffect(() => {
@@ -483,54 +511,48 @@ export default function AddClientScreen() {
             {referralSourceType === "client" && allClients && (
               <View>
                 <Text className="text-sm font-medium text-foreground mb-2">Select Client</Text>
-                <View className="bg-background border border-border rounded-xl overflow-hidden">
-                  <Picker
-                    selectedValue={referralSourceId}
-                    onValueChange={(value) => setReferralSourceId(value)}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select a client..." value={null} />
-                    {allClients.map((client: any) => (
-                      <Picker.Item key={client.id} label={client.name} value={client.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowClientReferralModal(true)}
+                  style={{ borderColor: colors.border, backgroundColor: colors.background }}
+                  className="border rounded-xl px-4 py-3 flex-row items-center justify-between"
+                >
+                  <Text style={{ color: referralSourceId ? colors.foreground : colors.muted }}>
+                    {referralSourceId ? allClients.find(c => c.id === referralSourceId)?.name : "Select a client..."}
+                  </Text>
+                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             )}
 
             {referralSourceType === "staff" && allStaff && (
               <View>
                 <Text className="text-sm font-medium text-foreground mb-2">Select Staff</Text>
-                <View className="bg-background border border-border rounded-xl overflow-hidden">
-                  <Picker
-                    selectedValue={referralSourceId}
-                    onValueChange={(value) => setReferralSourceId(value)}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select a staff member..." value={null} />
-                    {allStaff.map((staff: any) => (
-                      <Picker.Item key={staff.id} label={staff.name} value={staff.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowStaffReferralModal(true)}
+                  style={{ borderColor: colors.border, backgroundColor: colors.background }}
+                  className="border rounded-xl px-4 py-3 flex-row items-center justify-between"
+                >
+                  <Text style={{ color: referralSourceId ? colors.foreground : colors.muted }}>
+                    {referralSourceId ? allStaff.find(s => s.id === referralSourceId)?.name : "Select a staff member..."}
+                  </Text>
+                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             )}
 
             {referralSourceType === "fsm" && fsms && (
               <View>
                 <Text className="text-sm font-medium text-foreground mb-2">Select FSM</Text>
-                <View className="bg-background border border-border rounded-xl overflow-hidden">
-                  <Picker
-                    selectedValue={referralSourceId}
-                    onValueChange={(value) => setReferralSourceId(value)}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select an FSM..." value={null} />
-                    {fsms.map((fsm: any) => (
-                      <Picker.Item key={fsm.id} label={fsm.name} value={fsm.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowFsmModal(true)}
+                  style={{ borderColor: colors.border, backgroundColor: colors.background }}
+                  className="border rounded-xl px-4 py-3 flex-row items-center justify-between"
+                >
+                  <Text style={{ color: referralSourceId ? colors.foreground : colors.muted }}>
+                    {referralSourceId ? fsms.find(f => f.id === referralSourceId)?.name : "Select an FSM..."}
+                  </Text>
+                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -926,6 +948,168 @@ export default function AddClientScreen() {
               )}
               ListEmptyComponent={
                 <Text style={{ color: colors.muted }} className="text-center py-8">No teams found</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Client Referral Modal */}
+      <Modal
+        visible={showClientReferralModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowClientReferralModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-foreground">Select Client Referral</Text>
+              <TouchableOpacity onPress={() => {
+                setShowClientReferralModal(false);
+                setClientReferralSearchQuery("");
+              }}>
+                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              value={clientReferralSearchQuery}
+              onChangeText={setClientReferralSearchQuery}
+              placeholder="Search clients..."
+              placeholderTextColor={colors.muted}
+              style={{ borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }}
+              className="border rounded-xl px-4 py-3 mb-4"
+            />
+            <FlatList
+              data={filteredClientReferrals}
+              keyExtractor={(item) => `client-referral-${item.id}`}
+              style={{ maxHeight: 400 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setReferralSourceId(item.id);
+                    setShowClientReferralModal(false);
+                    setClientReferralSearchQuery("");
+                  }}
+                  style={{ 
+                    backgroundColor: referralSourceId === item.id ? colors.primary + '20' : 'transparent',
+                    borderBottomColor: colors.border 
+                  }}
+                  className="py-3 px-2 border-b"
+                >
+                  <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ color: colors.muted }} className="text-center py-8">No clients found</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Staff Referral Modal */}
+      <Modal
+        visible={showStaffReferralModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowStaffReferralModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-foreground">Select Staff Referral</Text>
+              <TouchableOpacity onPress={() => {
+                setShowStaffReferralModal(false);
+                setStaffReferralSearchQuery("");
+              }}>
+                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              value={staffReferralSearchQuery}
+              onChangeText={setStaffReferralSearchQuery}
+              placeholder="Search staff..."
+              placeholderTextColor={colors.muted}
+              style={{ borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }}
+              className="border rounded-xl px-4 py-3 mb-4"
+            />
+            <FlatList
+              data={filteredStaffReferrals}
+              keyExtractor={(item) => `staff-referral-${item.id}`}
+              style={{ maxHeight: 400 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setReferralSourceId(item.id);
+                    setShowStaffReferralModal(false);
+                    setStaffReferralSearchQuery("");
+                  }}
+                  style={{ 
+                    backgroundColor: referralSourceId === item.id ? colors.primary + '20' : 'transparent',
+                    borderBottomColor: colors.border 
+                  }}
+                  className="py-3 px-2 border-b"
+                >
+                  <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ color: colors.muted }} className="text-center py-8">No staff found</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* FSM Modal */}
+      <Modal
+        visible={showFsmModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFsmModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-foreground">Select FSM</Text>
+              <TouchableOpacity onPress={() => {
+                setShowFsmModal(false);
+                setFsmSearchQuery("");
+              }}>
+                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              value={fsmSearchQuery}
+              onChangeText={setFsmSearchQuery}
+              placeholder="Search FSMs..."
+              placeholderTextColor={colors.muted}
+              style={{ borderColor: colors.border, color: colors.foreground, backgroundColor: colors.surface }}
+              className="border rounded-xl px-4 py-3 mb-4"
+            />
+            <FlatList
+              data={filteredFsms}
+              keyExtractor={(item) => `fsm-${item.id}`}
+              style={{ maxHeight: 400 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setReferralSourceId(item.id);
+                    setShowFsmModal(false);
+                    setFsmSearchQuery("");
+                  }}
+                  style={{ 
+                    backgroundColor: referralSourceId === item.id ? colors.primary + '20' : 'transparent',
+                    borderBottomColor: colors.border 
+                  }}
+                  className="py-3 px-2 border-b"
+                >
+                  <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ color: colors.muted }} className="text-center py-8">No FSMs found</Text>
               }
             />
           </View>

@@ -24,3 +24,11 @@
 - [x] Display recent companies at top of selector modal
 - [x] Add visual "Recent" badge to recently selected companies
 - [x] Test all modal selectors and quick actions
+
+## v1.4.1 - Fix Remaining Picker Crashes
+- [x] Identify all remaining Picker components in add-client screen
+- [x] Replace Client Referral Picker with modal selector
+- [x] Replace Staff Referral Picker with modal selector
+- [x] Replace FSM (Functional Status Measure) Picker with modal selector
+- [x] Add search functionality to all referral modals
+- [x] Test all fields to ensure no crashes
