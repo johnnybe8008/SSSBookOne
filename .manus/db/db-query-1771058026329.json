@@ -1,0 +1,38 @@
+{
+  "query": "SELECT id, name, role, isAdmin, isVipRated FROM staff ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT id, name, role, isAdmin, isVipRated FROM staff ORDER BY id;",
+  "rows": [
+    {
+      "id": "150001",
+      "name": "Admin",
+      "role": "admin",
+      "isAdmin": "1",
+      "isVipRated": "1"
+    },
+    {
+      "id": "180001",
+      "name": "John Bee",
+      "role": "counselor",
+      "isAdmin": "0",
+      "isVipRated": "0"
+    },
+    {
+      "id": "180002",
+      "name": "Jack Black",
+      "role": "counselor",
+      "isAdmin": "0",
+      "isVipRated": "0"
+    },
+    {
+      "id": "180003",
+      "name": "Jane Doe",
+      "role": "counselor",
+      "isAdmin": "0",
+      "isVipRated": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\trole\tisAdmin\tisVipRated\n150001\tAdmin\tadmin\t1\t1\n180001\tJohn Bee\tcounselor\t0\t0\n180002\tJack Black\tcounselor\t0\t0\n180003\tJane Doe\tcounselor\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

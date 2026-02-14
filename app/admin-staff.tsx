@@ -54,9 +54,19 @@ export default function AdminStaffScreen() {
                     
                     {/* Badges */}
                     <View className="flex-row gap-2 mt-2">
-                      {staff.isAdmin && (
+                      {staff.role === "admin" && (
                         <View className="bg-error rounded px-2 py-1">
                           <Text className="text-xs text-background font-semibold">ADMIN</Text>
+                        </View>
+                      )}
+                      {staff.role === "counselor" && (
+                        <View className="bg-primary rounded px-2 py-1">
+                          <Text className="text-xs text-background font-semibold">COUNSELOR</Text>
+                        </View>
+                      )}
+                      {staff.role === "viewer" && (
+                        <View className="bg-success rounded px-2 py-1">
+                          <Text className="text-xs text-background font-semibold">VIEW ONLY</Text>
                         </View>
                       )}
                       {staff.isVipRated && (

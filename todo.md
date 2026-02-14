@@ -854,3 +854,13 @@
 - [x] Add password field to staff add/edit screens for admin to set/reset passwords
 - [x] Make home screen sessions clickable to view session details
 - [x] Create session detail view screen
+
+## v1.0.43 - Role-Based Access Control
+- [x] Add role enum field to staff table (admin, counselor, viewer)
+- [x] Migrate existing staff data (isAdmin=1 → admin, isAdmin=0 → counselor)
+- [x] Update staff schema in drizzle
+- [x] Update staff create/update endpoints to handle role field
+- [x] Replace Admin toggle with Role dropdown in staff add screen
+- [x] Replace Admin toggle with Role dropdown in staff edit screen
+- [x] Update staff list to show role badges (Admin, Counselor, View Only)
+- [x] Test role migration with existing staff data

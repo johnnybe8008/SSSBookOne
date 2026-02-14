@@ -13,15 +13,15 @@ export default function AdminStaffEditScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (staff) {
       setName(staff.name);
       setEmail(staff.email || "");
+      setRole((staff as any).role || "counselor");
       setIsVipRated(staff.isVipRated === 1);
-      setIsAdmin(staff.isAdmin === 1);
     }
   }, [staff]);
 
@@ -63,8 +63,9 @@ export default function AdminStaffEditScreen() {
       id: staffId,
       name: name.trim(),
       email: email.trim().toLowerCase(),
+      role: role,
       isVipRated: isVipRated ? 1 : 0,
-      isAdmin: isAdmin ? 1 : 0,
+      isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
       updatedBy: 1, // Admin user
     });
   };
@@ -196,31 +197,53 @@ export default function AdminStaffEditScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Admin Toggle */}
-          <TouchableOpacity
-            onPress={() => setIsAdmin(!isAdmin)}
-            className="bg-surface border border-border rounded-lg p-4"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-foreground">Admin Access</Text>
-                <Text className="text-sm text-muted mt-1">
-                  Full access to all admin functions
-                </Text>
-              </View>
-              <View
-                className={`w-12 h-7 rounded-full p-1 ${
-                  isAdmin ? "bg-error" : "bg-border"
+          {/* Role Selection */}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Role *</Text>
+            <View className="gap-2">
+              <TouchableOpacity
+                onPress={() => setRole("admin")}
+                className={`border rounded-lg p-4 ${
+                  role === "admin" ? "border-error bg-error/10" : "border-border bg-surface"
                 }`}
               >
-                <View
-                  className={`w-5 h-5 rounded-full bg-background ${
-                    isAdmin ? "ml-auto" : ""
-                  }`}
-                />
-              </View>
+                <Text className={`text-base font-semibold ${
+                  role === "admin" ? "text-error" : "text-foreground"
+                }`}>Admin</Text>
+                <Text className="text-sm text-muted mt-1">
+                  Full access to all admin functions and settings
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => setRole("counselor")}
+                className={`border rounded-lg p-4 ${
+                  role === "counselor" ? "border-primary bg-primary/10" : "border-border bg-surface"
+                }`}
+              >
+                <Text className={`text-base font-semibold ${
+                  role === "counselor" ? "text-primary" : "text-foreground"
+                }`}>Counselor</Text>
+                <Text className="text-sm text-muted mt-1">
+                  Can record sessions and manage own clients
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => setRole("viewer")}
+                className={`border rounded-lg p-4 ${
+                  role === "viewer" ? "border-success bg-success/10" : "border-border bg-surface"
+                }`}
+              >
+                <Text className={`text-base font-semibold ${
+                  role === "viewer" ? "text-success" : "text-foreground"
+                }`}>View Only</Text>
+                <Text className="text-sm text-muted mt-1">
+                  Read-only access to reports and analytics
+                </Text>
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Action Buttons */}

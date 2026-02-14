@@ -283,8 +283,9 @@ export const appRouter = router({
           address: z.string().optional(),
           phone: z.string().max(50).optional(),
           email: z.string().email().optional(),
+          role: z.enum(["admin", "counselor", "viewer"]).default("counselor"),
           isVipRated: z.number().default(0),
-          isAdmin: z.number().default(0),
+          isAdmin: z.number().default(0), // DEPRECATED: kept for backward compatibility
           createdBy: z.number(),
           updatedBy: z.number(),
         })
@@ -298,8 +299,9 @@ export const appRouter = router({
           address: z.string().optional(),
           phone: z.string().max(50).optional(),
           email: z.string().email().optional(),
+          role: z.enum(["admin", "counselor", "viewer"]).optional(),
           isVipRated: z.number().optional(),
-          isAdmin: z.number().optional(),
+          isAdmin: z.number().optional(), // DEPRECATED: kept for backward compatibility
           updatedBy: z.number(),
         })
       )

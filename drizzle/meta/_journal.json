@@ -43,6 +43,13 @@
       "when": 1770905008415,
       "tag": "0005_perpetual_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1771057980785,
+      "tag": "0006_majestic_blindfold",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE staff SET role = CASE WHEN isAdmin = 1 THEN 'admin' ELSE 'counselor' END;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute UPDATE staff SET role = CASE WHEN isAdmin = 1 THEN 'admin' ELSE 'counselor' END;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 58
+}

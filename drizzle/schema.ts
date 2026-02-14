@@ -85,8 +85,9 @@ export const staff = mysqlTable("staff", {
   address: text("address"),
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 320 }),
+  role: mysqlEnum("role", ["admin", "counselor", "viewer"]).notNull().default("counselor"), // Staff role for access control
   isVipRated: int("isVipRated").notNull().default(0), // 0 = false, 1 = true
-  isAdmin: int("isAdmin").notNull().default(0), // 0 = false, 1 = true
+  isAdmin: int("isAdmin").notNull().default(0), // DEPRECATED: Use role field instead
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
