@@ -7,14 +7,16 @@ import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
 
 /**
- * Admin - Manage Organizations (Groups and Teams)
+ * Admin - Manage Organizations (Staff Structure)
  * 
  * Allows admin users to:
- * - View all groups
- * - Add new groups
- * - View teams within groups
- * - Add teams to groups
- * - Delete groups and teams
+ * - View all organizations
+ * - Add new organizations
+ * - View departments within organizations
+ * - Add departments to organizations
+ * - View teams within departments
+ * - Add teams to departments
+ * - Delete organizations, departments, and teams
  */
 export default function AdminOrganizationsScreen() {
   const colors = useColors();
@@ -22,35 +24,35 @@ export default function AdminOrganizationsScreen() {
   const utils = trpc.useUtils();
   const { data: user } = trpc.auth.me.useQuery();
 
-  const [isAddingGroup, setIsAddingGroup] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupDescription, setNewGroupDescription] = useState("");
+  const [isAddingOrganization, setIsAddingOrganization] = useState(false);
+  const [newOrganizationName, setNewOrganizationName] = useState("");
+  const [newOrganizationDescription, setNewOrganizationDescription] = useState("");
 
-  const [expandedGroupId, setExpandedGroupId] = useState<number | null>(null);
+  const [expandedOrganizationId, setExpandedOrganizationId] = useState<number | null>(null);
   const [isAddingTeam, setIsAddingTeam] = useState<number | null>(null);
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamDescription, setNewTeamDescription] = useState("");
 
-  // Fetch all groups
-  const { data: groups, isLoading } = trpc.groups.list.useQuery();
+  // Fetch all organizations
+  const { data: organizations, isLoading } = trpc.groups.list.useQuery();
 
-  // Fetch teams for expanded group
+  // Fetch departments for expanded organization
   const { data: teams } = trpc.teams.list.useQuery(
-    { groupId: expandedGroupId || 0 },
-    { enabled: expandedGroupId !== null }
+    { groupId: expandedOrganizationId || 0 },
+    { enabled: expandedOrganizationId !== null }
   );
 
-  // Create group mutation
-  const createGroup = trpc.groups.create.useMutation({
+  // Create organization mutation
+  const createOrganization = trpc.groups.create.useMutation({
     onSuccess: () => {
       utils.groups.invalidate();
-      setIsAddingGroup(false);
-      setNewGroupName("");
-      setNewGroupDescription("");
-      Alert.alert("Success", "Group created successfully");
+      setIsAddingOrganization(false);
+      setNewOrganizationName("");
+      setNewOrganizationDescription("");
+      Alert.alert("Success", "Organization created successfully");
     },
     onError: (error) => {
-      Alert.alert("Error", error.message || "Failed to create group");
+      Alert.alert("Error", error.message || "Failed to create organization");
     },
   });
 
@@ -68,14 +70,14 @@ export default function AdminOrganizationsScreen() {
     },
   });
 
-  // Delete group mutation
-  const deleteGroup = trpc.groups.delete.useMutation({
+  // Delete organization mutation
+  const deleteOrganization = trpc.groups.delete.useMutation({
     onSuccess: () => {
       utils.groups.invalidate();
-      Alert.alert("Success", "Group deleted successfully");
+      Alert.alert("Success", "Organization deleted successfully");
     },
     onError: (error) => {
-      Alert.alert("Error", error.message || "Failed to delete group");
+      Alert.alert("Error", error.message || "Failed to delete organization");
     },
   });
 
@@ -90,9 +92,9 @@ export default function AdminOrganizationsScreen() {
     },
   });
 
-  const handleCreateGroup = () => {
-    if (!newGroupName.trim()) {
-      Alert.alert("Validation Error", "Please enter group name");
+  const handleCreateOrganization = () => {
+    if (!newOrganizationName.trim()) {
+      Alert.alert("Validation Error", "Please enter organization name");
       return;
     }
     if (!user?.id) {
@@ -100,15 +102,15 @@ export default function AdminOrganizationsScreen() {
       return;
     }
 
-    createGroup.mutate({
-      name: newGroupName.trim(),
-      description: newGroupDescription.trim() || undefined,
+    createOrganization.mutate({
+      name: newOrganizationName.trim(),
+      description: newOrganizationDescription.trim() || undefined,
       createdBy: user.id,
       updatedBy: user.id,
     });
   };
 
-  const handleCreateTeam = (groupId: number) => {
+  const handleCreateTeam = (organizationId: number) => {
     if (!newTeamName.trim()) {
       Alert.alert("Validation Error", "Please enter team name");
       return;
@@ -119,7 +121,7 @@ export default function AdminOrganizationsScreen() {
     }
 
     createTeam.mutate({
-      groupId,
+      groupId: expandedOrganizationId!,
       name: newTeamName.trim(),
       description: newTeamDescription.trim() || undefined,
       createdBy: user.id,
@@ -127,7 +129,7 @@ export default function AdminOrganizationsScreen() {
     });
   };
 
-  const handleDeleteGroup = (id: number, name: string) => {
+  const handleDeleteOrganization = (id: number, name: string) => {
     Alert.alert(
       "Confirm Delete",
       `Are you sure you want to delete "${name}"? This will also delete all associated teams and staff.`,
@@ -136,7 +138,7 @@ export default function AdminOrganizationsScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => deleteGroup.mutate({ id }),
+          onPress: () => deleteOrganization.mutate({ id }),
         },
       ]
     );
@@ -157,8 +159,8 @@ export default function AdminOrganizationsScreen() {
     );
   };
 
-  const toggleGroup = (groupId: number) => {
-    setExpandedGroupId(expandedGroupId === groupId ? null : groupId);
+  const toggleOrganization = (organizationId: number) => {
+    setExpandedOrganizationId(expandedOrganizationId === organizationId ? null : organizationId);
     setIsAddingTeam(null);
   };
 
@@ -180,26 +182,26 @@ export default function AdminOrganizationsScreen() {
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-foreground">Manage Organizations</Text>
         </View>
-        <TouchableOpacity onPress={() => setIsAddingGroup(!isAddingGroup)}>
-          <IconSymbol name={isAddingGroup ? "xmark.circle.fill" : "plus.circle.fill"} size={28} color={colors.primary} />
+        <TouchableOpacity onPress={() => setIsAddingOrganization(!isAddingOrganization)}>
+          <IconSymbol name={isAddingOrganization ? "xmark.circle.fill" : "plus.circle.fill"} size={28} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
-          {/* Add New Group Form */}
-          {isAddingGroup && (
+          {/* Add New Organization Form */}
+          {isAddingOrganization && (
             <View className="bg-surface border border-primary rounded-2xl p-4 gap-3">
-              <Text className="text-lg font-semibold text-foreground">Add New Group</Text>
+              <Text className="text-lg font-semibold text-foreground">Add New Organization</Text>
               
               <View>
                 <Text className="text-sm font-medium text-foreground mb-2">Group Name *</Text>
                 <TextInput
                   className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                  placeholder="Enter group name"
+                  placeholder="Enter organization name"
                   placeholderTextColor={colors.muted}
-                  value={newGroupName}
-                  onChangeText={setNewGroupName}
+                  value={newOrganizationName}
+                  onChangeText={setNewOrganizationName}
                   autoCapitalize="words"
                 />
               </View>
@@ -210,8 +212,8 @@ export default function AdminOrganizationsScreen() {
                   className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
                   placeholder="Enter description (optional)"
                   placeholderTextColor={colors.muted}
-                  value={newGroupDescription}
-                  onChangeText={setNewGroupDescription}
+                  value={newOrganizationDescription}
+                  onChangeText={setNewOrganizationDescription}
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
@@ -220,10 +222,10 @@ export default function AdminOrganizationsScreen() {
 
               <TouchableOpacity
                 className="bg-primary py-3 rounded-full items-center"
-                onPress={handleCreateGroup}
-                disabled={createGroup.isPending}
+                onPress={handleCreateOrganization}
+                disabled={createOrganization.isPending}
               >
-                {createGroup.isPending ? (
+                {createOrganization.isPending ? (
                   <ActivityIndicator size="small" color={colors.background} />
                 ) : (
                   <Text className="text-background font-semibold">Create Group</Text>
@@ -232,36 +234,36 @@ export default function AdminOrganizationsScreen() {
             </View>
           )}
 
-          {/* Groups List */}
-          <Text className="text-lg font-semibold text-foreground mt-2">All Groups ({groups?.length || 0})</Text>
+          {/* Organizations List */}
+          <Text className="text-lg font-semibold text-foreground mt-2">All Organizations ({organizations?.length || 0})</Text>
           
-          {groups && groups.length > 0 ? (
-            groups.map((group: any) => (
-              <View key={group.id} className="bg-surface border border-border rounded-2xl overflow-hidden">
+          {organizations && organizations.length > 0 ? (
+            organizations.map((organization: any) => (
+              <View key={organization.id} className="bg-surface border border-border rounded-2xl overflow-hidden">
                 {/* Group Header */}
                 <TouchableOpacity
                   className="p-4 flex-row items-center justify-between"
-                  onPress={() => toggleGroup(group.id)}
+                  onPress={() => toggleOrganization(organization.id)}
                 >
                   <View className="flex-1 mr-3">
-                    <Text className="text-lg font-semibold text-foreground">{group.name}</Text>
-                    <Text className="text-xs text-muted mt-1">ID: {group.id}</Text>
-                    {group.description && (
-                      <Text className="text-sm text-muted mt-1">{group.description}</Text>
+                    <Text className="text-lg font-semibold text-foreground">{organization.name}</Text>
+                    <Text className="text-xs text-muted mt-1">ID: {organization.id}</Text>
+                    {organization.description && (
+                      <Text className="text-sm text-muted mt-1">{organization.description}</Text>
                     )}
                   </View>
                   <View className="flex-row items-center gap-2">
                     <TouchableOpacity
                       onPress={(e) => {
                         e.stopPropagation();
-                        handleDeleteGroup(group.id, group.name);
+                        handleDeleteOrganization(organization.id, organization.name);
                       }}
-                      disabled={deleteGroup.isPending}
+                      disabled={deleteOrganization.isPending}
                     >
                       <IconSymbol name="trash" size={22} color={colors.error} />
                     </TouchableOpacity>
                     <IconSymbol 
-                      name={expandedGroupId === group.id ? "chevron.down" : "chevron.right"} 
+                      name={expandedOrganizationId === organization.id ? "chevron.down" : "chevron.right"} 
                       size={24} 
                       color={colors.muted} 
                     />
@@ -269,13 +271,13 @@ export default function AdminOrganizationsScreen() {
                 </TouchableOpacity>
 
                 {/* Teams List (when expanded) */}
-                {expandedGroupId === group.id && (
+                {expandedOrganizationId === organization.id && (
                   <View className="border-t border-border bg-background/50 p-4">
                     <View className="flex-row items-center justify-between mb-3">
                       <Text className="text-base font-semibold text-foreground">Teams</Text>
-                      <TouchableOpacity onPress={() => setIsAddingTeam(isAddingTeam === group.id ? null : group.id)}>
+                      <TouchableOpacity onPress={() => setIsAddingTeam(isAddingTeam === organization.id ? null : organization.id)}>
                         <IconSymbol 
-                          name={isAddingTeam === group.id ? "xmark.circle.fill" : "plus.circle.fill"} 
+                          name={isAddingTeam === organization.id ? "xmark.circle.fill" : "plus.circle.fill"} 
                           size={24} 
                           color={colors.primary} 
                         />
@@ -283,7 +285,7 @@ export default function AdminOrganizationsScreen() {
                     </View>
 
                     {/* Add Team Form */}
-                    {isAddingTeam === group.id && (
+                    {isAddingTeam === organization.id && (
                       <View className="bg-surface border border-primary rounded-xl p-3 gap-2 mb-3">
                         <TextInput
                           className="bg-background border border-border rounded-lg px-3 py-2 text-base text-foreground"
@@ -305,7 +307,7 @@ export default function AdminOrganizationsScreen() {
                         />
                         <TouchableOpacity
                           className="bg-primary py-2 rounded-lg items-center"
-                          onPress={() => handleCreateTeam(group.id)}
+                          onPress={() => handleCreateTeam(organization.id)}
                           disabled={createTeam.isPending}
                         >
                           {createTeam.isPending ? (

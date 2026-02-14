@@ -57,6 +57,13 @@
       "when": 1771065026255,
       "tag": "0007_greedy_junta",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1771067062462,
+      "tag": "0008_milky_loners",
+      "breakpoints": true
     }
   ]
 }

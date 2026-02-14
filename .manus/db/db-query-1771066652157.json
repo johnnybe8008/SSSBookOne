@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS staffDepartments (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  organizationId INT NOT NULL,\n  name VARCHAR(255) NOT NULL,\n  description TEXT,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  createdBy INT NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,\n  updatedBy INT NOT NULL\n);\n\nALTER TABLE teams ADD COLUMN staffDepartmentId INT;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute CREATE TABLE IF NOT EXISTS staffDepartments (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  organizationId INT NOT NULL,\n  name VARCHAR(255) NOT NULL,\n  description TEXT,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  createdBy INT NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,\n  updatedBy INT NOT NULL\n);\n\nALTER TABLE teams ADD COLUMN staffDepartmentId INT;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 733
+}

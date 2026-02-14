@@ -917,3 +917,42 @@
 - [x] Update staff create/update API endpoints with organizational fields
 - [x] Reports already use organizational structure correctly
 - [ ] Test organizational hierarchy integrity end-to-end
+
+## v1.1.1 - Organizational Management Enhancements
+- [x] Add company/division/department/team selectors to staff add screen
+- [x] Add organizational assignment fields to staff edit screen
+- [x] Update staff add/edit forms to cascade organizational dropdowns
+- [x] Rename "Groups" to "Organizations" in staff management UI
+- [ ] Update Manage Organizations screen (Staff: Organizations → Departments → Teams)
+- [ ] Add hierarchical creation workflow to Manage Organizations
+- [ ] Add "Create Department" button within organization context
+- [ ] Add "Create Team" button within department context
+- [ ] Create Manage Client Organizations screen (Companies → Divisions → Departments → Teams)
+- [ ] Add hierarchical creation workflow to Manage Client Organizations
+- [ ] Add "Create Division" button within company context
+- [ ] Add "Create Department" button within division context
+- [ ] Add "Create Team" button within department context
+- [ ] Create bulk client reassignment admin screen
+- [ ] Add multi-select for clients in reassignment tool
+- [ ] Add organizational destination selectors (company/division/department)
+- [ ] Implement bulk update mutation for client organizational reassignment
+- [ ] Add confirmation dialog before bulk reassignment
+- [ ] Test staff organizational assignment end-to-end
+- [ ] Test hierarchical organization creation workflows
+- [ ] Test bulk client reassignment with multiple clients
+- [x] Create staff_departments table (organizationId, name, description)
+- [x] Add staffDepartmentId to teams table
+- [x] Update teams schema to reference staff_departments
+- [x] Migrate existing teams to create default staff departments
+
+## v1.1.2 - Remaining Organizational Management Work
+- [ ] Create staffDepartments API endpoints (list, create, update, delete)
+- [ ] Update Manage Organizations screen to show 3-level hierarchy (Organizations → Departments → Teams)
+- [ ] Add "Create Department" button within organization context
+- [ ] Add "Create Team" button within department context
+- [ ] Create Manage Client Organizations screen (Companies → Divisions → Departments → Teams)
+- [ ] Add hierarchical creation workflow to Client Organizations screen
+- [ ] Create bulk client reassignment admin screen
+- [ ] Add multi-select for clients
+- [ ] Add organizational destination selectors
+- [ ] Implement bulk update mutation

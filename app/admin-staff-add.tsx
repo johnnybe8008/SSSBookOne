@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -13,6 +14,27 @@ export default function AdminStaffAddScreen() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
+  
+  // Organizational assignment (optional - for client-facing work)
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [divisionId, setDivisionId] = useState<number | null>(null);
+  const [departmentId, setDepartmentId] = useState<number | null>(null);
+  const [companyTeamId, setCompanyTeamId] = useState<number | null>(null);
+
+  // Fetch organizational data
+  const { data: companies } = trpc.companies.list.useQuery();
+  const { data: divisions } = trpc.divisions.list.useQuery(
+    { companyId: companyId || 0 },
+    { enabled: !!companyId }
+  );
+  const { data: departments } = trpc.departments.list.useQuery(
+    { divisionId: divisionId || 0 },
+    { enabled: !!divisionId }
+  );
+  const { data: companyTeams } = trpc.companyTeams.list.useQuery(
+    { departmentId: departmentId || 0 },
+    { enabled: !!departmentId }
+  );
 
   const utils = trpc.useUtils();
   const createStaff = trpc.staff.create.useMutation({
@@ -46,7 +68,11 @@ export default function AdminStaffAddScreen() {
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
-      teamId: 1, // Default team
+      teamId: 1, // Default staff organization team
+      companyId: companyId || undefined,
+      divisionId: divisionId || undefined,
+      departmentId: departmentId || undefined,
+      companyTeamId: companyTeamId || undefined,
       createdBy: 1, // Admin user
       updatedBy: 1,
     });
@@ -184,6 +210,100 @@ export default function AdminStaffAddScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* Organizational Assignment (Optional) */}
+          <View className="mt-6">
+            <Text className="text-lg font-bold text-foreground mb-2">Client Organization Assignment</Text>
+            <Text className="text-sm text-muted mb-4">
+              Optional: Assign staff to a client organization for client-facing work
+            </Text>
+
+            {/* Company Picker */}
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-foreground mb-2">Company</Text>
+              <View className="bg-surface border border-border rounded-lg">
+                <Picker
+                  selectedValue={companyId}
+                  onValueChange={(value) => {
+                    setCompanyId(value);
+                    setDivisionId(null);
+                    setDepartmentId(null);
+                    setCompanyTeamId(null);
+                  }}
+                  style={{ color: colors.foreground }}
+                >
+                  <Picker.Item label="None" value={null} />
+                  {companies?.map((company: any) => (
+                    <Picker.Item key={company.id} label={company.name} value={company.id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
+            {/* Division Picker */}
+            {companyId && (
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-foreground mb-2">Division</Text>
+                <View className="bg-surface border border-border rounded-lg">
+                  <Picker
+                    selectedValue={divisionId}
+                    onValueChange={(value) => {
+                      setDivisionId(value);
+                      setDepartmentId(null);
+                      setCompanyTeamId(null);
+                    }}
+                    style={{ color: colors.foreground }}
+                  >
+                    <Picker.Item label="Select Division" value={null} />
+                    {divisions?.map((division: any) => (
+                      <Picker.Item key={division.id} label={division.name} value={division.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            )}
+
+            {/* Department Picker */}
+            {divisionId && (
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
+                <View className="bg-surface border border-border rounded-lg">
+                  <Picker
+                    selectedValue={departmentId}
+                    onValueChange={(value) => {
+                      setDepartmentId(value);
+                      setCompanyTeamId(null);
+                    }}
+                    style={{ color: colors.foreground }}
+                  >
+                    <Picker.Item label="Select Department" value={null} />
+                    {departments?.map((dept: any) => (
+                      <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            )}
+
+            {/* Team Picker */}
+            {departmentId && (
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
+                <View className="bg-surface border border-border rounded-lg">
+                  <Picker
+                    selectedValue={companyTeamId}
+                    onValueChange={setCompanyTeamId}
+                    style={{ color: colors.foreground }}
+                  >
+                    <Picker.Item label="Select Team" value={null} />
+                    {companyTeams?.map((team: any) => (
+                      <Picker.Item key={team.id} label={team.name} value={team.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            )}
           </View>
         </View>
 

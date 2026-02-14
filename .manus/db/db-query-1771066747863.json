@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO staffDepartments (organizationId, name, description, createdBy, updatedBy)\nSELECT g.id, CONCAT(g.name, ' Department'), CONCAT('Default department for ', g.name), g.createdBy, g.updatedBy\nFROM `groups` g;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute INSERT INTO staffDepartments (organizationId, name, description, createdBy, updatedBy)\nSELECT g.id, CONCAT(g.name, ' Department'), CONCAT('Default department for ', g.name), g.createdBy, g.updatedBy\nFROM `groups` g;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 69
+}

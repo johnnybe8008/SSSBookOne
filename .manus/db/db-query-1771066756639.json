@@ -1,0 +1,26 @@
+{
+  "query": "SELECT 'Organizations' as entity, COUNT(*) as count FROM `groups`\nUNION ALL\nSELECT 'Staff Departments', COUNT(*) FROM staffDepartments\nUNION ALL\nSELECT 'Teams', COUNT(*) FROM teams\nUNION ALL\nSELECT 'Teams with staffDepartmentId', COUNT(*) FROM teams WHERE staffDepartmentId IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT 'Organizations' as entity, COUNT(*) as count FROM `groups`\nUNION ALL\nSELECT 'Staff Departments', COUNT(*) FROM staffDepartments\nUNION ALL\nSELECT 'Teams', COUNT(*) FROM teams\nUNION ALL\nSELECT 'Teams with staffDepartmentId', COUNT(*) FROM teams WHERE staffDepartmentId IS NOT NULL;",
+  "rows": [
+    {
+      "entity": "Organizations",
+      "count": "3"
+    },
+    {
+      "entity": "Staff Departments",
+      "count": "3"
+    },
+    {
+      "entity": "Teams with staffDepartmentId",
+      "count": "1"
+    },
+    {
+      "entity": "Teams",
+      "count": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "entity\tcount\nOrganizations\t3\nStaff Departments\t3\nTeams with staffDepartmentId\t1\nTeams\t1\n",
+  "stderr": "",
+  "execution_time_ms": 79
+}

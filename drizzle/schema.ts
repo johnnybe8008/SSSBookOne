@@ -53,9 +53,22 @@ export const groups = mysqlTable("groups", {
   updatedBy: int("updatedBy").notNull(),
 });
 
+// Staff Departments - middle layer between organizations (groups) and teams
+export const staffDepartments = mysqlTable("staffDepartments", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(), // Link to organization (group)
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdBy: int("createdBy").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: int("updatedBy").notNull(),
+});
+
 export const teams = mysqlTable("teams", {
   id: int("id").autoincrement().primaryKey(),
-  groupId: int("groupId").notNull(), // Link to group for staff organization
+  groupId: int("groupId").notNull(), // Link to group for staff organization (DEPRECATED - use staffDepartmentId)
+  staffDepartmentId: int("staffDepartmentId"), // Link to staff department
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
