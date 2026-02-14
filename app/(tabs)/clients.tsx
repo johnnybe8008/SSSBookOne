@@ -28,11 +28,7 @@ export default function ClientsScreen() {
   const [filterTeamId, setFilterTeamId] = useState<number | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
   
-  // Bulk selection state
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedClientIds, setSelectedClientIds] = useState<number[]>([]);
-  const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
-  const [bulkAssignDepartmentId, setBulkAssignDepartmentId] = useState<number | null>(null);
+
 
   // Search clients with filters
   const { data: searchResults, isLoading: searchLoading } = trpc.clients.search.useQuery(
@@ -87,40 +83,9 @@ export default function ClientsScreen() {
     setFilterTeamId(null);
   };
   
-  // Bulk update mutation
-  const { data: user } = trpc.auth.me.useQuery();
   const utils = trpc.useUtils();
-  const bulkUpdateMutation = trpc.clients.bulkUpdate.useMutation({
-    onSuccess: () => {
-      utils.clients.list.invalidate();
-      utils.clients.search.invalidate();
-      setSelectedClientIds([]);
-      setSelectionMode(false);
-      setShowBulkAssignModal(false);
-      Alert.alert("Success", "Clients updated successfully");
-    },
-    onError: (error) => {
-      Alert.alert("Error", error.message || "Failed to update clients");
-    },
-  });
   
-  const toggleClientSelection = (clientId: number) => {
-    setSelectedClientIds(prev => 
-      prev.includes(clientId) 
-        ? prev.filter(id => id !== clientId)
-        : [...prev, clientId]
-    );
-  };
-  
-  const handleBulkAssign = () => {
-    if (!bulkAssignDepartmentId || !user) return;
-    
-    bulkUpdateMutation.mutate({
-      clientIds: selectedClientIds,
-      departmentId: bulkAssignDepartmentId,
-      updatedBy: user.id,
-    });
-  };
+
 
   return (
     <ScreenContainer className="flex-1">
@@ -178,39 +143,10 @@ export default function ClientsScreen() {
         )}
         
         {/* Selection Mode Toggle */}
-        {filterDepartmentId && (
-          <View className="mt-3">
-            <TouchableOpacity
-              className="px-4 py-2 bg-primary rounded-xl"
-              onPress={() => {
-                setSelectionMode(!selectionMode);
-                setSelectedClientIds([]);
-              }}
-            >
-              <Text className="text-sm font-semibold text-white text-center">
-                {selectionMode ? "Cancel Selection" : "Select Multiple Clients"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+
       </View>
       
-      {/* Bulk Action Bar */}
-      {selectionMode && selectedClientIds.length > 0 && (
-        <View className="px-6 py-3 bg-primary border-t border-primary">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm font-semibold text-white">
-              {selectedClientIds.length} client{selectedClientIds.length > 1 ? 's' : ''} selected
-            </Text>
-            <TouchableOpacity
-              className="px-4 py-2 bg-white rounded-xl"
-              onPress={() => setShowBulkAssignModal(true)}
-            >
-              <Text className="text-sm font-semibold text-primary">Reassign</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+
       
       {/* Filter Modal */}
       <Modal
@@ -390,29 +326,9 @@ export default function ClientsScreen() {
                 <TouchableOpacity
                   key={client.id}
                   className="bg-surface rounded-2xl p-5 border border-border"
-                  onPress={() => {
-                    if (selectionMode) {
-                      toggleClientSelection(client.id);
-                    } else {
-                      router.push(`/client/${client.id}` as any);
-                    }
-                  }}
+                  onPress={() => router.push(`/client/${client.id}` as any)}
                 >
                   <View className="flex-row items-start justify-between mb-3">
-                    {/* Checkbox in selection mode */}
-                    {selectionMode && (
-                      <View className="mr-3">
-                        <View className={`w-6 h-6 rounded border-2 items-center justify-center ${
-                          selectedClientIds.includes(client.id) 
-                            ? 'bg-primary border-primary' 
-                            : 'border-border'
-                        }`}>
-                          {selectedClientIds.includes(client.id) && (
-                            <IconSymbol name="checkmark" size={16} color="white" />
-                          )}
-                        </View>
-                      </View>
-                    )}
                     <View className="flex-1">
                       <View className="flex-row items-center gap-2">
                         <Text className="text-lg font-semibold text-foreground">{client.name}</Text>
@@ -484,64 +400,7 @@ export default function ClientsScreen() {
         )}
       </ScrollView>
 
-      {/* Bulk Assignment Modal */}
-      <Modal
-        visible={showBulkAssignModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowBulkAssignModal(false)}
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-6">
-              <Text className="text-xl font-bold text-foreground">Reassign Clients</Text>
-              <TouchableOpacity onPress={() => setShowBulkAssignModal(false)}>
-                <IconSymbol name="xmark.circle.fill" size={28} color={colors.muted} />
-              </TouchableOpacity>
-            </View>
-            
-            <Text className="text-sm text-muted mb-4">
-              Reassigning {selectedClientIds.length} client{selectedClientIds.length > 1 ? 's' : ''} to a new department
-            </Text>
-            
-            {/* Department Selection */}
-            <View className="mb-6">
-              <Text className="text-sm font-medium text-foreground mb-2">New Department</Text>
-              <View className="bg-surface border border-border rounded-xl overflow-hidden">
-                <Picker
-                  selectedValue={bulkAssignDepartmentId}
-                  onValueChange={(value) => setBulkAssignDepartmentId(value)}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="Select department..." value={null} />
-                  {departments?.map((dept) => (
-                    <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-            
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                className="flex-1 bg-surface rounded-xl py-4 border border-border"
-                onPress={() => setShowBulkAssignModal(false)}
-              >
-                <Text className="text-center text-base font-semibold text-foreground">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 bg-primary rounded-xl py-4"
-                onPress={handleBulkAssign}
-                disabled={!bulkAssignDepartmentId || bulkUpdateMutation.isPending}
-                style={{ opacity: !bulkAssignDepartmentId || bulkUpdateMutation.isPending ? 0.5 : 1 }}
-              >
-                <Text className="text-center text-base font-semibold text-white">
-                  {bulkUpdateMutation.isPending ? "Updating..." : "Reassign"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+
       
       {/* Floating Action Button */}
       <View className="absolute bottom-6 right-6">

@@ -4,6 +4,7 @@ import {
   InsertUser,
   users,
   groups,
+  staffDepartments,
   teams,
   staff,
   companies,
@@ -19,6 +20,7 @@ import {
   sessions,
   notifications,
   type InsertGroup,
+  type InsertStaffDepartment,
   type InsertTeam,
   type InsertStaff,
   type InsertCompany,
@@ -182,6 +184,39 @@ export async function deleteGroup(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(groups).where(eq(groups.id, id));
+}
+
+// Staff Departments
+export async function getStaffDepartmentsByOrganizationId(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(staffDepartments).where(eq(staffDepartments.organizationId, organizationId)).orderBy(asc(staffDepartments.name));
+}
+
+export async function getStaffDepartmentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(staffDepartments).where(eq(staffDepartments.id, id));
+  return result[0] || null;
+}
+
+export async function createStaffDepartment(data: InsertStaffDepartment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result: any = await db.insert(staffDepartments).values(data);
+  return result.insertId as number;
+}
+
+export async function updateStaffDepartment(id: number, data: Partial<InsertStaffDepartment>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(staffDepartments).set(data).where(eq(staffDepartments.id, id));
+}
+
+export async function deleteStaffDepartment(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(staffDepartments).where(eq(staffDepartments.id, id));
 }
 
 export async function getTeamsByGroupId(groupId: number) {

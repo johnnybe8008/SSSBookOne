@@ -946,13 +946,16 @@
 - [x] Migrate existing teams to create default staff departments
 
 ## v1.1.2 - Remaining Organizational Management Work
-- [ ] Create staffDepartments API endpoints (list, create, update, delete)
-- [ ] Update Manage Organizations screen to show 3-level hierarchy (Organizations → Departments → Teams)
-- [ ] Add "Create Department" button within organization context
-- [ ] Add "Create Team" button within department context
-- [ ] Create Manage Client Organizations screen (Companies → Divisions → Departments → Teams)
-- [ ] Add hierarchical creation workflow to Client Organizations screen
-- [ ] Create bulk client reassignment admin screen
-- [ ] Add multi-select for clients
-- [ ] Add organizational destination selectors
-- [ ] Implement bulk update mutation
+- [x] Create staffDepartments API endpoints (list, create, update, delete)
+- [x] Update Manage Organizations screen to show 3-level hierarchy (Organizations → Departments → Teams)
+- [x] Add "Create Department" button within organization context
+- [x] Add "Create Team" button within department context
+- [x] Create Manage Client Organizations screen (Companies → Divisions → Departments → Teams)
+- [x] Add hierarchical creation workflow to Client Organizations screen
+- [x] Add Client Organizations link to More tab admin section
+- [x] Create bulk client reassignment admin screen
+- [x] Add multi-select for clients with organizational filters
+- [x] Add organizational destination selectors (company/division/department/team)
+- [x] Implement bulk update mutation (admin-only)
+- [x] Remove bulk reassignment from Clients tab
+- [x] Add Bulk Reassign Clients link to More tab admin section

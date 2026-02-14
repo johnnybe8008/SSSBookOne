@@ -65,6 +65,9 @@ export const staffDepartments = mysqlTable("staffDepartments", {
   updatedBy: int("updatedBy").notNull(),
 });
 
+export type StaffDepartment = typeof staffDepartments.$inferSelect;
+export type InsertStaffDepartment = typeof staffDepartments.$inferInsert;
+
 export const teams = mysqlTable("teams", {
   id: int("id").autoincrement().primaryKey(),
   groupId: int("groupId").notNull(), // Link to group for staff organization (DEPRECATED - use staffDepartmentId)

@@ -239,6 +239,41 @@ export const appRouter = router({
     delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteGroup(input.id)),
   }),
 
+  staffDepartments: router({ list: protectedProcedure
+      .input(z.object({ organizationId: z.number() }))
+      .query(({ input }) => db.getStaffDepartmentsByOrganizationId(input.organizationId)),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ input }) => db.getStaffDepartmentById(input.id)),
+    create: adminOnlyProcedure
+      .input(
+        z.object({
+          organizationId: z.number(),
+          name: z.string().min(1).max(255),
+          description: z.string().optional(),
+          createdBy: z.number(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => db.createStaffDepartment(input)),
+    update: adminOnlyProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).max(255).optional(),
+          description: z.string().optional(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => {
+        const { id, ...data } = input;
+        return db.updateStaffDepartment(id, data);
+      }),
+    delete: adminOnlyProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteStaffDepartment(input.id)),
+  }),
+
   teams: router({
     list: protectedProcedure.input(z.object({ groupId: z.number() })).query(({ input }) => db.getTeamsByGroupId(input.groupId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getTeamById(input.id)),
@@ -246,6 +281,7 @@ export const appRouter = router({
       .input(
         z.object({
           groupId: z.number(),
+          staffDepartmentId: z.number().optional(),
           name: z.string().min(1).max(255),
           description: z.string().optional(),
           createdBy: z.number(),
@@ -566,20 +602,25 @@ export const appRouter = router({
         return db.updateClient(id, updates);
       }),
     delete: writeAccessProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteClient(input.id)),
-    bulkUpdate: writeAccessProcedure
+    bulkUpdate: adminOnlyProcedure
       .input(
         z.object({
           clientIds: z.array(z.number()),
-          departmentId: z.number().optional(),
-          updatedBy: z.number(),
+          companyId: z.number(),
+          divisionId: z.number(),
+          departmentId: z.number(),
+          companyTeamId: z.number(),
         })
       )
-      .mutation(async ({ input }) => {
-        const { clientIds, departmentId, updatedBy } = input;
-        const updates: any = { updatedBy };
-        if (departmentId !== undefined) {
-          updates.departmentId = departmentId;
-        }
+      .mutation(async ({ input, ctx }) => {
+        const { clientIds, companyId, divisionId, departmentId, companyTeamId } = input;
+        const updates: any = {
+          companyId,
+          divisionId,
+          departmentId,
+          companyTeamId,
+          updatedBy: ctx.user!.id,
+        };
         
         // Update all clients
         const results = await Promise.all(
