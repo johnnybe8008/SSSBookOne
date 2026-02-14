@@ -973,3 +973,19 @@
 - [x] Updated staff.update API endpoint to accept teamId parameter
 - [x] Removed client organization fields from staff add screen
 - [x] Added proper cascading dropdowns for staff organizational hierarchy
+
+## v1.1.4 - Staff Management Enhancements
+- [x] Add optional client organization assignment section to staff add screen
+- [x] Add optional client organization assignment section to staff edit screen
+- [x] Update staff.create API to accept client organization fields (companyId, divisionId, departmentId, companyTeamId)
+- [x] Update staff.update API to accept client organization fields
+- [x] Implement organizational breadcrumbs component for staff views
+- [x] Add breadcrumbs to staff list screen showing organization → department → team
+- [x] Add breadcrumbs to staff edit screen showing full organizational path
+- [x] Create bulk staff reassignment screen (admin only)
+- [x] Add multi-select functionality for staff selection
+- [x] Add organizational filters for source staff
+- [x] Add destination organization/department/team selectors
+- [x] Implement bulk staff reassignment mutation
+- [x] Add confirmation dialog before bulk reassignment
+- [x] Add link to bulk reassignment from More tab admin section

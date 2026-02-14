@@ -6,6 +6,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
+import { OrganizationalBreadcrumbs } from "@/components/organizational-breadcrumbs";
 
 export default function AdminStaffEditScreen() {
   const colors = useColors();
@@ -25,6 +26,12 @@ export default function AdminStaffEditScreen() {
   const [staffDepartmentId, setStaffDepartmentId] = useState<number | null>(null);
   const [teamId, setTeamId] = useState<number | null>(null);
 
+  // Client organizational assignment (optional - for client-facing work)
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [divisionId, setDivisionId] = useState<number | null>(null);
+  const [departmentId, setDepartmentId] = useState<number | null>(null);
+  const [companyTeamId, setCompanyTeamId] = useState<number | null>(null);
+
   // Fetch staff organizational data
   const { data: organizations } = trpc.groups.list.useQuery();
   const { data: staffDepartments } = trpc.staffDepartments.list.useQuery(
@@ -36,6 +43,21 @@ export default function AdminStaffEditScreen() {
     { enabled: !!groupId }
   );
 
+  // Fetch client organizational data
+  const { data: companies } = trpc.companies.list.useQuery();
+  const { data: divisions } = trpc.divisions.list.useQuery(
+    { companyId: companyId || 0 },
+    { enabled: !!companyId }
+  );
+  const { data: departments } = trpc.departments.list.useQuery(
+    { divisionId: divisionId || 0 },
+    { enabled: !!divisionId }
+  );
+  const { data: companyTeams } = trpc.companyTeams.list.useQuery(
+    { departmentId: departmentId || 0 },
+    { enabled: !!departmentId }
+  );
+
   useEffect(() => {
     if (staff) {
       setName(staff.name);
@@ -45,6 +67,10 @@ export default function AdminStaffEditScreen() {
       setGroupId((staff as any).groupId || staff.teamId ? teams?.find(t => t.id === staff.teamId)?.groupId || null : null);
       setStaffDepartmentId((staff as any).staffDepartmentId || null);
       setTeamId(staff.teamId || null);
+      setCompanyId((staff as any).companyId || null);
+      setDivisionId((staff as any).divisionId || null);
+      setDepartmentId((staff as any).departmentId || null);
+      setCompanyTeamId((staff as any).companyTeamId || null);
     }
   }, [staff]);
 
@@ -90,7 +116,10 @@ export default function AdminStaffEditScreen() {
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
       teamId: teamId || undefined,
-
+      companyId: companyId || undefined,
+      divisionId: divisionId || undefined,
+      departmentId: departmentId || undefined,
+      companyTeamId: companyTeamId || undefined,
       updatedBy: 1, // Admin user
     });
   };
@@ -153,6 +182,21 @@ export default function AdminStaffEditScreen() {
         <View className="mb-6">
           <Text className="text-3xl font-bold text-foreground">Edit Staff</Text>
           <Text className="text-sm text-muted mt-1">Update staff member information</Text>
+          
+          {/* Organizational Breadcrumbs */}
+          {teamId && teams && (() => {
+            const team = teams.find((t: any) => t.id === teamId);
+            if (team) {
+              const breadcrumbs: string[] = [];
+              const org = organizations?.find((o: any) => o.id === team.groupId);
+              if (org) breadcrumbs.push(org.name);
+              const dept = staffDepartments?.find((d: any) => d.id === team.staffDepartmentId);
+              if (dept) breadcrumbs.push(dept.name);
+              breadcrumbs.push(team.name);
+              return <OrganizationalBreadcrumbs items={breadcrumbs} className="mt-3" />;
+            }
+            return null;
+          })()}
         </View>
 
         {/* Form */}
@@ -341,6 +385,100 @@ export default function AdminStaffEditScreen() {
                   >
                     <Picker.Item label="Select Team" value={null} />
                     {teams?.map((team: any) => (
+                      <Picker.Item key={team.id} label={team.name} value={team.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Client Organization Assignment (Optional) */}
+          <View className="mt-6">
+            <Text className="text-lg font-bold text-foreground mb-2">Client Organization Assignment (Optional)</Text>
+            <Text className="text-sm text-muted mb-4">
+              Optionally assign staff to a client company for client-facing work
+            </Text>
+
+            {/* Company Picker */}
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-foreground mb-2">Company</Text>
+              <View className="bg-surface border border-border rounded-lg">
+                <Picker
+                  selectedValue={companyId}
+                  onValueChange={(value) => {
+                    setCompanyId(value);
+                    setDivisionId(null);
+                    setDepartmentId(null);
+                    setCompanyTeamId(null);
+                  }}
+                  style={{ color: colors.foreground }}
+                >
+                  <Picker.Item label="None" value={null} />
+                  {companies?.map((company: any) => (
+                    <Picker.Item key={company.id} label={company.name} value={company.id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
+            {/* Division Picker */}
+            {companyId && (
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-foreground mb-2">Division</Text>
+                <View className="bg-surface border border-border rounded-lg">
+                  <Picker
+                    selectedValue={divisionId}
+                    onValueChange={(value) => {
+                      setDivisionId(value);
+                      setDepartmentId(null);
+                      setCompanyTeamId(null);
+                    }}
+                    style={{ color: colors.foreground }}
+                  >
+                    <Picker.Item label="Select Division" value={null} />
+                    {divisions?.map((division: any) => (
+                      <Picker.Item key={division.id} label={division.name} value={division.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            )}
+
+            {/* Department Picker */}
+            {divisionId && (
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
+                <View className="bg-surface border border-border rounded-lg">
+                  <Picker
+                    selectedValue={departmentId}
+                    onValueChange={(value) => {
+                      setDepartmentId(value);
+                      setCompanyTeamId(null);
+                    }}
+                    style={{ color: colors.foreground }}
+                  >
+                    <Picker.Item label="Select Department" value={null} />
+                    {departments?.map((dept: any) => (
+                      <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            )}
+
+            {/* Team Picker */}
+            {departmentId && (
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
+                <View className="bg-surface border border-border rounded-lg">
+                  <Picker
+                    selectedValue={companyTeamId}
+                    onValueChange={setCompanyTeamId}
+                    style={{ color: colors.foreground }}
+                  >
+                    <Picker.Item label="Select Team" value={null} />
+                    {companyTeams?.map((team: any) => (
                       <Picker.Item key={team.id} label={team.name} value={team.id} />
                     ))}
                   </Picker>

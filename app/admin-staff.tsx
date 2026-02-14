@@ -4,10 +4,41 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
+import { OrganizationalBreadcrumbs } from "@/components/organizational-breadcrumbs";
 
 export default function AdminStaffScreen() {
   const colors = useColors();
   const { data: allStaff, isLoading } = trpc.staff.listAll.useQuery();
+  const { data: organizations } = trpc.groups.list.useQuery();
+  const { data: staffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
+  const { data: teams } = trpc.teams.list.useQuery({ groupId: 0 });
+
+  // Helper function to get organizational breadcrumbs for a staff member
+  const getStaffBreadcrumbs = (staff: any) => {
+    const breadcrumbs: string[] = [];
+    
+    if (staff.teamId && teams) {
+      const team = teams.find((t: any) => t.id === staff.teamId);
+      if (team) {
+        // Find organization
+        const org = organizations?.find((o: any) => o.id === team.groupId);
+        if (org) {
+          breadcrumbs.push(org.name);
+        }
+        
+        // Find department
+        const dept = staffDepartments?.find((d: any) => d.id === team.staffDepartmentId);
+        if (dept) {
+          breadcrumbs.push(dept.name);
+        }
+        
+        // Add team
+        breadcrumbs.push(team.name);
+      }
+    }
+    
+    return breadcrumbs;
+  };
 
   if (isLoading) {
     return (
@@ -63,6 +94,9 @@ export default function AdminStaffScreen() {
                       {staff.name}
                     </Text>
                     <Text className="text-sm text-muted mt-1">{staff.email}</Text>
+                    
+                    {/* Organizational Breadcrumbs */}
+                    <OrganizationalBreadcrumbs items={getStaffBreadcrumbs(staff)} className="mt-2" />
                     
                     {/* Badges */}
                     <View className="flex-row gap-2 mt-2">

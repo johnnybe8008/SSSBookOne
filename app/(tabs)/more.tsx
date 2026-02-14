@@ -236,6 +236,17 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() => router.push("/admin-staff-bulk-reassign" as any)}
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="person.2.fill" size={20} color={colors.primary} />
+                <Text className="text-base text-foreground">Bulk Reassign Staff</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
               onPress={() => router.push("/admin-bulk-reassign" as any)}
             >
               <View className="flex-row items-center gap-3">

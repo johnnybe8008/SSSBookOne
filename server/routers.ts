@@ -355,6 +355,23 @@ export const appRouter = router({
         return db.updateStaff(id, data);
       }),
     delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteStaff(input.id)),
+    bulkUpdate: adminOnlyProcedure
+      .input(
+        z.object({
+          staffIds: z.array(z.number()),
+          teamId: z.number(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { staffIds, teamId, updatedBy } = input;
+        const results = [];
+        for (const staffId of staffIds) {
+          const result = await db.updateStaff(staffId, { teamId, updatedBy });
+          results.push(result);
+        }
+        return { updated: results.length };
+      }),
   }),
 
   // Client Organization
