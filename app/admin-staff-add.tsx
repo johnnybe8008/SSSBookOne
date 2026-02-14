@@ -15,25 +15,20 @@ export default function AdminStaffAddScreen() {
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
   
-  // Organizational assignment (optional - for client-facing work)
-  const [companyId, setCompanyId] = useState<number | null>(null);
-  const [divisionId, setDivisionId] = useState<number | null>(null);
-  const [departmentId, setDepartmentId] = useState<number | null>(null);
-  const [companyTeamId, setCompanyTeamId] = useState<number | null>(null);
+  // Staff organizational assignment
+  const [groupId, setGroupId] = useState<number | null>(null);
+  const [staffDepartmentId, setStaffDepartmentId] = useState<number | null>(null);
+  const [teamId, setTeamId] = useState<number | null>(null);
 
-  // Fetch organizational data
-  const { data: companies } = trpc.companies.list.useQuery();
-  const { data: divisions } = trpc.divisions.list.useQuery(
-    { companyId: companyId || 0 },
-    { enabled: !!companyId }
+  // Fetch staff organizational data
+  const { data: organizations } = trpc.groups.list.useQuery();
+  const { data: staffDepartments } = trpc.staffDepartments.list.useQuery(
+    { organizationId: groupId || 0 },
+    { enabled: !!groupId }
   );
-  const { data: departments } = trpc.departments.list.useQuery(
-    { divisionId: divisionId || 0 },
-    { enabled: !!divisionId }
-  );
-  const { data: companyTeams } = trpc.companyTeams.list.useQuery(
-    { departmentId: departmentId || 0 },
-    { enabled: !!departmentId }
+  const { data: teams } = trpc.teams.list.useQuery(
+    { groupId: groupId || 0 },
+    { enabled: !!groupId }
   );
 
   const utils = trpc.useUtils();
@@ -68,11 +63,7 @@ export default function AdminStaffAddScreen() {
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
-      teamId: 1, // Default staff organization team
-      companyId: companyId || undefined,
-      divisionId: divisionId || undefined,
-      departmentId: departmentId || undefined,
-      companyTeamId: companyTeamId || undefined,
+      teamId: teamId || 1, // Staff organization team
       createdBy: 1, // Admin user
       updatedBy: 1,
     });
@@ -212,73 +203,49 @@ export default function AdminStaffAddScreen() {
             </View>
           </View>
 
-          {/* Organizational Assignment (Optional) */}
+          {/* Staff Organization Assignment */}
           <View className="mt-6">
-            <Text className="text-lg font-bold text-foreground mb-2">Client Organization Assignment</Text>
+            <Text className="text-lg font-bold text-foreground mb-2">Staff Organization Assignment</Text>
             <Text className="text-sm text-muted mb-4">
-              Optional: Assign staff to a client organization for client-facing work
+              Assign staff to your internal organizational structure
             </Text>
 
-            {/* Company Picker */}
+            {/* Organization Picker */}
             <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2">Company</Text>
+              <Text className="text-sm font-semibold text-foreground mb-2">Organization</Text>
               <View className="bg-surface border border-border rounded-lg">
                 <Picker
-                  selectedValue={companyId}
+                  selectedValue={groupId}
                   onValueChange={(value) => {
-                    setCompanyId(value);
-                    setDivisionId(null);
-                    setDepartmentId(null);
-                    setCompanyTeamId(null);
+                    setGroupId(value);
+                    setStaffDepartmentId(null);
+                    setTeamId(null);
                   }}
                   style={{ color: colors.foreground }}
                 >
-                  <Picker.Item label="None" value={null} />
-                  {companies?.map((company: any) => (
-                    <Picker.Item key={company.id} label={company.name} value={company.id} />
+                  <Picker.Item label="Select Organization" value={null} />
+                  {organizations?.map((org: any) => (
+                    <Picker.Item key={org.id} label={org.name} value={org.id} />
                   ))}
                 </Picker>
               </View>
             </View>
 
-            {/* Division Picker */}
-            {companyId && (
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-foreground mb-2">Division</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={divisionId}
-                    onValueChange={(value) => {
-                      setDivisionId(value);
-                      setDepartmentId(null);
-                      setCompanyTeamId(null);
-                    }}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Division" value={null} />
-                    {divisions?.map((division: any) => (
-                      <Picker.Item key={division.id} label={division.name} value={division.id} />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-            )}
-
             {/* Department Picker */}
-            {divisionId && (
+            {groupId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
                 <View className="bg-surface border border-border rounded-lg">
                   <Picker
-                    selectedValue={departmentId}
+                    selectedValue={staffDepartmentId}
                     onValueChange={(value) => {
-                      setDepartmentId(value);
-                      setCompanyTeamId(null);
+                      setStaffDepartmentId(value);
+                      setTeamId(null);
                     }}
                     style={{ color: colors.foreground }}
                   >
                     <Picker.Item label="Select Department" value={null} />
-                    {departments?.map((dept: any) => (
+                    {staffDepartments?.map((dept: any) => (
                       <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
                     ))}
                   </Picker>
@@ -287,17 +254,17 @@ export default function AdminStaffAddScreen() {
             )}
 
             {/* Team Picker */}
-            {departmentId && (
+            {staffDepartmentId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
                 <View className="bg-surface border border-border rounded-lg">
                   <Picker
-                    selectedValue={companyTeamId}
-                    onValueChange={setCompanyTeamId}
+                    selectedValue={teamId}
+                    onValueChange={setTeamId}
                     style={{ color: colors.foreground }}
                   >
                     <Picker.Item label="Select Team" value={null} />
-                    {companyTeams?.map((team: any) => (
+                    {teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).map((team: any) => (
                       <Picker.Item key={team.id} label={team.name} value={team.id} />
                     ))}
                   </Picker>

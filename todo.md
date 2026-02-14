@@ -959,3 +959,17 @@
 - [x] Implement bulk update mutation (admin-only)
 - [x] Remove bulk reassignment from Clients tab
 - [x] Add Bulk Reassign Clients link to More tab admin section
+
+## v1.1.3 - Fix Staff Organization Assignment
+- [ ] Replace client company selectors with staff organization selectors in staff add screen
+- [ ] Replace client company selectors with staff organization selectors in staff edit screen
+- [ ] Update staff organizational assignment to use: Organization (group) → Department (staff_department) → Team
+- [ ] Keep client organization assignment as separate optional section
+- [ ] Test staff organizational assignment with new structure
+
+## v1.1.3 - Staff Organization Assignment Fix
+- [x] Fixed staff add screen to show staff organizations (Organizations → Departments → Teams) instead of client companies
+- [x] Fixed staff edit screen organizational structure (already correct)
+- [x] Updated staff.update API endpoint to accept teamId parameter
+- [x] Removed client organization fields from staff add screen
+- [x] Added proper cascading dropdowns for staff organizational hierarchy

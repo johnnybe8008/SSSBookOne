@@ -20,25 +20,20 @@ export default function AdminStaffEditScreen() {
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
   
-  // Organizational assignment
-  const [companyId, setCompanyId] = useState<number | null>(null);
-  const [divisionId, setDivisionId] = useState<number | null>(null);
-  const [departmentId, setDepartmentId] = useState<number | null>(null);
-  const [companyTeamId, setCompanyTeamId] = useState<number | null>(null);
+  // Staff organizational assignment (Organizations → Departments → Teams)
+  const [groupId, setGroupId] = useState<number | null>(null);
+  const [staffDepartmentId, setStaffDepartmentId] = useState<number | null>(null);
+  const [teamId, setTeamId] = useState<number | null>(null);
 
-  // Fetch organizational data
-  const { data: companies } = trpc.companies.list.useQuery();
-  const { data: divisions } = trpc.divisions.list.useQuery(
-    { companyId: companyId || 0 },
-    { enabled: !!companyId }
+  // Fetch staff organizational data
+  const { data: organizations } = trpc.groups.list.useQuery();
+  const { data: staffDepartments } = trpc.staffDepartments.list.useQuery(
+    { organizationId: groupId || 0 },
+    { enabled: !!groupId }
   );
-  const { data: departments } = trpc.departments.list.useQuery(
-    { divisionId: divisionId || 0 },
-    { enabled: !!divisionId }
-  );
-  const { data: companyTeams } = trpc.companyTeams.list.useQuery(
-    { departmentId: departmentId || 0 },
-    { enabled: !!departmentId }
+  const { data: teams } = trpc.teams.list.useQuery(
+    { groupId: groupId || 0 },
+    { enabled: !!groupId }
   );
 
   useEffect(() => {
@@ -47,10 +42,9 @@ export default function AdminStaffEditScreen() {
       setEmail(staff.email || "");
       setRole((staff as any).role || "counselor");
       setIsVipRated(staff.isVipRated === 1);
-      setCompanyId((staff as any).companyId || null);
-      setDivisionId((staff as any).divisionId || null);
-      setDepartmentId((staff as any).departmentId || null);
-      setCompanyTeamId((staff as any).companyTeamId || null);
+      setGroupId((staff as any).groupId || staff.teamId ? teams?.find(t => t.id === staff.teamId)?.groupId || null : null);
+      setStaffDepartmentId((staff as any).staffDepartmentId || null);
+      setTeamId(staff.teamId || null);
     }
   }, [staff]);
 
@@ -95,10 +89,8 @@ export default function AdminStaffEditScreen() {
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
-      companyId: companyId || undefined,
-      divisionId: divisionId || undefined,
-      departmentId: departmentId || undefined,
-      companyTeamId: companyTeamId || undefined,
+      teamId: teamId || undefined,
+
       updatedBy: 1, // Admin user
     });
   };
@@ -287,73 +279,49 @@ export default function AdminStaffEditScreen() {
             </View>
           </View>
 
-          {/* Organizational Assignment (Optional) */}
+          {/* Staff Organizational Assignment */}
           <View className="mt-6">
-            <Text className="text-lg font-bold text-foreground mb-2">Client Organization Assignment</Text>
+            <Text className="text-lg font-bold text-foreground mb-2">Staff Organization Assignment</Text>
             <Text className="text-sm text-muted mb-4">
-              Optional: Assign staff to a client organization for client-facing work
+              Assign staff to an organization, department, and team
             </Text>
 
-            {/* Company Picker */}
+            {/* Organization Picker */}
             <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2">Company</Text>
+              <Text className="text-sm font-semibold text-foreground mb-2">Organization</Text>
               <View className="bg-surface border border-border rounded-lg">
                 <Picker
-                  selectedValue={companyId}
+                  selectedValue={groupId}
                   onValueChange={(value) => {
-                    setCompanyId(value);
-                    setDivisionId(null);
-                    setDepartmentId(null);
-                    setCompanyTeamId(null);
+                    setGroupId(value);
+                    setStaffDepartmentId(null);
+                    setTeamId(null);
                   }}
                   style={{ color: colors.foreground }}
                 >
                   <Picker.Item label="None" value={null} />
-                  {companies?.map((company: any) => (
-                    <Picker.Item key={company.id} label={company.name} value={company.id} />
+                  {organizations?.map((org: any) => (
+                    <Picker.Item key={org.id} label={org.name} value={org.id} />
                   ))}
                 </Picker>
               </View>
             </View>
 
-            {/* Division Picker */}
-            {companyId && (
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-foreground mb-2">Division</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={divisionId}
-                    onValueChange={(value) => {
-                      setDivisionId(value);
-                      setDepartmentId(null);
-                      setCompanyTeamId(null);
-                    }}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Division" value={null} />
-                    {divisions?.map((division: any) => (
-                      <Picker.Item key={division.id} label={division.name} value={division.id} />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-            )}
-
-            {/* Department Picker */}
-            {divisionId && (
+            {/* Staff Department Picker */}
+            {groupId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
                 <View className="bg-surface border border-border rounded-lg">
                   <Picker
-                    selectedValue={departmentId}
+                    selectedValue={staffDepartmentId}
                     onValueChange={(value) => {
-                      setDepartmentId(value);
-                      setCompanyTeamId(null);
+                      setStaffDepartmentId(value);
+                      setTeamId(null);
                     }}
                     style={{ color: colors.foreground }}
                   >
                     <Picker.Item label="Select Department" value={null} />
-                    {departments?.map((dept: any) => (
+                    {staffDepartments?.map((dept: any) => (
                       <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
                     ))}
                   </Picker>
@@ -362,17 +330,17 @@ export default function AdminStaffEditScreen() {
             )}
 
             {/* Team Picker */}
-            {departmentId && (
+            {groupId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
                 <View className="bg-surface border border-border rounded-lg">
                   <Picker
-                    selectedValue={companyTeamId}
-                    onValueChange={setCompanyTeamId}
+                    selectedValue={teamId}
+                    onValueChange={setTeamId}
                     style={{ color: colors.foreground }}
                   >
                     <Picker.Item label="Select Team" value={null} />
-                    {companyTeams?.map((team: any) => (
+                    {teams?.map((team: any) => (
                       <Picker.Item key={team.id} label={team.name} value={team.id} />
                     ))}
                   </Picker>

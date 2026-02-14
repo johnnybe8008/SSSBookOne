@@ -335,6 +335,7 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          teamId: z.number().optional(),
           companyId: z.number().optional(),
           divisionId: z.number().optional(),
           departmentId: z.number().optional(),
