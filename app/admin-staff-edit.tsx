@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import { useState, useEffect, useMemo } from "react";
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal, FlatList } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -17,6 +16,7 @@ export default function AdminStaffEditScreen() {
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
@@ -31,6 +31,24 @@ export default function AdminStaffEditScreen() {
   const [divisionId, setDivisionId] = useState<number | null>(null);
   const [departmentId, setDepartmentId] = useState<number | null>(null);
   const [companyTeamId, setCompanyTeamId] = useState<number | null>(null);
+
+  // Modal states for all selectors
+  const [showOrganizationModal, setShowOrganizationModal] = useState(false);
+  const [showStaffDepartmentModal, setShowStaffDepartmentModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [showDivisionModal, setShowDivisionModal] = useState(false);
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [showCompanyTeamModal, setShowCompanyTeamModal] = useState(false);
+
+  // Search states for modals
+  const [organizationSearch, setOrganizationSearch] = useState("");
+  const [staffDepartmentSearch, setStaffDepartmentSearch] = useState("");
+  const [teamSearch, setTeamSearch] = useState("");
+  const [companySearch, setCompanySearch] = useState("");
+  const [divisionSearch, setDivisionSearch] = useState("");
+  const [departmentSearch, setDepartmentSearch] = useState("");
+  const [companyTeamSearch, setCompanyTeamSearch] = useState("");
 
   // Fetch staff organizational data
   const { data: organizations } = trpc.groups.list.useQuery();
@@ -62,10 +80,61 @@ export default function AdminStaffEditScreen() {
     { enabled: !!departmentId }
   );
 
+  // Filtered lists for modal selectors
+  const filteredOrganizations = useMemo(() => {
+    if (!organizations) return [];
+    return organizations.filter((org: any) =>
+      org.name.toLowerCase().includes(organizationSearch.toLowerCase())
+    );
+  }, [organizations, organizationSearch]);
+
+  const filteredStaffDepartments = useMemo(() => {
+    if (!staffDepartments) return [];
+    return staffDepartments.filter((dept: any) =>
+      dept.name.toLowerCase().includes(staffDepartmentSearch.toLowerCase())
+    );
+  }, [staffDepartments, staffDepartmentSearch]);
+
+  const filteredTeams = useMemo(() => {
+    if (!teams) return [];
+    return teams.filter((team: any) =>
+      team.name.toLowerCase().includes(teamSearch.toLowerCase())
+    );
+  }, [teams, teamSearch]);
+
+  const filteredCompanies = useMemo(() => {
+    if (!companies) return [];
+    return companies.filter((company: any) =>
+      company.name.toLowerCase().includes(companySearch.toLowerCase())
+    );
+  }, [companies, companySearch]);
+
+  const filteredDivisions = useMemo(() => {
+    if (!divisions) return [];
+    return divisions.filter((division: any) =>
+      division.name.toLowerCase().includes(divisionSearch.toLowerCase())
+    );
+  }, [divisions, divisionSearch]);
+
+  const filteredDepartments = useMemo(() => {
+    if (!departments) return [];
+    return departments.filter((dept: any) =>
+      dept.name.toLowerCase().includes(departmentSearch.toLowerCase())
+    );
+  }, [departments, departmentSearch]);
+
+  const filteredCompanyTeams = useMemo(() => {
+    if (!companyTeams) return [];
+    return companyTeams.filter((team: any) =>
+      team.name.toLowerCase().includes(companyTeamSearch.toLowerCase())
+    );
+  }, [companyTeams, companyTeamSearch]);
+
   useEffect(() => {
     if (staff) {
       setName(staff.name);
       setEmail(staff.email || "");
+      setPhone((staff as any).phone || "");
       setRole((staff as any).role || "counselor");
       setIsVipRated(staff.isVipRated === 1);
       setGroupId((staff as any).groupId || staff.teamId ? teams?.find(t => t.id === staff.teamId)?.groupId || null : null);
@@ -116,6 +185,7 @@ export default function AdminStaffEditScreen() {
       id: staffId,
       name: name.trim(),
       email: email.trim().toLowerCase(),
+      phone: phone.trim(),
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
@@ -231,6 +301,19 @@ export default function AdminStaffEditScreen() {
             />
           </View>
 
+          {/* Phone */}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Phone</Text>
+            <TextInput
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="Enter phone number"
+              keyboardType="phone-pad"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
           {/* Staff ID (read-only) */}
           <View>
             <Text className="text-sm font-semibold text-foreground mb-2">Staff ID</Text>
@@ -334,65 +417,49 @@ export default function AdminStaffEditScreen() {
               Assign staff to an organization, department, and team
             </Text>
 
-            {/* Organization Picker */}
+            {/* Organization Selector */}
             <View className="mb-4">
               <Text className="text-sm font-semibold text-foreground mb-2">Organization</Text>
-              <View className="bg-surface border border-border rounded-lg">
-                <Picker
-                  selectedValue={groupId}
-                  onValueChange={(value) => {
-                    setGroupId(value);
-                    setStaffDepartmentId(null);
-                    setTeamId(null);
-                  }}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="None" value={null} />
-                  {organizations?.map((org: any) => (
-                    <Picker.Item key={org.id} label={org.name} value={org.id} />
-                  ))}
-                </Picker>
-              </View>
+              <TouchableOpacity
+                onPress={() => setShowOrganizationModal(true)}
+                className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+              >
+                <Text className="text-base" style={{ color: colors.foreground }}>
+                  {groupId ? organizations?.find((o: any) => o.id === groupId)?.name : "None"}
+                </Text>
+                <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+              </TouchableOpacity>
             </View>
 
-            {/* Staff Department Picker */}
+            {/* Staff Department Selector */}
             {groupId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={staffDepartmentId}
-                    onValueChange={(value) => {
-                      setStaffDepartmentId(value);
-                      setTeamId(null);
-                    }}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Department" value={null} />
-                    {staffDepartments?.map((dept: any) => (
-                      <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowStaffDepartmentModal(true)}
+                  className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                >
+                  <Text className="text-base" style={{ color: colors.foreground }}>
+                    {staffDepartmentId ? staffDepartments?.find((d: any) => d.id === staffDepartmentId)?.name : "Select Department"}
+                  </Text>
+                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             )}
 
-            {/* Team Picker */}
+            {/* Team Selector */}
             {groupId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={teamId}
-                    onValueChange={setTeamId}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Team" value={null} />
-                    {teams?.map((team: any) => (
-                      <Picker.Item key={team.id} label={team.name} value={team.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowTeamModal(true)}
+                  className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                >
+                  <Text className="text-base" style={{ color: colors.foreground }}>
+                    {teamId ? teams?.find((t: any) => t.id === teamId)?.name : "Select Team"}
+                  </Text>
+                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -404,89 +471,65 @@ export default function AdminStaffEditScreen() {
               Optionally assign staff to a client company for client-facing work
             </Text>
 
-            {/* Company Picker */}
+            {/* Company Selector */}
             <View className="mb-4">
               <Text className="text-sm font-semibold text-foreground mb-2">Company</Text>
-              <View className="bg-surface border border-border rounded-lg">
-                <Picker
-                  selectedValue={companyId}
-                  onValueChange={(value) => {
-                    setCompanyId(value);
-                    setDivisionId(null);
-                    setDepartmentId(null);
-                    setCompanyTeamId(null);
-                  }}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="None" value={null} />
-                  {companies?.map((company: any) => (
-                    <Picker.Item key={company.id} label={company.name} value={company.id} />
-                  ))}
-                </Picker>
-              </View>
+              <TouchableOpacity
+                onPress={() => setShowCompanyModal(true)}
+                className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+              >
+                <Text className="text-base" style={{ color: colors.foreground }}>
+                  {companyId ? companies?.find((c: any) => c.id === companyId)?.name : "None"}
+                </Text>
+                <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+              </TouchableOpacity>
             </View>
 
-            {/* Division Picker */}
+            {/* Division Selector */}
             {companyId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Division</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={divisionId}
-                    onValueChange={(value) => {
-                      setDivisionId(value);
-                      setDepartmentId(null);
-                      setCompanyTeamId(null);
-                    }}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Division" value={null} />
-                    {divisions?.map((division: any) => (
-                      <Picker.Item key={division.id} label={division.name} value={division.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowDivisionModal(true)}
+                  className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                >
+                  <Text className="text-base" style={{ color: colors.foreground }}>
+                    {divisionId ? divisions?.find((d: any) => d.id === divisionId)?.name : "Select Division"}
+                  </Text>
+                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             )}
 
-            {/* Department Picker */}
+            {/* Department Selector */}
             {divisionId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={departmentId}
-                    onValueChange={(value) => {
-                      setDepartmentId(value);
-                      setCompanyTeamId(null);
-                    }}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Department" value={null} />
-                    {departments?.map((dept: any) => (
-                      <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowDepartmentModal(true)}
+                  className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                >
+                  <Text className="text-base" style={{ color: colors.foreground }}>
+                    {departmentId ? departments?.find((d: any) => d.id === departmentId)?.name : "Select Department"}
+                  </Text>
+                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             )}
 
-            {/* Team Picker */}
+            {/* Company Team Selector */}
             {departmentId && (
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={companyTeamId}
-                    onValueChange={setCompanyTeamId}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Team" value={null} />
-                    {companyTeams?.map((team: any) => (
-                      <Picker.Item key={team.id} label={team.name} value={team.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setShowCompanyTeamModal(true)}
+                  className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                >
+                  <Text className="text-base" style={{ color: colors.foreground }}>
+                    {companyTeamId ? companyTeams?.find((t: any) => t.id === companyTeamId)?.name : "Select Team"}
+                  </Text>
+                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -535,6 +578,277 @@ export default function AdminStaffEditScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Organization Selection Modal */}
+      <Modal visible={showOrganizationModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
+            <View className="p-6 border-b border-border flex-row justify-between items-center">
+              <Text className="text-xl font-bold text-foreground">Select Organization</Text>
+              <TouchableOpacity onPress={() => { setShowOrganizationModal(false); setOrganizationSearch(""); }}>
+                <Text className="text-primary font-semibold text-lg">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Search organizations..."
+              value={organizationSearch}
+              onChangeText={setOrganizationSearch}
+              className="mx-6 mt-4 p-4 bg-surface border border-border rounded-lg text-foreground"
+              placeholderTextColor={colors.muted}
+            />
+            <FlatList
+              data={filteredOrganizations}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }: any) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setGroupId(item.id);
+                    setStaffDepartmentId(null);
+                    setTeamId(null);
+                    setShowOrganizationModal(false);
+                    setOrganizationSearch("");
+                  }}
+                  className="p-4 border-b border-border mx-6"
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Staff Department Selection Modal */}
+      <Modal visible={showStaffDepartmentModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
+            <View className="p-6 border-b border-border flex-row justify-between items-center">
+              <Text className="text-xl font-bold text-foreground">Select Department</Text>
+              <TouchableOpacity onPress={() => { setShowStaffDepartmentModal(false); setStaffDepartmentSearch(""); }}>
+                <Text className="text-primary font-semibold text-lg">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Search departments..."
+              value={staffDepartmentSearch}
+              onChangeText={setStaffDepartmentSearch}
+              className="mx-6 mt-4 p-4 bg-surface border border-border rounded-lg text-foreground"
+              placeholderTextColor={colors.muted}
+            />
+            <FlatList
+              data={filteredStaffDepartments}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }: any) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setStaffDepartmentId(item.id);
+                    setTeamId(null);
+                    setShowStaffDepartmentModal(false);
+                    setStaffDepartmentSearch("");
+                  }}
+                  className="p-4 border-b border-border mx-6"
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Team Selection Modal */}
+      <Modal visible={showTeamModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
+            <View className="p-6 border-b border-border flex-row justify-between items-center">
+              <Text className="text-xl font-bold text-foreground">Select Team</Text>
+              <TouchableOpacity onPress={() => { setShowTeamModal(false); setTeamSearch(""); }}>
+                <Text className="text-primary font-semibold text-lg">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Search teams..."
+              value={teamSearch}
+              onChangeText={setTeamSearch}
+              className="mx-6 mt-4 p-4 bg-surface border border-border rounded-lg text-foreground"
+              placeholderTextColor={colors.muted}
+            />
+            <FlatList
+              data={filteredTeams}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }: any) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setTeamId(item.id);
+                    setShowTeamModal(false);
+                    setTeamSearch("");
+                  }}
+                  className="p-4 border-b border-border mx-6"
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Company Selection Modal */}
+      <Modal visible={showCompanyModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
+            <View className="p-6 border-b border-border flex-row justify-between items-center">
+              <Text className="text-xl font-bold text-foreground">Select Company</Text>
+              <TouchableOpacity onPress={() => { setShowCompanyModal(false); setCompanySearch(""); }}>
+                <Text className="text-primary font-semibold text-lg">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Search companies..."
+              value={companySearch}
+              onChangeText={setCompanySearch}
+              className="mx-6 mt-4 p-4 bg-surface border border-border rounded-lg text-foreground"
+              placeholderTextColor={colors.muted}
+            />
+            <FlatList
+              data={filteredCompanies}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }: any) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setCompanyId(item.id);
+                    setDivisionId(null);
+                    setDepartmentId(null);
+                    setCompanyTeamId(null);
+                    setShowCompanyModal(false);
+                    setCompanySearch("");
+                  }}
+                  className="p-4 border-b border-border mx-6"
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                  {item.contactPerson && (
+                    <Text className="text-sm text-muted mt-1">{item.contactPerson}</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Division Selection Modal */}
+      <Modal visible={showDivisionModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
+            <View className="p-6 border-b border-border flex-row justify-between items-center">
+              <Text className="text-xl font-bold text-foreground">Select Division</Text>
+              <TouchableOpacity onPress={() => { setShowDivisionModal(false); setDivisionSearch(""); }}>
+                <Text className="text-primary font-semibold text-lg">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Search divisions..."
+              value={divisionSearch}
+              onChangeText={setDivisionSearch}
+              className="mx-6 mt-4 p-4 bg-surface border border-border rounded-lg text-foreground"
+              placeholderTextColor={colors.muted}
+            />
+            <FlatList
+              data={filteredDivisions}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }: any) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setDivisionId(item.id);
+                    setDepartmentId(null);
+                    setCompanyTeamId(null);
+                    setShowDivisionModal(false);
+                    setDivisionSearch("");
+                  }}
+                  className="p-4 border-b border-border mx-6"
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Department Selection Modal */}
+      <Modal visible={showDepartmentModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
+            <View className="p-6 border-b border-border flex-row justify-between items-center">
+              <Text className="text-xl font-bold text-foreground">Select Department</Text>
+              <TouchableOpacity onPress={() => { setShowDepartmentModal(false); setDepartmentSearch(""); }}>
+                <Text className="text-primary font-semibold text-lg">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Search departments..."
+              value={departmentSearch}
+              onChangeText={setDepartmentSearch}
+              className="mx-6 mt-4 p-4 bg-surface border border-border rounded-lg text-foreground"
+              placeholderTextColor={colors.muted}
+            />
+            <FlatList
+              data={filteredDepartments}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }: any) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setDepartmentId(item.id);
+                    setCompanyTeamId(null);
+                    setShowDepartmentModal(false);
+                    setDepartmentSearch("");
+                  }}
+                  className="p-4 border-b border-border mx-6"
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Company Team Selection Modal */}
+      <Modal visible={showCompanyTeamModal} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
+            <View className="p-6 border-b border-border flex-row justify-between items-center">
+              <Text className="text-xl font-bold text-foreground">Select Team</Text>
+              <TouchableOpacity onPress={() => { setShowCompanyTeamModal(false); setCompanyTeamSearch(""); }}>
+                <Text className="text-primary font-semibold text-lg">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Search teams..."
+              value={companyTeamSearch}
+              onChangeText={setCompanyTeamSearch}
+              className="mx-6 mt-4 p-4 bg-surface border border-border rounded-lg text-foreground"
+              placeholderTextColor={colors.muted}
+            />
+            <FlatList
+              data={filteredCompanyTeams}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }: any) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setCompanyTeamId(item.id);
+                    setShowCompanyTeamModal(false);
+                    setCompanyTeamSearch("");
+                  }}
+                  className="p-4 border-b border-border mx-6"
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }

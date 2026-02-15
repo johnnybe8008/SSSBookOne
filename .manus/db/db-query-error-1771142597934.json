@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE staff ADD COLUMN phone VARCHAR(255);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute ALTER TABLE staff ADD COLUMN phone VARCHAR(255);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'phone'"
+  ]
+}

@@ -46,6 +46,29 @@ export default function AdminClientOrganizationsScreen() {
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamDescription, setNewTeamDescription] = useState("");
 
+  // Edit state for companies
+  const [editingCompanyId, setEditingCompanyId] = useState<number | null>(null);
+  const [editCompanyName, setEditCompanyName] = useState("");
+  const [editCompanyDescription, setEditCompanyDescription] = useState("");
+  const [editCompanyAddress, setEditCompanyAddress] = useState("");
+  const [editCompanyPhone, setEditCompanyPhone] = useState("");
+  const [editCompanyEmail, setEditCompanyEmail] = useState("");
+
+  // Edit state for divisions
+  const [editingDivisionId, setEditingDivisionId] = useState<number | null>(null);
+  const [editDivisionName, setEditDivisionName] = useState("");
+  const [editDivisionDescription, setEditDivisionDescription] = useState("");
+
+  // Edit state for departments
+  const [editingDeptId, setEditingDeptId] = useState<number | null>(null);
+  const [editDeptName, setEditDeptName] = useState("");
+  const [editDeptDescription, setEditDeptDescription] = useState("");
+
+  // Edit state for teams
+  const [editingTeamId, setEditingTeamId] = useState<number | null>(null);
+  const [editTeamName, setEditTeamName] = useState("");
+  const [editTeamDescription, setEditTeamDescription] = useState("");
+
   // Queries
   const { data: companies, isLoading } = trpc.companies.list.useQuery();
 
@@ -156,6 +179,42 @@ export default function AdminClientOrganizationsScreen() {
     onError: (error) => Alert.alert("Error", error.message),
   });
 
+  const updateCompany = trpc.companies.update.useMutation({
+    onSuccess: () => {
+      utils.companies.invalidate();
+      setEditingCompanyId(null);
+      Alert.alert("Success", "Company updated");
+    },
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+
+  const updateDivision = trpc.divisions.update.useMutation({
+    onSuccess: () => {
+      utils.divisions.invalidate();
+      setEditingDivisionId(null);
+      Alert.alert("Success", "Division updated");
+    },
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+
+  const updateDept = trpc.departments.update.useMutation({
+    onSuccess: () => {
+      utils.departments.invalidate();
+      setEditingDeptId(null);
+      Alert.alert("Success", "Department updated");
+    },
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+
+  const updateTeam = trpc.companyTeams.update.useMutation({
+    onSuccess: () => {
+      utils.companyTeams.invalidate();
+      setEditingTeamId(null);
+      Alert.alert("Success", "Team updated");
+    },
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+
   // Handlers
   const handleCreateCompany = () => {
     if (!newCompanyName.trim() || !user?.id) return;
@@ -228,6 +287,75 @@ export default function AdminClientOrganizationsScreen() {
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: () => deleteTeam.mutate({ id }) },
     ]);
+  };
+
+  const handleStartEditCompany = (company: any) => {
+    setEditingCompanyId(company.id);
+    setEditCompanyName(company.name);
+    setEditCompanyDescription(company.description || "");
+    setEditCompanyAddress(company.address || "");
+    setEditCompanyPhone(company.phone || "");
+    setEditCompanyEmail(company.email || "");
+  };
+
+  const handleUpdateCompany = () => {
+    if (!editCompanyName.trim() || !user?.id || !editingCompanyId) return;
+    updateCompany.mutate({
+      id: editingCompanyId,
+      name: editCompanyName,
+      address: editCompanyAddress || undefined,
+      phone: editCompanyPhone || undefined,
+      email: editCompanyEmail || undefined,
+      updatedBy: user.id,
+    });
+  };
+
+  const handleStartEditDivision = (division: any) => {
+    setEditingDivisionId(division.id);
+    setEditDivisionName(division.name);
+    setEditDivisionDescription(division.description || "");
+  };
+
+  const handleUpdateDivision = () => {
+    if (!editDivisionName.trim() || !user?.id || !editingDivisionId) return;
+    updateDivision.mutate({
+      id: editingDivisionId,
+      name: editDivisionName,
+      description: editDivisionDescription,
+      updatedBy: user.id,
+    });
+  };
+
+  const handleStartEditDept = (dept: any) => {
+    setEditingDeptId(dept.id);
+    setEditDeptName(dept.name);
+    setEditDeptDescription(dept.description || "");
+  };
+
+  const handleUpdateDept = () => {
+    if (!editDeptName.trim() || !user?.id || !editingDeptId) return;
+    updateDept.mutate({
+      id: editingDeptId,
+      name: editDeptName,
+      description: editDeptDescription,
+      updatedBy: user.id,
+    });
+  };
+
+  const handleStartEditTeam = (team: any) => {
+    setEditingTeamId(team.id);
+    setEditTeamName(team.name);
+    setEditTeamDescription(team.description || "");
+  };
+
+  const handleUpdateTeam = () => {
+    if (!editTeamName.trim() || !user?.id || !editingTeamId) return;
+    updateTeam.mutate({
+      id: editingTeamId,
+      name: editTeamName,
+      description: editTeamDescription,
+      updatedBy: user.id,
+    });
   };
 
   if (isLoading) {
@@ -358,10 +486,82 @@ export default function AdminClientOrganizationsScreen() {
                   </View>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteCompany(company.id)} className="ml-2">
-                <Text className="text-error">Delete</Text>
-              </TouchableOpacity>
+              <View className="flex-row gap-2">
+                <TouchableOpacity onPress={() => handleStartEditCompany(company)} className="ml-2">
+                  <Text className="text-primary">Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDeleteCompany(company.id)}>
+                  <Text className="text-error">Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+
+            {/* Edit Company Form */}
+            {editingCompanyId === company.id && (
+              <View style={{ backgroundColor: colors.background }} className="p-4 rounded-lg mt-4">
+                <Text className="text-foreground font-semibold mb-3">Edit Company</Text>
+                <TextInput
+                  value={editCompanyName}
+                  onChangeText={setEditCompanyName}
+                  placeholder="Company Name"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-2"
+                />
+                <TextInput
+                  value={editCompanyDescription}
+                  onChangeText={setEditCompanyDescription}
+                  placeholder="Description (optional)"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-2"
+                  multiline
+                />
+                <TextInput
+                  value={editCompanyAddress}
+                  onChangeText={setEditCompanyAddress}
+                  placeholder="Address (optional)"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-2"
+                />
+                <TextInput
+                  value={editCompanyPhone}
+                  onChangeText={setEditCompanyPhone}
+                  placeholder="Phone (optional)"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-2"
+                  keyboardType="phone-pad"
+                />
+                <TextInput
+                  value={editCompanyEmail}
+                  onChangeText={setEditCompanyEmail}
+                  placeholder="Email (optional)"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-3"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={handleUpdateCompany}
+                    style={{ backgroundColor: colors.primary }}
+                    className="flex-1 px-4 py-2 rounded"
+                  >
+                    <Text className="text-background font-semibold text-center">Update</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setEditingCompanyId(null)}
+                    style={{ backgroundColor: colors.muted }}
+                    className="flex-1 px-4 py-2 rounded"
+                  >
+                    <Text className="text-background font-semibold text-center">Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {/* Divisions */}
             {expandedCompanyId === company.id && (
@@ -433,10 +633,55 @@ export default function AdminClientOrganizationsScreen() {
                           </View>
                         )}
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleDeleteDivision(division.id)} className="ml-2">
-                        <Text className="text-error text-sm">Delete</Text>
-                      </TouchableOpacity>
+                      <View className="flex-row gap-2">
+                        <TouchableOpacity onPress={() => handleStartEditDivision(division)} className="ml-2">
+                          <Text className="text-primary text-sm">Edit</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleDeleteDivision(division.id)}>
+                          <Text className="text-error text-sm">Delete</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
+
+                    {/* Edit Division Form */}
+                    {editingDivisionId === division.id && (
+                      <View style={{ backgroundColor: colors.surface }} className="p-3 rounded-lg mt-3">
+                        <Text className="text-foreground font-semibold mb-2">Edit Division</Text>
+                        <TextInput
+                          value={editDivisionName}
+                          onChangeText={setEditDivisionName}
+                          placeholder="Division Name"
+                          placeholderTextColor={colors.muted}
+                          style={{ backgroundColor: colors.background, color: colors.foreground }}
+                          className="px-3 py-2 rounded mb-2"
+                        />
+                        <TextInput
+                          value={editDivisionDescription}
+                          onChangeText={setEditDivisionDescription}
+                          placeholder="Description (optional)"
+                          placeholderTextColor={colors.muted}
+                          style={{ backgroundColor: colors.background, color: colors.foreground }}
+                          className="px-3 py-2 rounded mb-2"
+                          multiline
+                        />
+                        <View className="flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={handleUpdateDivision}
+                            style={{ backgroundColor: colors.primary }}
+                            className="flex-1 px-3 py-2 rounded"
+                          >
+                            <Text className="text-background font-semibold text-center text-sm">Update</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => setEditingDivisionId(null)}
+                            style={{ backgroundColor: colors.muted }}
+                            className="flex-1 px-3 py-2 rounded"
+                          >
+                            <Text className="text-background font-semibold text-center text-sm">Cancel</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
 
                     {/* Departments */}
                     {expandedDivisionId === division.id && (
@@ -508,10 +753,55 @@ export default function AdminClientOrganizationsScreen() {
                                   </View>
                                 )}
                               </TouchableOpacity>
-                              <TouchableOpacity onPress={() => handleDeleteDept(dept.id)} className="ml-2">
-                                <Text className="text-error text-xs">Delete</Text>
-                              </TouchableOpacity>
+                              <View className="flex-row gap-2">
+                                <TouchableOpacity onPress={() => handleStartEditDept(dept)} className="ml-2">
+                                  <Text className="text-primary text-xs">Edit</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleDeleteDept(dept.id)}>
+                                  <Text className="text-error text-xs">Delete</Text>
+                                </TouchableOpacity>
+                              </View>
                             </View>
+
+                            {/* Edit Department Form */}
+                            {editingDeptId === dept.id && (
+                              <View style={{ backgroundColor: colors.background }} className="p-3 rounded-lg mt-2">
+                                <Text className="text-foreground font-semibold mb-2">Edit Department</Text>
+                                <TextInput
+                                  value={editDeptName}
+                                  onChangeText={setEditDeptName}
+                                  placeholder="Department Name"
+                                  placeholderTextColor={colors.muted}
+                                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                                  className="px-3 py-2 rounded mb-2"
+                                />
+                                <TextInput
+                                  value={editDeptDescription}
+                                  onChangeText={setEditDeptDescription}
+                                  placeholder="Description (optional)"
+                                  placeholderTextColor={colors.muted}
+                                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                                  className="px-3 py-2 rounded mb-2"
+                                  multiline
+                                />
+                                <View className="flex-row gap-2">
+                                  <TouchableOpacity
+                                    onPress={handleUpdateDept}
+                                    style={{ backgroundColor: colors.primary }}
+                                    className="flex-1 px-3 py-2 rounded"
+                                  >
+                                    <Text className="text-background font-semibold text-center text-xs">Update</Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    onPress={() => setEditingDeptId(null)}
+                                    style={{ backgroundColor: colors.muted }}
+                                    className="flex-1 px-3 py-2 rounded"
+                                  >
+                                    <Text className="text-background font-semibold text-center text-xs">Cancel</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            )}
 
                             {/* Teams */}
                             {expandedDeptId === dept.id && (
@@ -567,25 +857,71 @@ export default function AdminClientOrganizationsScreen() {
                                 )}
 
                                 {teams?.map((team) => (
-                                  <View
-                                    key={team.id}
-                                    style={{ backgroundColor: colors.background }}
-                                    className="rounded p-2 mb-1 flex-row items-center justify-between"
-                                  >
-                                    <View className="flex-1">
-                                      <Text className="text-foreground text-xs">{team.name}</Text>
-                                      {team.description && <Text className="text-muted text-xs">{team.description}</Text>}
-                                      {(team.address || team.phone || team.email) && (
-                                        <View className="mt-0.5 gap-0.5">
-                                          {team.address && <Text className="text-muted text-xs">📍 {team.address}</Text>}
-                                          {team.phone && <Text className="text-muted text-xs">📞 {team.phone}</Text>}
-                                          {team.email && <Text className="text-muted text-xs">✉️ {team.email}</Text>}
-                                        </View>
-                                      )}
+                                  <View key={team.id} className="mb-1">
+                                    <View
+                                      style={{ backgroundColor: colors.background }}
+                                      className="rounded p-2 flex-row items-center justify-between"
+                                    >
+                                      <View className="flex-1">
+                                        <Text className="text-foreground text-xs">{team.name}</Text>
+                                        {team.description && <Text className="text-muted text-xs">{team.description}</Text>}
+                                        {(team.address || team.phone || team.email) && (
+                                          <View className="mt-0.5 gap-0.5">
+                                            {team.address && <Text className="text-muted text-xs">📍 {team.address}</Text>}
+                                            {team.phone && <Text className="text-muted text-xs">📞 {team.phone}</Text>}
+                                            {team.email && <Text className="text-muted text-xs">✉️ {team.email}</Text>}
+                                          </View>
+                                        )}
+                                      </View>
+                                      <View className="flex-row gap-2">
+                                        <TouchableOpacity onPress={() => handleStartEditTeam(team)}>
+                                          <Text className="text-primary text-xs">Edit</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => handleDeleteTeam(team.id)}>
+                                          <Text className="text-error text-xs">Delete</Text>
+                                        </TouchableOpacity>
+                                      </View>
                                     </View>
-                                    <TouchableOpacity onPress={() => handleDeleteTeam(team.id)}>
-                                      <Text className="text-error text-xs">Delete</Text>
-                                    </TouchableOpacity>
+
+                                    {/* Edit Team Form */}
+                                    {editingTeamId === team.id && (
+                                      <View style={{ backgroundColor: colors.surface }} className="p-2 rounded-lg mt-1">
+                                        <Text className="text-foreground font-semibold mb-2">Edit Team</Text>
+                                        <TextInput
+                                          value={editTeamName}
+                                          onChangeText={setEditTeamName}
+                                          placeholder="Team Name"
+                                          placeholderTextColor={colors.muted}
+                                          style={{ backgroundColor: colors.background, color: colors.foreground }}
+                                          className="px-3 py-2 rounded mb-2"
+                                        />
+                                        <TextInput
+                                          value={editTeamDescription}
+                                          onChangeText={setEditTeamDescription}
+                                          placeholder="Description (optional)"
+                                          placeholderTextColor={colors.muted}
+                                          style={{ backgroundColor: colors.background, color: colors.foreground }}
+                                          className="px-3 py-2 rounded mb-2"
+                                          multiline
+                                        />
+                                        <View className="flex-row gap-2">
+                                          <TouchableOpacity
+                                            onPress={handleUpdateTeam}
+                                            style={{ backgroundColor: colors.primary }}
+                                            className="flex-1 px-3 py-2 rounded"
+                                          >
+                                            <Text className="text-background font-semibold text-center text-xs">Update</Text>
+                                          </TouchableOpacity>
+                                          <TouchableOpacity
+                                            onPress={() => setEditingTeamId(null)}
+                                            style={{ backgroundColor: colors.muted }}
+                                            className="flex-1 px-3 py-2 rounded"
+                                          >
+                                            <Text className="text-background font-semibold text-center text-xs">Cancel</Text>
+                                          </TouchableOpacity>
+                                        </View>
+                                      </View>
+                                    )}
                                   </View>
                                 ))}
                               </View>

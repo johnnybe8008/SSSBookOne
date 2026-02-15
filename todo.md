@@ -44,3 +44,16 @@
 - [ ] Add error state styling for invalid fields
 - [ ] Show validation error messages before form submission
 - [ ] Test all modal selectors, quick-create actions, and validation
+
+## v1.6.0 - Critical Bug Fixes and Edit Functionality
+- [x] Fix crash in staff edit screen when changing organization (segmentation fault)
+- [x] Replace organization Pickers in staff edit screen with modal selectors
+- [x] Add all 6 modal selectors with search functionality
+- [x] Add phone number field to staff add screen
+- [x] Add phone number field to staff edit screen
+- [x] Add phone column to staff database schema (already existed)
+- [x] Add edit functionality to Staff Organizations screen (edit org/dept/team names and contact info)
+- [x] Add edit functionality to Client Organizations screen (edit company/division/dept/team names and contact info)
+- [x] Test all organizational management edit features
+- [ ] Test staff phone number field
+- [ ] Test staff organization assignment without crashes

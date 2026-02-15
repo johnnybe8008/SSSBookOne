@@ -11,6 +11,7 @@ export default function AdminStaffAddScreen() {
   const colors = useColors();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
@@ -85,6 +86,7 @@ export default function AdminStaffAddScreen() {
     createStaff.mutate({
       name: name.trim(),
       email: email.trim().toLowerCase(),
+      phone: phone.trim(),
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
@@ -139,6 +141,19 @@ export default function AdminStaffAddScreen() {
               placeholder="Enter email address"
               keyboardType="email-address"
               autoCapitalize="none"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          {/* Phone */}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Phone</Text>
+            <TextInput
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="Enter phone number"
+              keyboardType="phone-pad"
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
               placeholderTextColor="#9BA1A6"
             />

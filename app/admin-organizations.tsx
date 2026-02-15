@@ -25,17 +25,29 @@ export default function AdminOrganizationsScreen() {
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgDescription, setNewOrgDescription] = useState("");
   const [expandedOrgId, setExpandedOrgId] = useState<number | null>(null);
+  const [editingOrgId, setEditingOrgId] = useState<number | null>(null);
+  const [editOrgName, setEditOrgName] = useState("");
+  const [editOrgDescription, setEditOrgDescription] = useState("");
+  const [editOrgAddress, setEditOrgAddress] = useState("");
+  const [editOrgPhone, setEditOrgPhone] = useState("");
+  const [editOrgEmail, setEditOrgEmail] = useState("");
 
   // Department state
   const [isAddingDepartment, setIsAddingDepartment] = useState<number | null>(null);
   const [newDeptName, setNewDeptName] = useState("");
   const [newDeptDescription, setNewDeptDescription] = useState("");
   const [expandedDeptId, setExpandedDeptId] = useState<number | null>(null);
+  const [editingDeptId, setEditingDeptId] = useState<number | null>(null);
+  const [editDeptName, setEditDeptName] = useState("");
+  const [editDeptDescription, setEditDeptDescription] = useState("");
 
   // Team state
   const [isAddingTeam, setIsAddingTeam] = useState<number | null>(null);
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamDescription, setNewTeamDescription] = useState("");
+  const [editingTeamId, setEditingTeamId] = useState<number | null>(null);
+  const [editTeamName, setEditTeamName] = useState("");
+  const [editTeamDescription, setEditTeamDescription] = useState("");
 
   // Queries
   const { data: organizations, isLoading } = trpc.groups.list.useQuery();
@@ -93,6 +105,42 @@ export default function AdminOrganizationsScreen() {
       setNewTeamName("");
       setNewTeamDescription("");
       Alert.alert("Success", "Team created");
+    },
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+
+  const updateOrg = trpc.groups.update.useMutation({
+    onSuccess: () => {
+      utils.groups.invalidate();
+      setEditingOrgId(null);
+      setEditOrgName("");
+      setEditOrgDescription("");
+      setEditOrgAddress("");
+      setEditOrgPhone("");
+      setEditOrgEmail("");
+      Alert.alert("Success", "Organization updated");
+    },
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+
+  const updateDept = trpc.staffDepartments.update.useMutation({
+    onSuccess: () => {
+      utils.staffDepartments.invalidate();
+      setEditingDeptId(null);
+      setEditDeptName("");
+      setEditDeptDescription("");
+      Alert.alert("Success", "Department updated");
+    },
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+
+  const updateTeam = trpc.teams.update.useMutation({
+    onSuccess: () => {
+      utils.teams.invalidate();
+      setEditingTeamId(null);
+      setEditTeamName("");
+      setEditTeamDescription("");
+      Alert.alert("Success", "Team updated");
     },
     onError: (error) => Alert.alert("Error", error.message),
   });
@@ -174,6 +222,60 @@ export default function AdminOrganizationsScreen() {
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: () => deleteTeam.mutate({ id }) },
     ]);
+  };
+
+  const handleStartEditOrg = (org: any) => {
+    setEditingOrgId(org.id);
+    setEditOrgName(org.name);
+    setEditOrgDescription(org.description || "");
+    setEditOrgAddress(org.address || "");
+    setEditOrgPhone(org.phone || "");
+    setEditOrgEmail(org.email || "");
+  };
+
+  const handleUpdateOrg = () => {
+    if (!editOrgName.trim() || !user?.id || !editingOrgId) return;
+    updateOrg.mutate({
+      id: editingOrgId,
+      name: editOrgName,
+      description: editOrgDescription,
+      address: editOrgAddress,
+      phone: editOrgPhone,
+      email: editOrgEmail,
+      updatedBy: user.id,
+    });
+  };
+
+  const handleStartEditDept = (dept: any) => {
+    setEditingDeptId(dept.id);
+    setEditDeptName(dept.name);
+    setEditDeptDescription(dept.description || "");
+  };
+
+  const handleUpdateDept = () => {
+    if (!editDeptName.trim() || !user?.id || !editingDeptId) return;
+    updateDept.mutate({
+      id: editingDeptId,
+      name: editDeptName,
+      description: editDeptDescription,
+      updatedBy: user.id,
+    });
+  };
+
+  const handleStartEditTeam = (team: any) => {
+    setEditingTeamId(team.id);
+    setEditTeamName(team.name);
+    setEditTeamDescription(team.description || "");
+  };
+
+  const handleUpdateTeam = () => {
+    if (!editTeamName.trim() || !user?.id || !editingTeamId) return;
+    updateTeam.mutate({
+      id: editingTeamId,
+      name: editTeamName,
+      description: editTeamDescription,
+      updatedBy: user.id,
+    });
   };
 
   const filteredTeams = teams?.filter((t) => t.staffDepartmentId === expandedDeptId) || [];
@@ -278,10 +380,82 @@ export default function AdminOrganizationsScreen() {
                   </View>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteOrg(org.id)} className="ml-2">
-                <Text className="text-error">Delete</Text>
-              </TouchableOpacity>
+              <View className="flex-row gap-2">
+                <TouchableOpacity onPress={() => handleStartEditOrg(org)} className="ml-2">
+                  <Text className="text-primary">Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDeleteOrg(org.id)}>
+                  <Text className="text-error">Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+
+            {/* Edit Organization Form */}
+            {editingOrgId === org.id && (
+              <View style={{ backgroundColor: colors.background }} className="p-4 rounded-lg mt-4">
+                <Text className="text-foreground font-semibold mb-3">Edit Organization</Text>
+                <TextInput
+                  value={editOrgName}
+                  onChangeText={setEditOrgName}
+                  placeholder="Organization Name"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-2"
+                />
+                <TextInput
+                  value={editOrgDescription}
+                  onChangeText={setEditOrgDescription}
+                  placeholder="Description (optional)"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-2"
+                  multiline
+                />
+                <TextInput
+                  value={editOrgAddress}
+                  onChangeText={setEditOrgAddress}
+                  placeholder="Address (optional)"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-2"
+                />
+                <TextInput
+                  value={editOrgPhone}
+                  onChangeText={setEditOrgPhone}
+                  placeholder="Phone (optional)"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-2"
+                  keyboardType="phone-pad"
+                />
+                <TextInput
+                  value={editOrgEmail}
+                  onChangeText={setEditOrgEmail}
+                  placeholder="Email (optional)"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                  className="px-3 py-2 rounded mb-3"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={handleUpdateOrg}
+                    style={{ backgroundColor: colors.primary }}
+                    className="flex-1 px-4 py-2 rounded"
+                  >
+                    <Text className="text-background font-semibold text-center">Update</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setEditingOrgId(null)}
+                    style={{ backgroundColor: colors.muted }}
+                    className="flex-1 px-4 py-2 rounded"
+                  >
+                    <Text className="text-background font-semibold text-center">Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {/* Departments */}
             {expandedOrgId === org.id && (
@@ -353,10 +527,55 @@ export default function AdminOrganizationsScreen() {
                           </View>
                         )}
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleDeleteDept(dept.id)} className="ml-2">
-                        <Text className="text-error text-sm">Delete</Text>
-                      </TouchableOpacity>
+                      <View className="flex-row gap-2">
+                        <TouchableOpacity onPress={() => handleStartEditDept(dept)} className="ml-2">
+                          <Text className="text-primary text-sm">Edit</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleDeleteDept(dept.id)}>
+                          <Text className="text-error text-sm">Delete</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
+
+                    {/* Edit Department Form */}
+                    {editingDeptId === dept.id && (
+                      <View style={{ backgroundColor: colors.surface }} className="p-3 rounded-lg mt-3">
+                        <Text className="text-foreground font-semibold mb-2">Edit Department</Text>
+                        <TextInput
+                          value={editDeptName}
+                          onChangeText={setEditDeptName}
+                          placeholder="Department Name"
+                          placeholderTextColor={colors.muted}
+                          style={{ backgroundColor: colors.background, color: colors.foreground }}
+                          className="px-3 py-2 rounded mb-2"
+                        />
+                        <TextInput
+                          value={editDeptDescription}
+                          onChangeText={setEditDeptDescription}
+                          placeholder="Description (optional)"
+                          placeholderTextColor={colors.muted}
+                          style={{ backgroundColor: colors.background, color: colors.foreground }}
+                          className="px-3 py-2 rounded mb-2"
+                          multiline
+                        />
+                        <View className="flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={handleUpdateDept}
+                            style={{ backgroundColor: colors.primary }}
+                            className="flex-1 px-3 py-2 rounded"
+                          >
+                            <Text className="text-background font-semibold text-center text-sm">Update</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => setEditingDeptId(null)}
+                            style={{ backgroundColor: colors.muted }}
+                            className="flex-1 px-3 py-2 rounded"
+                          >
+                            <Text className="text-background font-semibold text-center text-sm">Cancel</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
 
                     {/* Teams */}
                     {expandedDeptId === dept.id && (
@@ -412,25 +631,71 @@ export default function AdminOrganizationsScreen() {
                         )}
 
                         {filteredTeams.map((team) => (
-                          <View
-                            key={team.id}
-                            style={{ backgroundColor: colors.surface }}
-                            className="rounded p-2 mb-2 flex-row items-center justify-between"
-                          >
-                            <View className="flex-1">
-                              <Text className="text-foreground">{team.name}</Text>
-                              {team.description && <Text className="text-muted text-xs">{team.description}</Text>}
-                              {(team.address || team.phone || team.email) && (
-                                <View className="mt-0.5 gap-0.5">
-                                  {team.address && <Text className="text-muted text-xs">📍 {team.address}</Text>}
-                                  {team.phone && <Text className="text-muted text-xs">📞 {team.phone}</Text>}
-                                  {team.email && <Text className="text-muted text-xs">✉️ {team.email}</Text>}
-                                </View>
-                              )}
+                          <View key={team.id} className="mb-2">
+                            <View
+                              style={{ backgroundColor: colors.surface }}
+                              className="rounded p-2 flex-row items-center justify-between"
+                            >
+                              <View className="flex-1">
+                                <Text className="text-foreground">{team.name}</Text>
+                                {team.description && <Text className="text-muted text-xs">{team.description}</Text>}
+                                {(team.address || team.phone || team.email) && (
+                                  <View className="mt-0.5 gap-0.5">
+                                    {team.address && <Text className="text-muted text-xs">📍 {team.address}</Text>}
+                                    {team.phone && <Text className="text-muted text-xs">📞 {team.phone}</Text>}
+                                    {team.email && <Text className="text-muted text-xs">✉️ {team.email}</Text>}
+                                  </View>
+                                )}
+                              </View>
+                              <View className="flex-row gap-2">
+                                <TouchableOpacity onPress={() => handleStartEditTeam(team)}>
+                                  <Text className="text-primary text-xs">Edit</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleDeleteTeam(team.id)}>
+                                  <Text className="text-error text-xs">Delete</Text>
+                                </TouchableOpacity>
+                              </View>
                             </View>
-                            <TouchableOpacity onPress={() => handleDeleteTeam(team.id)}>
-                              <Text className="text-error text-xs">Delete</Text>
-                            </TouchableOpacity>
+
+                            {/* Edit Team Form */}
+                            {editingTeamId === team.id && (
+                              <View style={{ backgroundColor: colors.background }} className="p-3 rounded-lg mt-2">
+                                <Text className="text-foreground font-semibold mb-2">Edit Team</Text>
+                                <TextInput
+                                  value={editTeamName}
+                                  onChangeText={setEditTeamName}
+                                  placeholder="Team Name"
+                                  placeholderTextColor={colors.muted}
+                                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                                  className="px-3 py-2 rounded mb-2"
+                                />
+                                <TextInput
+                                  value={editTeamDescription}
+                                  onChangeText={setEditTeamDescription}
+                                  placeholder="Description (optional)"
+                                  placeholderTextColor={colors.muted}
+                                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                                  className="px-3 py-2 rounded mb-2"
+                                  multiline
+                                />
+                                <View className="flex-row gap-2">
+                                  <TouchableOpacity
+                                    onPress={handleUpdateTeam}
+                                    style={{ backgroundColor: colors.primary }}
+                                    className="flex-1 px-3 py-2 rounded"
+                                  >
+                                    <Text className="text-background font-semibold text-center text-xs">Update</Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    onPress={() => setEditingTeamId(null)}
+                                    style={{ backgroundColor: colors.muted }}
+                                    className="flex-1 px-3 py-2 rounded"
+                                  >
+                                    <Text className="text-background font-semibold text-center text-xs">Cancel</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            )}
                           </View>
                         ))}
                       </View>
