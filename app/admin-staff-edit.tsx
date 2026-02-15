@@ -128,6 +128,8 @@ export default function AdminStaffEditScreen() {
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
+      groupId: groupId || undefined,
+      staffDepartmentId: staffDepartmentId || undefined,
       teamId: teamId || undefined,
       updatedBy: 1, // Admin user
     });

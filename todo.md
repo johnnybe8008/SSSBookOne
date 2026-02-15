@@ -65,3 +65,14 @@
 - [x] Remove company/division/department/team fields from staff edit screen
 - [x] Verify organizational dropdowns work correctly in staff add screen
 - [x] Test staff creation with proper organizational assignment
+
+## v1.6.2 - Fix Staff Edit Screen Organizational Assignment Bugs
+- [x] Fix staff edit screen not saving organization/department/team assignments
+- [x] Fix department dropdown not appearing after organization selection
+- [x] Fix team dropdown not appearing after department selection
+- [x] Add proper organizational IDs to staff update mutation
+- [x] Update database schema to use staff organizational fields (groupId, staffDepartmentId, teamId)
+- [x] Remove client organizational fields from staff table (companyId, divisionId, departmentId, companyTeamId)
+- [x] Update backend API to accept staff organizational fields
+- [x] Run database migration to apply schema changes
+- [x] Test staff edit with full organizational assignment flow

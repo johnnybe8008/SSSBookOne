@@ -322,11 +322,9 @@ export const appRouter = router({
     create: adminOnlyProcedure
       .input(
         z.object({
-          teamId: z.number(),
-          companyId: z.number().optional(),
-          divisionId: z.number().optional(),
-          departmentId: z.number().optional(),
-          companyTeamId: z.number().optional(),
+          groupId: z.number().optional(),
+          staffDepartmentId: z.number().optional(),
+          teamId: z.number().optional(),
           userId: z.number().optional(),
           name: z.string().min(1).max(255),
           address: z.string().optional(),
@@ -344,11 +342,9 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          groupId: z.number().optional(),
+          staffDepartmentId: z.number().optional(),
           teamId: z.number().optional(),
-          companyId: z.number().optional(),
-          divisionId: z.number().optional(),
-          departmentId: z.number().optional(),
-          companyTeamId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
           address: z.string().optional(),
           phone: z.string().max(50).optional(),

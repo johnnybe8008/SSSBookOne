@@ -107,12 +107,10 @@ export const companyTeams = mysqlTable("companyTeams", {
 
 export const staff = mysqlTable("staff", {
   id: int("id").autoincrement().primaryKey(),
-  teamId: int("teamId").notNull(), // Staff organization team (groups/teams for internal structure)
-  // Company organizational assignment (for client-facing work)
-  companyId: int("companyId"),
-  divisionId: int("divisionId"),
-  departmentId: int("departmentId"),
-  companyTeamId: int("companyTeamId"),
+  // Staff organizational assignment (Organizations → Departments → Teams)
+  groupId: int("groupId"), // Link to organization (group)
+  staffDepartmentId: int("staffDepartmentId"), // Link to staff department
+  teamId: int("teamId"), // Link to team
   userId: int("userId"), // Foreign key to users table for authentication
   name: varchar("name", { length: 255 }).notNull(),
   address: text("address"),
