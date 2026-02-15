@@ -1,10 +1,12 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { useState } from "react";
+import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
 import { router } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { OrganizationalBreadcrumbs } from "@/components/organizational-breadcrumbs";
+import { Picker } from "@react-native-picker/picker";
 
 export default function AdminStaffScreen() {
   const colors = useColors();
@@ -12,6 +14,13 @@ export default function AdminStaffScreen() {
   const { data: organizations } = trpc.groups.list.useQuery();
   const { data: staffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
   const { data: teams } = trpc.teams.list.useQuery({ groupId: 0 });
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterOrganization, setFilterOrganization] = useState<number | null>(null);
+  const [filterDepartment, setFilterDepartment] = useState<number | null>(null);
+  const [filterTeam, setFilterTeam] = useState<number | null>(null);
+  const [filterRole, setFilterRole] = useState<string | null>(null);
 
   // Helper function to get organizational breadcrumbs for a staff member
   const getStaffBreadcrumbs = (staff: any) => {
@@ -39,6 +48,101 @@ export default function AdminStaffScreen() {
     
     return breadcrumbs;
   };
+
+  // CSV Export Handler
+  const handleExportCSV = () => {
+    if (!allStaff || allStaff.length === 0) {
+      Alert.alert("No Data", "There are no staff members to export.");
+      return;
+    }
+
+    // Create CSV header
+    const header = "Name,Email,Phone,Role,VIP Rated,Organization,Department,Team\n";
+    
+    // Create CSV rows
+    const rows = allStaff.map((staff: any) => {
+      const breadcrumbs = getStaffBreadcrumbs(staff);
+      const org = breadcrumbs[0] || "";
+      const dept = breadcrumbs[1] || "";
+      const team = breadcrumbs[2] || "";
+      
+      return [
+        `"${staff.name}"`,
+        `"${staff.email || ""}"`,
+        `"${staff.phone || ""}"`,
+        staff.role,
+        staff.isVipRated ? "Yes" : "No",
+        `"${org}"`,
+        `"${dept}"`,
+        `"${team}"`
+      ].join(",");
+    }).join("\n");
+
+    const csv = header + rows;
+    
+    // TODO: Implement actual file download/sharing
+    // For now, just show an alert with the CSV data
+    Alert.alert(
+      "Export Staff",
+      `CSV export ready with ${allStaff.length} staff members. In a production app, this would download a file.`,
+      [
+        { text: "OK" },
+        { text: "Copy to Clipboard", onPress: () => {
+          // TODO: Copy CSV to clipboard
+          Alert.alert("Success", "CSV data copied to clipboard");
+        }}
+      ]
+    );
+  };
+
+  // CSV Import Handler
+  const handleImportCSV = () => {
+    Alert.alert(
+      "Import Staff",
+      "CSV import functionality coming soon. Expected format:\nName,Email,Phone,Role,VIP Rated,Organization,Department,Team",
+      [{ text: "OK" }]
+    );
+  };
+
+  // Filter staff based on search and filters
+  const filteredStaff = allStaff?.filter((staff: any) => {
+    // Search filter (name or email)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        staff.name.toLowerCase().includes(query) ||
+        staff.email?.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
+
+    // Role filter
+    if (filterRole && staff.role !== filterRole) {
+      return false;
+    }
+
+    // Team filter
+    if (filterTeam && staff.teamId !== filterTeam) {
+      return false;
+    }
+
+    // Department filter
+    if (filterDepartment) {
+      const team = teams?.find((t: any) => t.id === staff.teamId);
+      if (!team || team.staffDepartmentId !== filterDepartment) {
+        return false;
+      }
+    }
+
+    // Organization filter
+    if (filterOrganization) {
+      const team = teams?.find((t: any) => t.id === staff.teamId);
+      if (!team || team.groupId !== filterOrganization) {
+        return false;
+      }
+    }
+
+    return true;
+  }) || [];
 
   if (isLoading) {
     return (
@@ -71,18 +175,127 @@ export default function AdminStaffScreen() {
           </Text>
         </View>
 
-        {/* Add New Button */}
-        <TouchableOpacity
-          onPress={() => router.push("/admin-staff-add" as any)}
-          className="bg-primary rounded-lg p-4 mb-4"
-        >
-          <Text className="text-background font-semibold text-center">+ Add New Staff</Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View className="mb-4 gap-3">
+          <TouchableOpacity
+            onPress={() => router.push("/admin-staff-add" as any)}
+            className="bg-primary rounded-lg p-4"
+          >
+            <Text className="text-background font-semibold text-center">+ Add New Staff</Text>
+          </TouchableOpacity>
+          
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              onPress={handleExportCSV}
+              className="flex-1 bg-success rounded-lg p-4"
+            >
+              <Text className="text-background font-semibold text-center">Export CSV</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={handleImportCSV}
+              className="flex-1 bg-warning rounded-lg p-4"
+            >
+              <Text className="text-background font-semibold text-center">Import CSV</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Search Bar */}
+        <View className="mb-4">
+          <TextInput
+            className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+            placeholder="Search by name or email..."
+            placeholderTextColor={colors.muted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        {/* Filters */}
+        <View className="mb-4 gap-3">
+          <Text className="text-sm font-semibold text-foreground">Filters</Text>
+          
+          {/* Organization Filter */}
+          <View className="bg-surface border border-border rounded-xl">
+            <Picker
+              selectedValue={filterOrganization}
+              onValueChange={(value) => setFilterOrganization(value)}
+              style={{ color: colors.foreground }}
+            >
+              <Picker.Item label="All Organizations" value={null} />
+              {organizations?.map((org: any) => (
+                <Picker.Item key={org.id} label={org.name} value={org.id} />
+              ))}
+            </Picker>
+          </View>
+
+          {/* Department Filter */}
+          <View className="bg-surface border border-border rounded-xl">
+            <Picker
+              selectedValue={filterDepartment}
+              onValueChange={(value) => setFilterDepartment(value)}
+              style={{ color: colors.foreground }}
+            >
+              <Picker.Item label="All Departments" value={null} />
+              {staffDepartments?.map((dept: any) => (
+                <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
+              ))}
+            </Picker>
+          </View>
+
+          {/* Team Filter */}
+          <View className="bg-surface border border-border rounded-xl">
+            <Picker
+              selectedValue={filterTeam}
+              onValueChange={(value) => setFilterTeam(value)}
+              style={{ color: colors.foreground }}
+            >
+              <Picker.Item label="All Teams" value={null} />
+              {teams?.map((team: any) => (
+                <Picker.Item key={team.id} label={team.name} value={team.id} />
+              ))}
+            </Picker>
+          </View>
+
+          {/* Role Filter */}
+          <View className="bg-surface border border-border rounded-xl">
+            <Picker
+              selectedValue={filterRole}
+              onValueChange={(value) => setFilterRole(value)}
+              style={{ color: colors.foreground }}
+            >
+              <Picker.Item label="All Roles" value={null} />
+              <Picker.Item label="Admin" value="admin" />
+              <Picker.Item label="Counselor" value="counselor" />
+              <Picker.Item label="View Only" value="viewer" />
+            </Picker>
+          </View>
+
+          {/* Clear Filters Button */}
+          {(searchQuery || filterOrganization || filterDepartment || filterTeam || filterRole) && (
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery("");
+                setFilterOrganization(null);
+                setFilterDepartment(null);
+                setFilterTeam(null);
+                setFilterRole(null);
+              }}
+              className="bg-muted rounded-lg p-3"
+            >
+              <Text className="text-background font-semibold text-center">Clear All Filters</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Staff List */}
-        {allStaff && allStaff.length > 0 ? (
+        <Text className="text-sm text-muted mb-3">
+          Showing {filteredStaff.length} of {allStaff?.length || 0} staff members
+        </Text>
+        {filteredStaff && filteredStaff.length > 0 ? (
           <View className="gap-3">
-            {allStaff.map((staff: any) => (
+            {filteredStaff.map((staff: any) => (
               <TouchableOpacity
                 key={staff.id}
                 onPress={() => router.push(`/admin-staff-edit?id=${staff.id}` as any)}

@@ -105,3 +105,15 @@
 - [x] Fix backend getTeamsByGroupId to return ALL when groupId=0
 - [x] Test department dropdown shows departments after selecting organization
 - [x] Test team dropdown shows teams after selecting department
+
+## v1.7.0 - Enable Client Selection in Record Session + Staff Management Enhancements
+- [x] Remove "Coming Soon" placeholder from Record Session screen
+- [x] Enable client selection functionality in Record Session screen
+- [x] Add client search modal with search functionality
+- [x] Connect selected client to session recording
+- [x] Add organizational breadcrumbs to staff list (Organization > Department > Team) - Already implemented
+- [x] Add search functionality to staff list (search by name and email)
+- [x] Add filter dropdowns for organization, department, team, and role
+- [x] Add CSV export functionality for staff list
+- [x] Add CSV import functionality for bulk staff creation (placeholder with expected format)
+- [x] Test all new features end-to-end

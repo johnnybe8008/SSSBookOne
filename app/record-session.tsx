@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, FlatList } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -26,7 +26,12 @@ export default function RecordSessionScreen() {
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery();
   const { data: sessionStatuses } = trpc.sessionStatuses.list.useQuery();
   const { data: sessionResults } = trpc.sessionResults.list.useQuery();
+  const { data: clients } = trpc.clients.listAll.useQuery();
 
+  // Client selection state
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  
   // Session metadata
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedCase, setSelectedCase] = useState<any>(null);
@@ -47,6 +52,20 @@ export default function RecordSessionScreen() {
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const sessionIntervalRef = useRef<any>(null);
+
+  // Filter clients based on search
+  const filteredClients = clients?.filter((client: any) =>
+    client.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    client.email?.toLowerCase().includes(clientSearch.toLowerCase())
+  ) || [];
+
+  // Handler for selecting a client
+  const handleSelectClient = (client: any) => {
+    setSelectedClient(client);
+    // TODO: Fetch cases for this client and auto-select if only one case
+    setShowClientModal(false);
+    setClientSearch("");
+  };
 
   // Create session mutation
   const createSession = trpc.sessions.create.useMutation({
@@ -209,7 +228,7 @@ export default function RecordSessionScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity className="bg-primary py-3 rounded-xl items-center" onPress={() => Alert.alert("Coming Soon", "Client selection will be available after Client Management is implemented")}>
+              <TouchableOpacity className="bg-primary py-3 rounded-xl items-center" onPress={() => setShowClientModal(true)}>
                 <Text className="text-background font-semibold">Select Client</Text>
               </TouchableOpacity>
             )}
@@ -362,6 +381,60 @@ export default function RecordSessionScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Client Selection Modal */}
+      <Modal
+        visible={showClientModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowClientModal(false)}
+      >
+        <ScreenContainer>
+          <View className="flex-1 p-4">
+            {/* Modal Header */}
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl font-bold text-foreground">Select Client</Text>
+              <TouchableOpacity onPress={() => setShowClientModal(false)}>
+                <Text className="text-primary font-semibold">Done</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Search Bar */}
+            <View className="mb-4">
+              <TextInput
+                className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                placeholder="Search clients..."
+                placeholderTextColor={colors.muted}
+                value={clientSearch}
+                onChangeText={setClientSearch}
+                autoFocus
+              />
+            </View>
+
+            {/* Client List */}
+            <FlatList
+              data={filteredClients}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="bg-surface border border-border rounded-xl p-4 mb-3"
+                  onPress={() => handleSelectClient(item)}
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                  {item.email && (
+                    <Text className="text-sm text-muted mt-1">{item.email}</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View className="items-center justify-center py-8">
+                  <Text className="text-muted">No clients found</Text>
+                </View>
+              }
+            />
+          </View>
+        </ScreenContainer>
+      </Modal>
     </ScreenContainer>
   );
 }
