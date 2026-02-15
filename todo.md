@@ -95,3 +95,13 @@
 - [x] Fix filtering logic to support both legacy (Org→Team) and new (Org→Dept→Team) structures
 - [x] Fix useEffect dependency issue causing groupId to not be set properly
 - [x] Verify staff edit saves all three organizational IDs correctly
+
+## v1.6.5 - CRITICAL: Fix Staff Edit Dropdowns (5th Attempt - Focus on API Queries)
+- [x] Verify the API queries used to fetch departments and teams in staff edit screen
+- [x] Check if departments query is returning data for the selected organization - FOUND BUG: backend returns empty when organizationId=0
+- [x] Check if teams query is returning data - FOUND BUG: backend returns empty when groupId=0
+- [x] Compare the queries used in "Manage Staff Orgs" (which works) vs staff edit screen (which doesn't)
+- [x] Fix backend getStaffDepartmentsByOrganizationId to return ALL when organizationId=0
+- [x] Fix backend getTeamsByGroupId to return ALL when groupId=0
+- [x] Test department dropdown shows departments after selecting organization
+- [x] Test team dropdown shows teams after selecting department

@@ -190,6 +190,10 @@ export async function deleteGroup(id: number) {
 export async function getStaffDepartmentsByOrganizationId(organizationId: number) {
   const db = await getDb();
   if (!db) return [];
+  // If organizationId is 0, return all departments
+  if (organizationId === 0) {
+    return db.select().from(staffDepartments).orderBy(asc(staffDepartments.name));
+  }
   return db.select().from(staffDepartments).where(eq(staffDepartments.organizationId, organizationId)).orderBy(asc(staffDepartments.name));
 }
 
@@ -222,6 +226,10 @@ export async function deleteStaffDepartment(id: number) {
 export async function getTeamsByGroupId(groupId: number) {
   const db = await getDb();
   if (!db) return [];
+  // If groupId is 0, return all teams
+  if (groupId === 0) {
+    return db.select().from(teams).orderBy(asc(teams.name));
+  }
   return db.select().from(teams).where(eq(teams.groupId, groupId)).orderBy(asc(teams.name));
 }
 
