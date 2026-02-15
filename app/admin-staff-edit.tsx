@@ -43,13 +43,15 @@ export default function AdminStaffEditScreen() {
   // Fetch all teams (0 = all)
   const { data: allTeams } = trpc.teams.list.useQuery({ groupId: 0 });
   
-  // Filter departments and teams based on selected organization
+  // Filter departments based on selected organization
   const staffDepartments = groupId 
     ? allStaffDepartments?.filter((d: any) => d.organizationId === groupId)
-    : allStaffDepartments;
-  const teams = groupId
-    ? allTeams?.filter((t: any) => t.groupId === groupId)
-    : allTeams;
+    : [];
+  
+  // Filter teams based on selected department
+  const teams = staffDepartmentId
+    ? allTeams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId)
+    : [];
 
   // Filtered lists for modal selectors
   const filteredOrganizations = useMemo(() => {

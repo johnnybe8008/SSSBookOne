@@ -76,3 +76,11 @@
 - [x] Update backend API to accept staff organizational fields
 - [x] Run database migration to apply schema changes
 - [x] Test staff edit with full organizational assignment flow
+
+## v1.6.3 - Fix Staff Edit Department/Team Modal Data Loading
+- [x] Fix department modal not showing any departments after organization is selected
+- [x] Fix team modal not showing any teams after department is selected
+- [x] Verify filtered departments are loaded based on selected organization (groupId)
+- [x] Verify filtered teams are loaded based on selected department (staffDepartmentId)
+- [x] Fix same filtering logic in staff add screen
+- [x] Test complete organizational assignment flow in staff edit screen
