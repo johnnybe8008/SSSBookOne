@@ -48,9 +48,13 @@ export default function AdminStaffEditScreen() {
     ? allStaffDepartments?.filter((d: any) => d.organizationId === groupId)
     : [];
   
-  // Filter teams based on selected department
+  // Filter teams based on selected department OR organization (for legacy data)
+  // New structure: Org → Dept → Team (filter by staffDepartmentId)
+  // Legacy structure: Org → Team (filter by groupId when no dept selected)
   const teams = staffDepartmentId
     ? allTeams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId)
+    : groupId
+    ? allTeams?.filter((t: any) => t.groupId === groupId && !t.staffDepartmentId)
     : [];
 
   // Filtered lists for modal selectors
@@ -82,11 +86,20 @@ export default function AdminStaffEditScreen() {
       setPhone((staff as any).phone || "");
       setRole((staff as any).role || "counselor");
       setIsVipRated(staff.isVipRated === 1);
-      setGroupId((staff as any).groupId || staff.teamId ? teams?.find(t => t.id === staff.teamId)?.groupId || null : null);
       setStaffDepartmentId((staff as any).staffDepartmentId || null);
       setTeamId(staff.teamId || null);
+      
+      // Set groupId from staff data or look it up from team
+      if ((staff as any).groupId) {
+        setGroupId((staff as any).groupId);
+      } else if (staff.teamId && allTeams) {
+        const team = allTeams.find((t: any) => t.id === staff.teamId);
+        setGroupId(team?.groupId || null);
+      } else {
+        setGroupId(null);
+      }
     }
-  }, [staff]);
+  }, [staff, allTeams]);
 
   const utils = trpc.useUtils();
   const updateStaff = trpc.staff.update.useMutation({

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, name, organizationId, createdAt FROM staffDepartments ORDER BY organizationId, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT id, name, organizationId, createdAt FROM staffDepartments ORDER BY organizationId, id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Default Group Department",
+      "organizationId": "1",
+      "createdAt": "2026-02-14 10:59:07"
+    },
+    {
+      "id": "2",
+      "name": "Team A Department",
+      "organizationId": "30001",
+      "createdAt": "2026-02-14 10:59:07"
+    },
+    {
+      "id": "3",
+      "name": "Team B Department",
+      "organizationId": "30002",
+      "createdAt": "2026-02-14 10:59:07"
+    },
+    {
+      "id": "30001",
+      "name": "Div 6",
+      "organizationId": "60001",
+      "createdAt": "2026-02-14 14:15:07"
+    },
+    {
+      "id": "60001",
+      "name": "Dept 31",
+      "organizationId": "90001",
+      "createdAt": "2026-02-14 15:20:28"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\torganizationId\tcreatedAt\n1\tDefault Group Department\t1\t2026-02-14 10:59:07\n2\tTeam A Department\t30001\t2026-02-14 10:59:07\n3\tTeam B Department\t30002\t2026-02-14 10:59:07\n30001\tDiv 6\t60001\t2026-02-14 14:15:07\n60001\tDept 31\t90001\t2026-02-14 15:20:28\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

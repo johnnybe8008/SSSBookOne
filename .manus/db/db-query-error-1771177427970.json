@@ -1,0 +1,10 @@
+{
+  "query": "SELECT g.id as org_id, g.name as org_name, sd.id as dept_id, sd.name as dept_name, sd.organizationId \nFROM groups g \nLEFT JOIN staffDepartments sd ON g.id = sd.organizationId \nWHERE g.name LIKE '%Joburg%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT g.id as org_id, g.name as org_name, sd.id as dept_id, sd.name as dept_name, sd.organizationId \nFROM groups g \nLEFT JOIN staffDepartments sd ON g.id = sd.organizationId \nWHERE g.name LIKE '%Joburg%';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 2 column 12 near \"groups g ",
+    "LEFT JOIN staffDepartments sd ON g.id = sd.organizationId ",
+    "WHERE g.name LIKE '%Joburg%'\""
+  ]
+}

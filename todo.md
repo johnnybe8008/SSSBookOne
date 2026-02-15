@@ -84,3 +84,14 @@
 - [x] Verify filtered teams are loaded based on selected department (staffDepartmentId)
 - [x] Fix same filtering logic in staff add screen
 - [x] Test complete organizational assignment flow in staff edit screen
+
+## v1.6.4 - CRITICAL: Fix Staff Edit Organization Save and Data Loading (4th Attempt)
+- [x] Check if departments and teams actually exist in database for "Joburg North" organization
+- [x] Verify department table has correct organizationId foreign key values
+- [x] Verify team table has correct staffDepartmentId foreign key values - FOUND ISSUE: all NULL
+- [x] Check if organization (groupId) is being saved to staff table
+- [x] Review complete data flow from UI → mutation → backend → database
+- [x] Test with actual database queries to verify data exists and relationships are correct
+- [x] Fix filtering logic to support both legacy (Org→Team) and new (Org→Dept→Team) structures
+- [x] Fix useEffect dependency issue causing groupId to not be set properly
+- [x] Verify staff edit saves all three organizational IDs correctly

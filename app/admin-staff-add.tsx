@@ -33,9 +33,13 @@ export default function AdminStaffAddScreen() {
     ? allStaffDepartments?.filter((d: any) => d.organizationId === groupId)
     : [];
   
-  // Filter teams based on selected department
+  // Filter teams based on selected department OR organization (for legacy data)
+  // New structure: Org → Dept → Team (filter by staffDepartmentId)
+  // Legacy structure: Org → Team (filter by groupId when no dept selected)
   const teams = staffDepartmentId
     ? allTeams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId)
+    : groupId
+    ? allTeams?.filter((t: any) => t.groupId === groupId && !t.staffDepartmentId)
     : [];
 
   const utils = trpc.useUtils();

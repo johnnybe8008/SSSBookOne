@@ -1,0 +1,46 @@
+{
+  "query": "SELECT * FROM `groups` ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT * FROM `groups` ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Default Group",
+      "description": "Default organizational group",
+      "createdAt": "2026-02-10 10:20:10",
+      "createdBy": "1",
+      "updatedAt": "2026-02-10 10:20:10",
+      "updatedBy": "1",
+      "address": "NULL",
+      "phone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "60001",
+      "name": "JHB HDA",
+      "description": "Johns HDAs",
+      "createdAt": "2026-02-14 12:42:30",
+      "createdBy": "1",
+      "updatedAt": "2026-02-14 12:42:30",
+      "updatedBy": "1",
+      "address": "NULL",
+      "phone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "90001",
+      "name": "Joburg North",
+      "description": "Joburg North",
+      "createdAt": "2026-02-14 14:16:58",
+      "createdBy": "1",
+      "updatedAt": "2026-02-15 09:06:41",
+      "updatedBy": "1",
+      "address": "123 North Rd, Joburg, 1111",
+      "phone": "+27 123 945 4561",
+      "email": "Ian@jbn.net"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tdescription\tcreatedAt\tcreatedBy\tupdatedAt\tupdatedBy\taddress\tphone\temail\n1\tDefault Group\tDefault organizational group\t2026-02-10 10:20:10\t1\t2026-02-10 10:20:10\t1\tNULL\tNULL\tNULL\n60001\tJHB HDA\tJohns HDAs\t2026-02-14 12:42:30\t1\t2026-02-14 12:42:30\t1\tNULL\tNULL\tNULL\n90001\tJoburg North\tJoburg North\t2026-02-14 14:16:58\t1\t2026-02-15 09:06:41\t1\t123 North Rd, Joburg, 1111\t+27 123 945 4561\tIan@jbn.net\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

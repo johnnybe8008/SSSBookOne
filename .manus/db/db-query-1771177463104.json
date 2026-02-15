@@ -1,0 +1,66 @@
+{
+  "query": "SELECT id, name, groupId, staffDepartmentId, createdAt FROM teams ORDER BY groupId, staffDepartmentId, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT id, name, groupId, staffDepartmentId, createdAt FROM teams ORDER BY groupId, staffDepartmentId, id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Default Team",
+      "groupId": "1",
+      "staffDepartmentId": "1",
+      "createdAt": "2026-02-10 10:20:33"
+    },
+    {
+      "id": "30001",
+      "name": "Team A",
+      "groupId": "60001",
+      "staffDepartmentId": "NULL",
+      "createdAt": "2026-02-14 12:43:21"
+    },
+    {
+      "id": "30002",
+      "name": "Team B",
+      "groupId": "60001",
+      "staffDepartmentId": "NULL",
+      "createdAt": "2026-02-14 12:43:52"
+    },
+    {
+      "id": "60001",
+      "name": "Mims Team - A",
+      "groupId": "60001",
+      "staffDepartmentId": "30001",
+      "createdAt": "2026-02-14 14:15:45"
+    },
+    {
+      "id": "60002",
+      "name": "Pomela Team - B",
+      "groupId": "60001",
+      "staffDepartmentId": "30001",
+      "createdAt": "2026-02-14 14:16:16"
+    },
+    {
+      "id": "90001",
+      "name": "Book One Auditors",
+      "groupId": "90001",
+      "staffDepartmentId": "60001",
+      "createdAt": "2026-02-14 15:20:53"
+    },
+    {
+      "id": "90002",
+      "name": "Seminar Supervisors",
+      "groupId": "90001",
+      "staffDepartmentId": "60001",
+      "createdAt": "2026-02-14 15:21:23"
+    },
+    {
+      "id": "90003",
+      "name": "Co-Audit Supervisors",
+      "groupId": "90001",
+      "staffDepartmentId": "60001",
+      "createdAt": "2026-02-14 15:21:46"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tgroupId\tstaffDepartmentId\tcreatedAt\n1\tDefault Team\t1\t1\t2026-02-10 10:20:33\n30001\tTeam A\t60001\tNULL\t2026-02-14 12:43:21\n30002\tTeam B\t60001\tNULL\t2026-02-14 12:43:52\n60001\tMims Team - A\t60001\t30001\t2026-02-14 14:15:45\n60002\tPomela Team - B\t60001\t30001\t2026-02-14 14:16:16\n90001\tBook One Auditors\t90001\t60001\t2026-02-14 15:20:53\n90002\tSeminar Supervisors\t90001\t60001\t2026-02-14 15:21:23\n90003\tCo-Audit Supervisors\t90001\t60001\t2026-02-14 15:21:46\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

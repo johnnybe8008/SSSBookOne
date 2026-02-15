@@ -1,0 +1,75 @@
+{
+  "query": "SELECT * FROM staffDepartments ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT * FROM staffDepartments ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "organizationId": "1",
+      "name": "Default Group Department",
+      "description": "Default department for Default Group",
+      "createdAt": "2026-02-14 10:59:07",
+      "createdBy": "1",
+      "updatedAt": "2026-02-14 10:59:07",
+      "updatedBy": "1",
+      "address": "NULL",
+      "phone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "2",
+      "organizationId": "30001",
+      "name": "Team A Department",
+      "description": "Default department for Team A",
+      "createdAt": "2026-02-14 10:59:07",
+      "createdBy": "1",
+      "updatedAt": "2026-02-14 10:59:07",
+      "updatedBy": "1",
+      "address": "NULL",
+      "phone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "3",
+      "organizationId": "30002",
+      "name": "Team B Department",
+      "description": "Default department for Team B",
+      "createdAt": "2026-02-14 10:59:07",
+      "createdBy": "1",
+      "updatedAt": "2026-02-14 10:59:07",
+      "updatedBy": "1",
+      "address": "NULL",
+      "phone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "30001",
+      "organizationId": "60001",
+      "name": "Div 6",
+      "description": "Div 6",
+      "createdAt": "2026-02-14 14:15:07",
+      "createdBy": "1",
+      "updatedAt": "2026-02-14 14:15:07",
+      "updatedBy": "1",
+      "address": "NULL",
+      "phone": "NULL",
+      "email": "NULL"
+    },
+    {
+      "id": "60001",
+      "organizationId": "90001",
+      "name": "Dept 31",
+      "description": "Div 6 B - HDA ",
+      "createdAt": "2026-02-14 15:20:28",
+      "createdBy": "1",
+      "updatedAt": "2026-02-15 09:04:51",
+      "updatedBy": "1",
+      "address": "NULL",
+      "phone": "NULL",
+      "email": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torganizationId\tname\tdescription\tcreatedAt\tcreatedBy\tupdatedAt\tupdatedBy\taddress\tphone\temail\n1\t1\tDefault Group Department\tDefault department for Default Group\t2026-02-14 10:59:07\t1\t2026-02-14 10:59:07\t1\tNULL\tNULL\tNULL\n2\t30001\tTeam A Department\tDefault department for Team A\t2026-02-14 10:59:07\t1\t2026-02-14 10:59:07\t1\tNULL\tNULL\tNULL\n3\t30002\tTeam B Department\tDefault department for Team B\t2026-02-14 10:59:07\t1\t2026-02-14 10:59:07\t1\tNULL\tNULL\tNULL\n30001\t60001\tDiv 6\tDiv 6\t2026-02-14 14:15:07\t1\t2026-02-14 14:15:07\t1\tNULL\tNULL\tNULL\n60001\t90001\tDept 31\tDiv 6 B - HDA \t2026-02-14 15:20:28\t1\t2026-02-15 09:04:51\t1\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

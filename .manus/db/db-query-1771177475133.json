@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, name FROM `groups` ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT id, name FROM `groups` ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Default Group"
+    },
+    {
+      "id": "60001",
+      "name": "JHB HDA"
+    },
+    {
+      "id": "90001",
+      "name": "Joburg North"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n1\tDefault Group\n60001\tJHB HDA\n90001\tJoburg North\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}
