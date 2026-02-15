@@ -57,3 +57,11 @@
 - [x] Test all organizational management edit features
 - [ ] Test staff phone number field
 - [ ] Test staff organization assignment without crashes
+
+## v1.6.1 - Fix Staff Add Screen Organizational Assignment
+- [x] Remove company dropdown from staff add screen (staff should not be assigned to companies)
+- [x] Ensure staff are only assigned to Staff Organizations (Organizations/Departments/Teams)
+- [x] Remove company/division/department/team fields from staff add screen
+- [x] Remove company/division/department/team fields from staff edit screen
+- [x] Verify organizational dropdowns work correctly in staff add screen
+- [x] Test staff creation with proper organizational assignment
