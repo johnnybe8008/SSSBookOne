@@ -30,11 +30,8 @@ export default function ClientsScreen() {
   
 
 
-  // Search clients with filters
-  const { data: searchResults, isLoading: searchLoading } = trpc.clients.search.useQuery(
-    { searchTerm },
-    { enabled: searchTerm.length >= 2 }
-  );
+  // Get all clients
+  const { data: allClients, isLoading: clientsLoading } = trpc.clients.listAll.useQuery();
 
   // Filter queries for cascading dropdowns
   const { data: companies } = trpc.companies.list.useQuery();
@@ -49,12 +46,6 @@ export default function ClientsScreen() {
   const { data: companyTeams } = trpc.companyTeams.list.useQuery(
     { departmentId: filterDepartmentId || 0 },
     { enabled: !!filterDepartmentId }
-  );
-  
-  // Get filtered clients list
-  const { data: filteredClients } = trpc.clients.list.useQuery(
-    { departmentId: filterDepartmentId || 0 },
-    { enabled: !searchTerm && !!filterDepartmentId }
   );
   
   // Reset cascading filters when parent changes
@@ -83,15 +74,34 @@ export default function ClientsScreen() {
     setFilterTeamId(null);
   };
   
+  // Client-side filtering
+  const displayedClients = allClients?.filter((client: any) => {
+    // Search filter
+    if (searchTerm) {
+      const query = searchTerm.toLowerCase();
+      const matchesSearch = 
+        client.name.toLowerCase().includes(query) ||
+        (client.email && client.email.toLowerCase().includes(query));
+      if (!matchesSearch) return false;
+    }
+    
+    // Organizational filter (if department is selected)
+    if (filterDepartmentId) {
+      if (client.departmentId !== filterDepartmentId) return false;
+    }
+    
+    return true;
+  });
+  
   const utils = trpc.useUtils();
   
 
 
   return (
     <ScreenContainer className="flex-1">
-      {/* Search Bar */}
+      {/* Search Bar and Add Button */}
       <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
-        <View className="flex-row items-center bg-surface rounded-xl px-4 py-3 border border-border">
+        <View className="flex-row items-center bg-surface rounded-xl px-4 py-3 border border-border mb-3">
           <IconSymbol name="magnifyingglass" size={20} color={colors.muted} />
           <TextInput
             className="flex-1 ml-3 text-base text-foreground"
@@ -108,6 +118,15 @@ export default function ClientsScreen() {
             </TouchableOpacity>
           )}
         </View>
+        
+        {/* Add New Client Button */}
+        <TouchableOpacity
+          className="bg-primary rounded-xl py-3 px-4 flex-row items-center justify-center gap-2"
+          onPress={() => router.push("/add-client" as any)}
+        >
+          <IconSymbol name="plus.circle.fill" size={20} color={colors.background} />
+          <Text className="text-base font-semibold text-background">Add New Client</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filter Section */}
@@ -252,15 +271,13 @@ export default function ClientsScreen() {
 
       {/* Client List */}
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
-        {searchLoading ? (
+        {clientsLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
-        ) : searchTerm.length >= 2 && searchResults ? (
-          // Show search results
-          searchResults.length > 0 ? (
-            <View className="gap-4 py-4">
-              {searchResults.map((client) => (
+        ) : displayedClients && displayedClients.length > 0 ? (
+          <View className="gap-4 py-4">
+            {displayedClients.map((client: any) => (
                 <TouchableOpacity
                   key={client.id}
                   className="bg-surface rounded-2xl p-5 border border-border"
@@ -316,105 +333,12 @@ export default function ClientsScreen() {
           ) : (
             <View className="items-center justify-center py-12">
               <Text className="text-base text-muted">No clients found</Text>
+              {searchTerm && (
+                <Text className="text-sm text-muted text-center mt-2">Try a different search term</Text>
+              )}
             </View>
-          )
-        ) : filterDepartmentId && filteredClients ? (
-          // Show filtered results
-          filteredClients.length > 0 ? (
-            <View className="gap-4 py-4">
-              {filteredClients.map((client) => (
-                <TouchableOpacity
-                  key={client.id}
-                  className="bg-surface rounded-2xl p-5 border border-border"
-                  onPress={() => router.push(`/client/${client.id}` as any)}
-                >
-                  <View className="flex-row items-start justify-between mb-3">
-                    <View className="flex-1">
-                      <View className="flex-row items-center gap-2">
-                        <Text className="text-lg font-semibold text-foreground">{client.name}</Text>
-                        {client.isVip === 1 && (
-                          <IconSymbol name="star.fill" size={18} color={colors.warning} />
-                        )}
-                      </View>
-                      <Text className="text-sm text-muted mt-1">
-                        {client.title || "No title"} • {client.occupation || "No occupation"}
-                      </Text>
-                    </View>
-                    <IconSymbol name="chevron.right" size={20} color={colors.muted} />
-                  </View>
-
-                  {/* Contact Information */}
-                  <View className="gap-2 mb-3">
-                    {client.mobilePhone && (
-                      <View className="flex-row items-center gap-2">
-                        <IconSymbol name="phone.fill" size={14} color={colors.muted} />
-                        <Text className="text-sm text-muted">{client.mobilePhone}</Text>
-                      </View>
-                    )}
-                    {client.email && (
-                      <View className="flex-row items-center gap-2">
-                        <IconSymbol name="envelope.fill" size={14} color={colors.muted} />
-                        <Text className="text-sm text-muted">{client.email}</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Status Badge */}
-                  <View className="flex-row items-center gap-2 flex-wrap">
-                    <View className={`px-3 py-1 rounded-full ${client.status === "Active" ? "bg-success/20" : "bg-muted/20"}`}>
-                      <Text className={`text-xs font-medium ${client.status === "Active" ? "text-success" : "text-muted"}`}>
-                        {client.status}
-                      </Text>
-                    </View>
-                    {client.notificationOptOut === 1 && (
-                      <View className="px-3 py-1 rounded-full bg-warning/20">
-                        <Text className="text-xs font-medium text-warning">Opted Out</Text>
-                      </View>
-                    )}
-                    {client.referralSourceType && (
-                      <View className="px-3 py-1 rounded-full bg-primary/20 flex-row items-center gap-1">
-                        <IconSymbol name="person.badge.plus" size={12} color={colors.primary} />
-                        <Text className="text-xs font-medium text-primary">
-                          {client.referralSourceType === 'fsm' ? 'FSM' : 
-                           client.referralSourceType === 'staff' ? 'Staff' : 
-                           client.referralSourceType === 'client' ? 'Client' : 'Ref'}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <View className="items-center justify-center py-12">
-              <Text className="text-base text-muted text-center">No clients found matching "{searchTerm}"</Text>
-              <Text className="text-sm text-muted text-center mt-2">Try a different search term</Text>
-            </View>
-          )
-        ) : (
-          <View className="items-center justify-center py-12">
-            <IconSymbol name="magnifyingglass" size={48} color={colors.muted} />
-            <Text className="text-base text-muted text-center mt-4">Search for clients by name or email</Text>
-            <Text className="text-sm text-muted text-center mt-2">Enter at least 2 characters to search</Text>
-          </View>
-        )}
+          )}
       </ScrollView>
-
-
-      
-      {/* Floating Action Button */}
-      <View className="absolute bottom-6 right-6">
-        <TouchableOpacity
-          className="bg-primary w-16 h-16 rounded-full items-center justify-center"
-          style={{ shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-          onPress={() => {
-            // Navigate to add client screen
-            router.push("/add-client" as any);
-          }}
-        >
-          <IconSymbol name="plus.circle.fill" size={32} color={colors.background} />
-        </TouchableOpacity>
-      </View>
     </ScreenContainer>
   );
 }

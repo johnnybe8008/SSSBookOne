@@ -117,3 +117,10 @@
 - [x] Add CSV export functionality for staff list
 - [x] Add CSV import functionality for bulk staff creation (placeholder with expected format)
 - [x] Test all new features end-to-end
+
+## v1.7.1 - Improve Clients Tab Search and UI
+- [x] Remove 2-character minimum requirement for client search
+- [x] Show all clients by default (not empty state)
+- [x] Filter clients instantly as user types
+- [x] Move Add button from floating bottom-right to top near search bar
+- [x] Test client search and filtering functionality
