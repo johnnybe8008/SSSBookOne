@@ -92,7 +92,14 @@ export default function ClientDetailScreen() {
           <View className="flex-row gap-3">
             <TouchableOpacity
               className="flex-1 bg-primary py-3 rounded-xl items-center"
-              onPress={() => router.push("/record-session" as any)}
+              onPress={() => router.push({
+                pathname: "/record-session" as any,
+                params: {
+                  clientId: client.id,
+                  clientName: client.name,
+                  clientEmail: client.email || '',
+                }
+              })}
             >
               <Text className="text-background font-semibold">Record Session</Text>
             </TouchableOpacity>

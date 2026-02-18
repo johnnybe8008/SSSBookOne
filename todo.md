@@ -177,3 +177,12 @@
 - [ ] Add session history view showing all changes (audit trail)
 - [ ] Add ability to delete sessions (admin only with confirmation)
 - [ ] Add export sessions to CSV functionality
+
+## v1.7.6 - Fix Critical Bugs in Record Session
+- [x] Fix client detail page to pass client data to Record Session screen
+- [x] Fix navigation so selected client appears in Record Session without re-searching
+- [x] Fix session type dropdown crash (EXC_BAD_ACCESS segmentation fault)
+- [x] Replace Picker component with modal dropdowns (more stable on iOS)
+- [x] Add Session Type modal selection
+- [x] Add Session Status modal selection
+- [x] Add Session Result modal selection with "None" option

@@ -4,8 +4,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
-import { useRouter } from "expo-router";
-import { Picker } from "@react-native-picker/picker";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 /**
  * Record Session Screen
@@ -19,6 +18,7 @@ import { Picker } from "@react-native-picker/picker";
 export default function RecordSessionScreen() {
   const colors = useColors();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { data: user } = trpc.auth.me.useQuery();
   const utils = trpc.useUtils();
 
@@ -37,6 +37,9 @@ export default function RecordSessionScreen() {
   const [selectedCase, setSelectedCase] = useState<any>(null);
   const [clientCases, setClientCases] = useState<any[]>([]);
   const [showCaseModal, setShowCaseModal] = useState(false);
+  const [showSessionTypeModal, setShowSessionTypeModal] = useState(false);
+  const [showSessionStatusModal, setShowSessionStatusModal] = useState(false);
+  const [showSessionResultModal, setShowSessionResultModal] = useState(false);
   const [sessionTypeId, setSessionTypeId] = useState<number | null>(null);
   const [sessionStatusId, setSessionStatusId] = useState<number | null>(null);
   const [sessionResultId, setSessionResultId] = useState<number | null>(null);
@@ -86,6 +89,17 @@ export default function RecordSessionScreen() {
     client.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
     client.email?.toLowerCase().includes(clientSearch.toLowerCase())
   ) || [];
+
+  // Handle passed client params from navigation
+  useEffect(() => {
+    if (params.clientId && clients) {
+      const clientId = parseInt(params.clientId as string);
+      const client = clients.find((c: any) => c.id === clientId);
+      if (client) {
+        setSelectedClient(client);
+      }
+    }
+  }, [params.clientId, clients]);
 
   // Update cases when data changes
   useEffect(() => {
@@ -503,52 +517,43 @@ export default function RecordSessionScreen() {
             {/* Session Type */}
             <View>
               <Text className="text-sm font-medium text-foreground mb-2">Session Type *</Text>
-              <View className="bg-background border border-border rounded-xl overflow-hidden">
-                <Picker
-                  selectedValue={sessionTypeId}
-                  onValueChange={(value: any) => setSessionTypeId(value)}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="Select session type" value={null} />
-                  {activeSessionTypes.map((type: any) => (
-                    <Picker.Item key={type.id} label={type.name} value={type.id} />
-                  ))}
-                </Picker>
-              </View>
+              <TouchableOpacity
+                className="bg-background border border-border rounded-xl px-4 py-3 flex-row items-center justify-between"
+                onPress={() => setShowSessionTypeModal(true)}
+              >
+                <Text className="text-base text-foreground">
+                  {sessionTypeId ? activeSessionTypes.find((t: any) => t.id === sessionTypeId)?.name : "Select session type"}
+                </Text>
+                <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+              </TouchableOpacity>
             </View>
 
             {/* Session Status */}
             <View>
               <Text className="text-sm font-medium text-foreground mb-2">Session Status *</Text>
-              <View className="bg-background border border-border rounded-xl overflow-hidden">
-                <Picker
-                  selectedValue={sessionStatusId}
-                  onValueChange={(value: any) => setSessionStatusId(value)}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="Select session status" value={null} />
-                  {activeSessionStatuses.map((status: any) => (
-                    <Picker.Item key={status.id} label={status.name} value={status.id} />
-                  ))}
-                </Picker>
-              </View>
+              <TouchableOpacity
+                className="bg-background border border-border rounded-xl px-4 py-3 flex-row items-center justify-between"
+                onPress={() => setShowSessionStatusModal(true)}
+              >
+                <Text className="text-base text-foreground">
+                  {sessionStatusId ? activeSessionStatuses.find((s: any) => s.id === sessionStatusId)?.name : "Select session status"}
+                </Text>
+                <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+              </TouchableOpacity>
             </View>
 
             {/* Session Result */}
             <View>
               <Text className="text-sm font-medium text-foreground mb-2">Session Result</Text>
-              <View className="bg-background border border-border rounded-xl overflow-hidden">
-                <Picker
-                  selectedValue={sessionResultId}
-                  onValueChange={(value: any) => setSessionResultId(value)}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="Select session result (optional)" value={null} />
-                  {activeSessionResults.map((result: any) => (
-                    <Picker.Item key={result.id} label={result.name} value={result.id} />
-                  ))}
-                </Picker>
-              </View>
+              <TouchableOpacity
+                className="bg-background border border-border rounded-xl px-4 py-3 flex-row items-center justify-between"
+                onPress={() => setShowSessionResultModal(true)}
+              >
+                <Text className="text-base text-foreground">
+                  {sessionResultId ? activeSessionResults.find((r: any) => r.id === sessionResultId)?.name : "Select session result (optional)"}
+                </Text>
+                <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+              </TouchableOpacity>
             </View>
 
             {/* Billable Hours */}
@@ -687,6 +692,117 @@ export default function RecordSessionScreen() {
                   <Text className="text-muted">No cases found</Text>
                 </View>
               }
+            />
+          </View>
+        </ScreenContainer>
+      </Modal>
+
+      {/* Session Type Modal */}
+      <Modal
+        visible={showSessionTypeModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSessionTypeModal(false)}
+      >
+        <ScreenContainer>
+          <View className="flex-1 p-4">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl font-bold text-foreground">Select Session Type</Text>
+              <TouchableOpacity onPress={() => setShowSessionTypeModal(false)}>
+                <Text className="text-primary font-semibold">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={activeSessionTypes}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="bg-surface border border-border rounded-xl p-4 mb-3"
+                  onPress={() => {
+                    setSessionTypeId(item.id);
+                    setShowSessionTypeModal(false);
+                  }}
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </ScreenContainer>
+      </Modal>
+
+      {/* Session Status Modal */}
+      <Modal
+        visible={showSessionStatusModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSessionStatusModal(false)}
+      >
+        <ScreenContainer>
+          <View className="flex-1 p-4">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl font-bold text-foreground">Select Session Status</Text>
+              <TouchableOpacity onPress={() => setShowSessionStatusModal(false)}>
+                <Text className="text-primary font-semibold">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={activeSessionStatuses}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="bg-surface border border-border rounded-xl p-4 mb-3"
+                  onPress={() => {
+                    setSessionStatusId(item.id);
+                    setShowSessionStatusModal(false);
+                  }}
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </ScreenContainer>
+      </Modal>
+
+      {/* Session Result Modal */}
+      <Modal
+        visible={showSessionResultModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSessionResultModal(false)}
+      >
+        <ScreenContainer>
+          <View className="flex-1 p-4">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl font-bold text-foreground">Select Session Result</Text>
+              <TouchableOpacity onPress={() => setShowSessionResultModal(false)}>
+                <Text className="text-primary font-semibold">Done</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              className="bg-surface border border-border rounded-xl p-4 mb-3"
+              onPress={() => {
+                setSessionResultId(null);
+                setShowSessionResultModal(false);
+              }}
+            >
+              <Text className="text-base font-semibold text-muted">None (Optional)</Text>
+            </TouchableOpacity>
+            <FlatList
+              data={activeSessionResults}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="bg-surface border border-border rounded-xl p-4 mb-3"
+                  onPress={() => {
+                    setSessionResultId(item.id);
+                    setShowSessionResultModal(false);
+                  }}
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                </TouchableOpacity>
+              )}
             />
           </View>
         </ScreenContainer>
