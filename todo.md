@@ -124,3 +124,24 @@
 - [x] Filter clients instantly as user types
 - [x] Move Add button from floating bottom-right to top near search bar
 - [x] Test client search and filtering functionality
+
+## v1.7.2 - Fix Staff Login and Logout Issues
+- [x] Investigate why staff password is not working after being set in staff edit screen
+- [x] Check if password is being hashed correctly when saved
+- [x] Check if login authentication is comparing passwords correctly
+- [x] Fix staff login to work with saved passwords - Added password field to backend and frontend, auto-create/update user records
+- [x] Fix logout flow to redirect to login screen instead of home screen
+- [x] Test staff login with newly set password
+- [x] Test logout redirects correctly to login screen
+
+## v1.7.3 - Auto-Create User Accounts for Staff with Password Change Requirement
+- [x] Update createStaff function to automatically create user record with default password "password"
+- [x] Add mustChangePassword flag to users table schema
+- [x] Run database migration to add mustChangePassword column
+- [x] Set mustChangePassword=1 when creating new staff users
+- [x] Implement first-login password change prompt/screen
+- [x] Create change-password.tsx screen with validation
+- [x] Update changePassword mutation to verify current password
+- [x] Add login redirect to change password screen when mustChangePassword=1
+- [x] Test staff creation auto-creates user account
+- [x] Test first login shows password change requirement

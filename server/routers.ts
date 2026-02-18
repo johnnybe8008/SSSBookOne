@@ -47,6 +47,7 @@ export const appRouter = router({
     changePassword: protectedProcedure
       .input(
         z.object({
+          currentPassword: z.string().min(1),
           newPassword: z.string().min(6),
         })
       )
@@ -54,7 +55,7 @@ export const appRouter = router({
         if (!ctx.user) {
           throw new Error("Not authenticated");
         }
-        await changePassword(ctx.user.id, input.newPassword);
+        await changePassword(ctx.user.id, input.currentPassword, input.newPassword);
         return { success: true };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -349,6 +350,7 @@ export const appRouter = router({
           address: z.string().optional(),
           phone: z.string().max(50).optional(),
           email: z.string().email().optional(),
+          password: z.string().min(1).optional(),
           role: z.enum(["admin", "counselor", "viewer"]).optional(),
           isVipRated: z.number().optional(),
           isAdmin: z.number().optional(), // DEPRECATED: kept for backward compatibility

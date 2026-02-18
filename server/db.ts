@@ -288,13 +288,82 @@ export async function getStaffByUserId(userId: number) {
 export async function createStaff(data: InsertStaff) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Auto-create user account with default password if email is provided
+  if (data.email) {
+    const { hashPassword } = await import('./auth.js');
+    const passwordHash = await hashPassword('password'); // Default password
+    
+    // Check if user already exists
+    const [existingUser] = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
+    
+    if (!existingUser) {
+      // Create new user
+      const userRole = data.role === 'admin' ? 'admin' : 'user';
+      const userResult: any = await db.insert(users).values({
+        email: data.email,
+        name: data.name,
+        passwordHash,
+        loginMethod: 'email',
+        role: userRole,
+        openId: null,
+        mustChangePassword: 1, // Force password change on first login
+      });
+      data.userId = userResult.insertId;
+    } else {
+      // Link to existing user
+      data.userId = existingUser.id;
+    }
+  }
+  
   const result: any = await db.insert(staff).values(data);
   return result.insertId as number;
 }
 
-export async function updateStaff(id: number, data: Partial<InsertStaff>) {
+export async function updateStaff(id: number, data: Partial<InsertStaff> & { password?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Handle password update
+  if (data.password) {
+    // Import hashPassword from auth module
+    const { hashPassword } = await import('./auth.js');
+    const passwordHash = await hashPassword(data.password);
+    
+    // Get the staff record to find the email
+    const [staffRecord] = await db.select().from(staff).where(eq(staff.id, id)).limit(1);
+    if (!staffRecord) throw new Error("Staff not found");
+    if (!staffRecord.email) throw new Error("Staff email is required to set password");
+    
+    // Check if user already exists
+    const [existingUser] = await db.select().from(users).where(eq(users.email, staffRecord.email)).limit(1);
+    
+    if (existingUser) {
+      // Update existing user's password
+      await db.update(users).set({ passwordHash }).where(eq(users.id, existingUser.id));
+      // Link staff to user if not already linked
+      if (!staffRecord.userId) {
+        data.userId = existingUser.id;
+      }
+    } else {
+      // Create new user
+      // Map staff role to user role (staff has admin/counselor/viewer, users has admin/user)
+      const userRole = staffRecord.role === 'admin' ? 'admin' : 'user';
+      const userResult: any = await db.insert(users).values({
+        email: staffRecord.email,
+        name: staffRecord.name,
+        passwordHash,
+        loginMethod: 'email',
+        role: userRole,
+        openId: null,
+      });
+      data.userId = userResult.insertId;
+    }
+    
+    // Remove password from data before updating staff table
+    delete data.password;
+  }
+  
   await db.update(staff).set(data).where(eq(staff.id, id));
 }
 

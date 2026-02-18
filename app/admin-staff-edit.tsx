@@ -140,6 +140,7 @@ export default function AdminStaffEditScreen() {
       name: name.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),
+      password: password.trim() || undefined, // Only send if not empty
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility

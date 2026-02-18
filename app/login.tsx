@@ -40,8 +40,13 @@ export default function LoginScreen() {
           await Auth.setSessionToken(result.sessionToken);
         }
         
-        // Navigate to home
-        router.replace("/(tabs)");
+        // Check if user must change password
+        if (result.user.mustChangePassword === 1) {
+          router.replace("/change-password" as any);
+        } else {
+          // Navigate to home
+          router.replace("/(tabs)");
+        }
       }
     } catch (error: any) {
       Alert.alert("Login Failed", error.message || "Invalid email or password");

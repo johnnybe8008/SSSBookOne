@@ -190,10 +190,27 @@ export async function createDefaultAdmin() {
   return newAdmin;
 }
 
-export async function changePassword(userId: number, newPassword: string) {
+export async function changePassword(userId: number, currentPassword: string, newPassword: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  // Get user
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  
+  // Verify current password
+  if (!user.passwordHash) {
+    throw new Error("No password set for this user");
+  }
+  
+  const isValid = await verifyPassword(currentPassword, user.passwordHash);
+  if (!isValid) {
+    throw new Error("Current password is incorrect");
+  }
+  
+  // Hash new password and update, also clear mustChangePassword flag
   const passwordHash = await hashPassword(newPassword);
-  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+  await db.update(users).set({ passwordHash, mustChangePassword: 0 }).where(eq(users.id, userId));
 }
