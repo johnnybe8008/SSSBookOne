@@ -60,12 +60,26 @@ export default function RecordSessionScreen() {
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const sessionIntervalRef = useRef<any>(null);
 
-  // Manual time input state
+  // Helper function to format date for datetime-local input
+  const formatDateTimeLocal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Manual time input state with default values
   const [useManualTime, setUseManualTime] = useState(false);
-  const [manualInterviewStart, setManualInterviewStart] = useState("");
-  const [manualInterviewEnd, setManualInterviewEnd] = useState("");
-  const [manualSessionStart, setManualSessionStart] = useState("");
-  const [manualSessionEnd, setManualSessionEnd] = useState("");
+  const now = new Date();
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+  const thirtyMinutesLater = new Date(now.getTime() + 30 * 60 * 1000);
+  
+  const [manualInterviewStart, setManualInterviewStart] = useState(formatDateTimeLocal(now));
+  const [manualInterviewEnd, setManualInterviewEnd] = useState(formatDateTimeLocal(thirtyMinutesLater));
+  const [manualSessionStart, setManualSessionStart] = useState(formatDateTimeLocal(now));
+  const [manualSessionEnd, setManualSessionEnd] = useState(formatDateTimeLocal(oneHourLater));
 
   // Fetch cases for selected client
   const { data: casesData, refetch: refetchCases } = trpc.cases.list.useQuery(
@@ -150,7 +164,9 @@ export default function RecordSessionScreen() {
       ]);
     },
     onError: (error) => {
-      Alert.alert("Error", error.message || "Failed to save session");
+      console.error("Session creation error:", error);
+      const errorMessage = error.message || "Failed to save session";
+      Alert.alert("Error", `Failed to save session: ${errorMessage}\n\nPlease check all required fields are filled correctly.`);
     },
   });
 
@@ -256,11 +272,23 @@ export default function RecordSessionScreen() {
     let sessionEnd: Date | undefined;
 
     if (useManualTime) {
-      // Use manual time input
-      if (manualInterviewStart) interviewStart = new Date(manualInterviewStart);
-      if (manualInterviewEnd) interviewEnd = new Date(manualInterviewEnd);
-      if (manualSessionStart) sessionStart = new Date(manualSessionStart);
-      if (manualSessionEnd) sessionEnd = new Date(manualSessionEnd);
+      // Use manual time input - parse datetime-local format (YYYY-MM-DDTHH:MM)
+      if (manualInterviewStart) {
+        const parsed = new Date(manualInterviewStart);
+        interviewStart = isNaN(parsed.getTime()) ? undefined : parsed;
+      }
+      if (manualInterviewEnd) {
+        const parsed = new Date(manualInterviewEnd);
+        interviewEnd = isNaN(parsed.getTime()) ? undefined : parsed;
+      }
+      if (manualSessionStart) {
+        const parsed = new Date(manualSessionStart);
+        sessionStart = isNaN(parsed.getTime()) ? undefined : parsed;
+      }
+      if (manualSessionEnd) {
+        const parsed = new Date(manualSessionEnd);
+        sessionEnd = isNaN(parsed.getTime()) ? undefined : parsed;
+      }
     } else {
       // Use timer values
       interviewStart = interviewStartTime || undefined;
@@ -280,7 +308,7 @@ export default function RecordSessionScreen() {
       ? Math.floor((sessionEnd.getTime() - sessionStart.getTime()) / 60000) 
       : undefined;
 
-    createSession.mutate({
+    const sessionData = {
       caseId: selectedCase.id,
       clientId: selectedClient.id,
       staffId: user.id,
@@ -297,7 +325,10 @@ export default function RecordSessionScreen() {
       notes: notes.trim() || undefined,
       createdBy: user.id,
       updatedBy: user.id,
-    });
+    };
+
+    console.log("Creating session with data:", sessionData);
+    createSession.mutate(sessionData);
   };
 
   const activeSessionTypes = sessionTypes?.filter((t: any) => t.isActive === 1) || [];
@@ -462,7 +493,7 @@ export default function RecordSessionScreen() {
                     <Text className="text-sm text-muted mb-1">Start Time</Text>
                     <TextInput
                       className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                      placeholder="YYYY-MM-DD HH:MM:SS"
+                      placeholder="YYYY-MM-DDTHH:MM"
                       placeholderTextColor={colors.muted}
                       value={manualInterviewStart}
                       onChangeText={setManualInterviewStart}
@@ -472,7 +503,7 @@ export default function RecordSessionScreen() {
                     <Text className="text-sm text-muted mb-1">End Time</Text>
                     <TextInput
                       className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                      placeholder="YYYY-MM-DD HH:MM:SS"
+                      placeholder="YYYY-MM-DDTHH:MM"
                       placeholderTextColor={colors.muted}
                       value={manualInterviewEnd}
                       onChangeText={setManualInterviewEnd}
@@ -489,7 +520,7 @@ export default function RecordSessionScreen() {
                     <Text className="text-sm text-muted mb-1">Start Time</Text>
                     <TextInput
                       className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                      placeholder="YYYY-MM-DD HH:MM:SS"
+                      placeholder="YYYY-MM-DDTHH:MM"
                       placeholderTextColor={colors.muted}
                       value={manualSessionStart}
                       onChangeText={setManualSessionStart}
@@ -499,7 +530,7 @@ export default function RecordSessionScreen() {
                     <Text className="text-sm text-muted mb-1">End Time</Text>
                     <TextInput
                       className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                      placeholder="YYYY-MM-DD HH:MM:SS"
+                      placeholder="YYYY-MM-DDTHH:MM"
                       placeholderTextColor={colors.muted}
                       value={manualSessionEnd}
                       onChangeText={setManualSessionEnd}

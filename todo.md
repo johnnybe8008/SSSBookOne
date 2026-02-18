@@ -186,3 +186,13 @@
 - [x] Add Session Type modal selection
 - [x] Add Session Status modal selection
 - [x] Add Session Result modal selection with "None" option
+
+## v1.7.7 - Fix Session Submission Error
+- [x] Investigate "failed to fetch" error when submitting session
+- [x] Check session creation API endpoint for errors
+- [x] Verify data validation and required fields
+- [x] Add better error messages for debugging
+- [x] Fix date parsing for manual time input (sessionStartTime/sessionEndTime null)
+- [x] Add default current date/time values for manual input fields
+- [x] Validate parsed dates and handle invalid dates gracefully
+- [x] Update placeholders to match datetime-local format (YYYY-MM-DDTHH:MM)
