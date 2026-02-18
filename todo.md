@@ -162,3 +162,18 @@
 - [x] Auto-generate case ID when client has no existing cases
 - [x] Auto-select case when client has only one case
 - [x] Show case selection modal when client has multiple cases
+
+## v1.7.5 - Improve Timer UX in Record Session
+- [x] Change "Pause" button to "End Timer" button
+- [x] Make timer stop permanently when ended (no restart)
+- [x] Show "✓ Timer Ended" message after ending timer
+- [x] Keep screen open after ending timer for notes and details
+- [x] Add ability to reset timer if needed before saving
+
+## Future: Session History and Management
+- [ ] Create Sessions tab to view all recorded sessions
+- [ ] Add search and filter by client, staff, date range, status
+- [ ] Implement session edit functionality (admin only)
+- [ ] Add session history view showing all changes (audit trail)
+- [ ] Add ability to delete sessions (admin only with confirmation)
+- [ ] Add export sessions to CSV functionality

@@ -45,12 +45,14 @@ export default function RecordSessionScreen() {
 
   // Interview Timer State
   const [interviewRunning, setInterviewRunning] = useState(false);
+  const [interviewEnded, setInterviewEnded] = useState(false);
   const [interviewSeconds, setInterviewSeconds] = useState(0);
   const [interviewStartTime, setInterviewStartTime] = useState<Date | null>(null);
   const interviewIntervalRef = useRef<any>(null);
 
   // Session Timer State
   const [sessionRunning, setSessionRunning] = useState(false);
+  const [sessionEnded, setSessionEnded] = useState(false);
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const sessionIntervalRef = useRef<any>(null);
@@ -181,36 +183,40 @@ export default function RecordSessionScreen() {
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const toggleInterviewTimer = () => {
-    if (!interviewRunning) {
-      if (interviewSeconds === 0) {
-        setInterviewStartTime(new Date());
-      }
-      setInterviewRunning(true);
-    } else {
-      setInterviewRunning(false);
+  const startInterviewTimer = () => {
+    if (interviewSeconds === 0) {
+      setInterviewStartTime(new Date());
     }
+    setInterviewRunning(true);
+  };
+
+  const endInterviewTimer = () => {
+    setInterviewRunning(false);
+    setInterviewEnded(true);
   };
 
   const resetInterviewTimer = () => {
     setInterviewRunning(false);
+    setInterviewEnded(false);
     setInterviewSeconds(0);
     setInterviewStartTime(null);
   };
 
-  const toggleSessionTimer = () => {
-    if (!sessionRunning) {
-      if (sessionSeconds === 0) {
-        setSessionStartTime(new Date());
-      }
-      setSessionRunning(true);
-    } else {
-      setSessionRunning(false);
+  const startSessionTimer = () => {
+    if (sessionSeconds === 0) {
+      setSessionStartTime(new Date());
     }
+    setSessionRunning(true);
+  };
+
+  const endSessionTimer = () => {
+    setSessionRunning(false);
+    setSessionEnded(true);
   };
 
   const resetSessionTimer = () => {
     setSessionRunning(false);
+    setSessionEnded(false);
     setSessionSeconds(0);
     setSessionStartTime(null);
   };
@@ -365,18 +371,32 @@ export default function RecordSessionScreen() {
                 <View className="bg-background rounded-xl p-4 items-center">
                   <Text className="text-4xl font-bold text-foreground mb-4">{formatTime(interviewSeconds)}</Text>
                   <View className="flex-row gap-3">
-                    <TouchableOpacity
-                      className="bg-primary px-6 py-3 rounded-xl"
-                      onPress={toggleInterviewTimer}
-                    >
-                      <Text className="text-background font-semibold">{interviewRunning ? "Pause" : "Start"}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      className="bg-surface border border-border px-6 py-3 rounded-xl"
-                      onPress={resetInterviewTimer}
-                    >
-                      <Text className="text-foreground font-semibold">Reset</Text>
-                    </TouchableOpacity>
+                    {!interviewEnded ? (
+                      <>
+                        <TouchableOpacity
+                          className="bg-primary px-6 py-3 rounded-xl"
+                          onPress={interviewRunning ? endInterviewTimer : startInterviewTimer}
+                        >
+                          <Text className="text-background font-semibold">{interviewRunning ? "End Timer" : "Start"}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className="bg-surface border border-border px-6 py-3 rounded-xl"
+                          onPress={resetInterviewTimer}
+                        >
+                          <Text className="text-foreground font-semibold">Reset</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-success font-semibold">✓ Timer Ended</Text>
+                        <TouchableOpacity
+                          className="bg-surface border border-border px-4 py-2 rounded-xl"
+                          onPress={resetInterviewTimer}
+                        >
+                          <Text className="text-foreground text-sm">Reset</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
                 </View>
               </View>
@@ -388,18 +408,32 @@ export default function RecordSessionScreen() {
                 <View className="bg-background rounded-xl p-4 items-center">
                   <Text className="text-4xl font-bold text-primary mb-4">{formatTime(sessionSeconds)}</Text>
                   <View className="flex-row gap-3">
-                    <TouchableOpacity
-                      className="bg-primary px-6 py-3 rounded-xl"
-                      onPress={toggleSessionTimer}
-                    >
-                      <Text className="text-background font-semibold">{sessionRunning ? "Pause" : "Start"}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      className="bg-surface border border-border px-6 py-3 rounded-xl"
-                      onPress={resetSessionTimer}
-                    >
-                      <Text className="text-foreground font-semibold">Reset</Text>
-                    </TouchableOpacity>
+                    {!sessionEnded ? (
+                      <>
+                        <TouchableOpacity
+                          className="bg-primary px-6 py-3 rounded-xl"
+                          onPress={sessionRunning ? endSessionTimer : startSessionTimer}
+                        >
+                          <Text className="text-background font-semibold">{sessionRunning ? "End Timer" : "Start"}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className="bg-surface border border-border px-6 py-3 rounded-xl"
+                          onPress={resetSessionTimer}
+                        >
+                          <Text className="text-foreground font-semibold">Reset</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-success font-semibold">✓ Timer Ended</Text>
+                        <TouchableOpacity
+                          className="bg-surface border border-border px-4 py-2 rounded-xl"
+                          onPress={resetSessionTimer}
+                        >
+                          <Text className="text-foreground text-sm">Reset</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
                 </View>
               </View>
