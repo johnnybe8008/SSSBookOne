@@ -35,6 +35,8 @@ export default function RecordSessionScreen() {
   // Session metadata
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [clientCases, setClientCases] = useState<any[]>([]);
+  const [showCaseModal, setShowCaseModal] = useState(false);
   const [sessionTypeId, setSessionTypeId] = useState<number | null>(null);
   const [sessionStatusId, setSessionStatusId] = useState<number | null>(null);
   const [sessionResultId, setSessionResultId] = useState<number | null>(null);
@@ -53,18 +55,74 @@ export default function RecordSessionScreen() {
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const sessionIntervalRef = useRef<any>(null);
 
+  // Manual time input state
+  const [useManualTime, setUseManualTime] = useState(false);
+  const [manualInterviewStart, setManualInterviewStart] = useState("");
+  const [manualInterviewEnd, setManualInterviewEnd] = useState("");
+  const [manualSessionStart, setManualSessionStart] = useState("");
+  const [manualSessionEnd, setManualSessionEnd] = useState("");
+
+  // Fetch cases for selected client
+  const { data: casesData, refetch: refetchCases } = trpc.cases.list.useQuery(
+    { clientId: selectedClient?.id || 0 },
+    { enabled: !!selectedClient }
+  );
+
+  // Create case mutation
+  const createCase = trpc.cases.create.useMutation({
+    onSuccess: (newCase) => {
+      setSelectedCase(newCase);
+      refetchCases();
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message || "Failed to create case");
+    },
+  });
+
   // Filter clients based on search
   const filteredClients = clients?.filter((client: any) =>
     client.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
     client.email?.toLowerCase().includes(clientSearch.toLowerCase())
   ) || [];
 
+  // Update cases when data changes
+  useEffect(() => {
+    if (casesData) {
+      setClientCases(casesData);
+      
+      // If no cases exist, auto-generate a new case
+      if (casesData.length === 0 && selectedClient && user?.id) {
+        const caseNumber = `CASE-${selectedClient.id}-${Date.now()}`;
+        createCase.mutate({
+          caseNumber,
+          clientId: selectedClient.id,
+          createdByStaffId: user.id,
+          startDate: new Date(),
+          status: "Active",
+          notes: "Auto-generated case",
+          createdBy: user.id,
+          updatedBy: user.id,
+        });
+      } else if (casesData.length === 1) {
+        // Auto-select if only one case
+        setSelectedCase(casesData[0]);
+      }
+    }
+  }, [casesData, selectedClient, user?.id]);
+
   // Handler for selecting a client
   const handleSelectClient = (client: any) => {
     setSelectedClient(client);
-    // TODO: Fetch cases for this client and auto-select if only one case
+    setSelectedCase(null);
+    setClientCases([]);
     setShowClientModal(false);
     setClientSearch("");
+  };
+
+  // Handler for selecting a case
+  const handleSelectCase = (caseItem: any) => {
+    setSelectedCase(caseItem);
+    setShowCaseModal(false);
   };
 
   // Create session mutation
@@ -172,8 +230,35 @@ export default function RecordSessionScreen() {
       return;
     }
 
-    const interviewEndTime = interviewStartTime && interviewSeconds > 0 ? new Date(interviewStartTime.getTime() + interviewSeconds * 1000) : null;
-    const sessionEndTime = sessionStartTime && sessionSeconds > 0 ? new Date(sessionStartTime.getTime() + sessionSeconds * 1000) : null;
+    let interviewStart: Date | undefined;
+    let interviewEnd: Date | undefined;
+    let sessionStart: Date | undefined;
+    let sessionEnd: Date | undefined;
+
+    if (useManualTime) {
+      // Use manual time input
+      if (manualInterviewStart) interviewStart = new Date(manualInterviewStart);
+      if (manualInterviewEnd) interviewEnd = new Date(manualInterviewEnd);
+      if (manualSessionStart) sessionStart = new Date(manualSessionStart);
+      if (manualSessionEnd) sessionEnd = new Date(manualSessionEnd);
+    } else {
+      // Use timer values
+      interviewStart = interviewStartTime || undefined;
+      interviewEnd = interviewStartTime && interviewSeconds > 0 
+        ? new Date(interviewStartTime.getTime() + interviewSeconds * 1000) 
+        : undefined;
+      sessionStart = sessionStartTime || undefined;
+      sessionEnd = sessionStartTime && sessionSeconds > 0 
+        ? new Date(sessionStartTime.getTime() + sessionSeconds * 1000) 
+        : undefined;
+    }
+
+    const interviewDuration = interviewStart && interviewEnd 
+      ? Math.floor((interviewEnd.getTime() - interviewStart.getTime()) / 60000) 
+      : undefined;
+    const sessionDuration = sessionStart && sessionEnd 
+      ? Math.floor((sessionEnd.getTime() - sessionStart.getTime()) / 60000) 
+      : undefined;
 
     createSession.mutate({
       caseId: selectedCase.id,
@@ -182,12 +267,12 @@ export default function RecordSessionScreen() {
       sessionTypeId,
       sessionStatusId,
       sessionResultId: sessionResultId || undefined,
-      interviewStartTime: interviewStartTime || undefined,
-      interviewEndTime: interviewEndTime || undefined,
-      interviewDuration: interviewSeconds > 0 ? Math.floor(interviewSeconds / 60) : undefined,
-      sessionStartTime: sessionStartTime || undefined,
-      sessionEndTime: sessionEndTime || undefined,
-      sessionDuration: sessionSeconds > 0 ? Math.floor(sessionSeconds / 60) : undefined,
+      interviewStartTime: interviewStart,
+      interviewEndTime: interviewEnd,
+      interviewDuration,
+      sessionStartTime: sessionStart,
+      sessionEndTime: sessionEnd,
+      sessionDuration,
       billableHours: billableHours.trim() || undefined,
       notes: notes.trim() || undefined,
       createdBy: user.id,
@@ -216,14 +301,31 @@ export default function RecordSessionScreen() {
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
-          {/* Client Selection (Placeholder - will be implemented in Client Management) */}
+          {/* Client & Case Selection */}
           <View className="bg-surface border border-border rounded-2xl p-4">
             <Text className="text-base font-semibold text-foreground mb-2">Client & Case</Text>
             {selectedClient ? (
               <View>
                 <Text className="text-base text-foreground">{selectedClient.name}</Text>
-                <Text className="text-sm text-muted">Case: {selectedCase?.caseNumber || "N/A"}</Text>
-                <TouchableOpacity className="mt-2" onPress={() => { setSelectedClient(null); setSelectedCase(null); }}>
+                
+                {/* Case Selection */}
+                {clientCases.length > 1 ? (
+                  <TouchableOpacity 
+                    className="mt-2 bg-background border border-border rounded-xl p-3"
+                    onPress={() => setShowCaseModal(true)}
+                  >
+                    <Text className="text-sm text-muted">Case:</Text>
+                    <Text className="text-base text-foreground">
+                      {selectedCase ? selectedCase.caseNumber : "Select a case"}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text className="text-sm text-muted mt-1">
+                    Case: {selectedCase?.caseNumber || "Generating..."}
+                  </Text>
+                )}
+                
+                <TouchableOpacity className="mt-2" onPress={() => { setSelectedClient(null); setSelectedCase(null); setClientCases([]); }}>
                   <Text className="text-sm text-primary">Change Client</Text>
                 </TouchableOpacity>
               </View>
@@ -234,54 +336,131 @@ export default function RecordSessionScreen() {
             )}
           </View>
 
-          {/* Dual Timers */}
-          <View className="bg-surface border border-border rounded-2xl p-4 gap-4">
-            {/* Interview Timer */}
-            <View>
-              <Text className="text-base font-semibold text-foreground mb-2">Interview Time</Text>
-              <Text className="text-sm text-muted mb-3">Pre/post activities (travel, prep, documentation)</Text>
-              <View className="bg-background rounded-xl p-4 items-center">
-                <Text className="text-4xl font-bold text-foreground mb-4">{formatTime(interviewSeconds)}</Text>
-                <View className="flex-row gap-3">
-                  <TouchableOpacity
-                    className="bg-primary px-6 py-3 rounded-xl"
-                    onPress={toggleInterviewTimer}
-                  >
-                    <Text className="text-background font-semibold">{interviewRunning ? "Pause" : "Start"}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="bg-surface border border-border px-6 py-3 rounded-xl"
-                    onPress={resetInterviewTimer}
-                  >
-                    <Text className="text-foreground font-semibold">Reset</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            {/* Session Timer */}
-            <View>
-              <Text className="text-base font-semibold text-foreground mb-2">Session Time</Text>
-              <Text className="text-sm text-muted mb-3">Actual counseling/therapy time</Text>
-              <View className="bg-background rounded-xl p-4 items-center">
-                <Text className="text-4xl font-bold text-primary mb-4">{formatTime(sessionSeconds)}</Text>
-                <View className="flex-row gap-3">
-                  <TouchableOpacity
-                    className="bg-primary px-6 py-3 rounded-xl"
-                    onPress={toggleSessionTimer}
-                  >
-                    <Text className="text-background font-semibold">{sessionRunning ? "Pause" : "Start"}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="bg-surface border border-border px-6 py-3 rounded-xl"
-                    onPress={resetSessionTimer}
-                  >
-                    <Text className="text-foreground font-semibold">Reset</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+          {/* Time Input Mode Toggle */}
+          <View className="bg-surface border border-border rounded-2xl p-4">
+            <Text className="text-base font-semibold text-foreground mb-2">Time Tracking Method</Text>
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                className={`flex-1 py-3 rounded-xl items-center ${!useManualTime ? 'bg-primary' : 'bg-background border border-border'}`}
+                onPress={() => setUseManualTime(false)}
+              >
+                <Text className={`font-semibold ${!useManualTime ? 'text-background' : 'text-foreground'}`}>Use Timer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-3 rounded-xl items-center ${useManualTime ? 'bg-primary' : 'bg-background border border-border'}`}
+                onPress={() => setUseManualTime(true)}
+              >
+                <Text className={`font-semibold ${useManualTime ? 'text-background' : 'text-foreground'}`}>Manual Input</Text>
+              </TouchableOpacity>
             </View>
           </View>
+
+          {/* Dual Timers or Manual Input */}
+          {!useManualTime ? (
+            <View className="bg-surface border border-border rounded-2xl p-4 gap-4">
+              {/* Interview Timer */}
+              <View>
+                <Text className="text-base font-semibold text-foreground mb-2">Interview Time</Text>
+                <Text className="text-sm text-muted mb-3">Pre/post activities (travel, prep, documentation)</Text>
+                <View className="bg-background rounded-xl p-4 items-center">
+                  <Text className="text-4xl font-bold text-foreground mb-4">{formatTime(interviewSeconds)}</Text>
+                  <View className="flex-row gap-3">
+                    <TouchableOpacity
+                      className="bg-primary px-6 py-3 rounded-xl"
+                      onPress={toggleInterviewTimer}
+                    >
+                      <Text className="text-background font-semibold">{interviewRunning ? "Pause" : "Start"}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="bg-surface border border-border px-6 py-3 rounded-xl"
+                      onPress={resetInterviewTimer}
+                    >
+                      <Text className="text-foreground font-semibold">Reset</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              {/* Session Timer */}
+              <View>
+                <Text className="text-base font-semibold text-foreground mb-2">Session Time</Text>
+                <Text className="text-sm text-muted mb-3">Actual counseling/therapy time</Text>
+                <View className="bg-background rounded-xl p-4 items-center">
+                  <Text className="text-4xl font-bold text-primary mb-4">{formatTime(sessionSeconds)}</Text>
+                  <View className="flex-row gap-3">
+                    <TouchableOpacity
+                      className="bg-primary px-6 py-3 rounded-xl"
+                      onPress={toggleSessionTimer}
+                    >
+                      <Text className="text-background font-semibold">{sessionRunning ? "Pause" : "Start"}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="bg-surface border border-border px-6 py-3 rounded-xl"
+                      onPress={resetSessionTimer}
+                    >
+                      <Text className="text-foreground font-semibold">Reset</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <View className="bg-surface border border-border rounded-2xl p-4 gap-4">
+              {/* Manual Interview Time */}
+              <View>
+                <Text className="text-base font-semibold text-foreground mb-2">Interview Time (Optional)</Text>
+                <View className="gap-2">
+                  <View>
+                    <Text className="text-sm text-muted mb-1">Start Time</Text>
+                    <TextInput
+                      className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                      placeholder="YYYY-MM-DD HH:MM:SS"
+                      placeholderTextColor={colors.muted}
+                      value={manualInterviewStart}
+                      onChangeText={setManualInterviewStart}
+                    />
+                  </View>
+                  <View>
+                    <Text className="text-sm text-muted mb-1">End Time</Text>
+                    <TextInput
+                      className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                      placeholder="YYYY-MM-DD HH:MM:SS"
+                      placeholderTextColor={colors.muted}
+                      value={manualInterviewEnd}
+                      onChangeText={setManualInterviewEnd}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* Manual Session Time */}
+              <View>
+                <Text className="text-base font-semibold text-foreground mb-2">Session Time (Optional)</Text>
+                <View className="gap-2">
+                  <View>
+                    <Text className="text-sm text-muted mb-1">Start Time</Text>
+                    <TextInput
+                      className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                      placeholder="YYYY-MM-DD HH:MM:SS"
+                      placeholderTextColor={colors.muted}
+                      value={manualSessionStart}
+                      onChangeText={setManualSessionStart}
+                    />
+                  </View>
+                  <View>
+                    <Text className="text-sm text-muted mb-1">End Time</Text>
+                    <TextInput
+                      className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                      placeholder="YYYY-MM-DD HH:MM:SS"
+                      placeholderTextColor={colors.muted}
+                      value={manualSessionEnd}
+                      onChangeText={setManualSessionEnd}
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Session Metadata */}
           <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
@@ -429,6 +608,49 @@ export default function RecordSessionScreen() {
               ListEmptyComponent={
                 <View className="items-center justify-center py-8">
                   <Text className="text-muted">No clients found</Text>
+                </View>
+              }
+            />
+          </View>
+        </ScreenContainer>
+      </Modal>
+
+      {/* Case Selection Modal */}
+      <Modal
+        visible={showCaseModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCaseModal(false)}
+      >
+        <ScreenContainer>
+          <View className="flex-1 p-4">
+            {/* Modal Header */}
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl font-bold text-foreground">Select Case</Text>
+              <TouchableOpacity onPress={() => setShowCaseModal(false)}>
+                <Text className="text-primary font-semibold">Done</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Case List */}
+            <FlatList
+              data={clientCases}
+              keyExtractor={(item: any) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="bg-surface border border-border rounded-xl p-4 mb-3"
+                  onPress={() => handleSelectCase(item)}
+                >
+                  <Text className="text-base font-semibold text-foreground">{item.caseNumber}</Text>
+                  <Text className="text-sm text-muted mt-1">Status: {item.status}</Text>
+                  {item.notes && (
+                    <Text className="text-sm text-muted mt-1">{item.notes}</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View className="items-center justify-center py-8">
+                  <Text className="text-muted">No cases found</Text>
                 </View>
               }
             />

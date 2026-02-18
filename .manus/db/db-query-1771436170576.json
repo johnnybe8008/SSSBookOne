@@ -1,0 +1,9 @@
+{
+  "query": "SELECT * FROM sessionTypes LIMIT 5; SELECT * FROM sessionStatuses LIMIT 5; SELECT * FROM sessionResults LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute SELECT * FROM sessionTypes LIMIT 5; SELECT * FROM sessionStatuses LIMIT 5; SELECT * FROM sessionResults LIMIT 5;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 71
+}

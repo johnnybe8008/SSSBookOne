@@ -145,3 +145,20 @@
 - [x] Add login redirect to change password screen when mustChangePassword=1
 - [x] Test staff creation auto-creates user account
 - [x] Test first login shows password change requirement
+
+## v1.7.3 - Fix Logout Redirect
+- [x] Find logout button in More tab
+- [x] Verify logout redirect logic (already correctly implemented)
+- [x] Confirmed: logout redirects to login screen with router.replace("/login")
+
+## v1.7.4 - Fix Record Session Screen Issues
+- [x] Add case ID generation for first-time clients
+- [x] Add case ID selection dropdown for existing clients with cases
+- [x] Make session time fields optional (manual input OR timer)
+- [x] Add toggle between timer mode and manual time input
+- [x] Populate Session Type dropdown with predefined values (6 types)
+- [x] Populate Status dropdown with predefined values (6 statuses)
+- [x] Populate Results dropdown with predefined values (6 results)
+- [x] Auto-generate case ID when client has no existing cases
+- [x] Auto-select case when client has only one case
+- [x] Show case selection modal when client has multiple cases

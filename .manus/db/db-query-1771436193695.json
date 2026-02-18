@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT INTO sessionTypes (name, isActive, createdBy, updatedBy) VALUES\n('Individual Counseling', 1, 1, 1),\n('Group Counseling', 1, 1, 1),\n('Family Counseling', 1, 1, 1),\n('Crisis Intervention', 1, 1, 1),\n('Assessment', 1, 1, 1),\n('Follow-up', 1, 1, 1);\n\nINSERT INTO sessionStatuses (name, isActive, createdBy, updatedBy) VALUES\n('Scheduled', 1, 1, 1),\n('In Progress', 1, 1, 1),\n('Completed', 1, 1, 1),\n('Cancelled', 1, 1, 1),\n('No Show', 1, 1, 1),\n('Rescheduled', 1, 1, 1);\n\nINSERT INTO sessionResults (name, isActive, createdBy, updatedBy) VALUES\n('Positive Progress', 1, 1, 1),\n('Neutral', 1, 1, 1),\n('Needs Follow-up', 1, 1, 1),\n('Referred Out', 1, 1, 1),\n('Goals Met', 1, 1, 1),\n('Early Termination', 1, 1, 1);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user UDpvnf9XhWoW84h.8eed4e98904d --database Jg9gbm3tYHVyWYyJYNbUAr --execute \nINSERT INTO sessionTypes (name, isActive, createdBy, updatedBy) VALUES\n('Individual Counseling', 1, 1, 1),\n('Group Counseling', 1, 1, 1),\n('Family Counseling', 1, 1, 1),\n('Crisis Intervention', 1, 1, 1),\n('Assessment', 1, 1, 1),\n('Follow-up', 1, 1, 1);\n\nINSERT INTO sessionStatuses (name, isActive, createdBy, updatedBy) VALUES\n('Scheduled', 1, 1, 1),\n('In Progress', 1, 1, 1),\n('Completed', 1, 1, 1),\n('Cancelled', 1, 1, 1),\n('No Show', 1, 1, 1),\n('Rescheduled', 1, 1, 1);\n\nINSERT INTO sessionResults (name, isActive, createdBy, updatedBy) VALUES\n('Positive Progress', 1, 1, 1),\n('Neutral', 1, 1, 1),\n('Needs Follow-up', 1, 1, 1),\n('Referred Out', 1, 1, 1),\n('Goals Met', 1, 1, 1),\n('Early Termination', 1, 1, 1);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 155
+}
