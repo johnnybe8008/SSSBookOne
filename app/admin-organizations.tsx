@@ -291,12 +291,17 @@ export default function AdminOrganizationsScreen() {
   return (
     <ScreenContainer>
       <ScrollView className="flex-1 p-4">
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-4">
-          <TouchableOpacity onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
+        {/* Header with prominent Back button */}
+        <View className="flex-row items-center mb-4">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 16 }}
+            className="mr-2"
+          >
+            <IconSymbol name="chevron.left" size={28} color={colors.primary} />
+            <Text className="text-primary text-lg font-semibold ml-1">Back</Text>
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Manage Staff Organizations</Text>
+          <Text className="text-2xl font-bold text-foreground flex-1 text-center">Manage Staff Organizations</Text>
           <View style={{ width: 24 }} />
         </View>
 

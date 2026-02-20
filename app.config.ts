@@ -28,8 +28,8 @@ const schemeFromBundleId = `manus${timestamp}`;
 
 const env = {
   // App branding - update these values directly (do not use env vars)
-  appName: "DoH Book One",
-  appSlug: "doh-book-one",
+  appName: "SSS Book One",
+  appSlug: "sss-book-one",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
   logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663216694334/ArhUdsilyrucHTDg.png",
@@ -41,7 +41,7 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
-  version: "1.0.39",
+  version: "1.7.9",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,

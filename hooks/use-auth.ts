@@ -55,8 +55,10 @@ export function useAuth(options?: UseAuthOptions) {
   }, []);
 
   const logout = useCallback(async () => {
+    console.log("[useAuth] logout called");
     try {
       await Api.logout();
+      console.log("[useAuth] Api.logout() resolved");
     } catch (err) {
       console.error("[Auth] Logout API call failed:", err);
       // Continue with logout even if API call fails
@@ -65,6 +67,7 @@ export function useAuth(options?: UseAuthOptions) {
       await Auth.clearUserInfo();
       setUser(null);
       setError(null);
+      console.log("[useAuth] Local logout cleanup complete");
     }
   }, []);
 

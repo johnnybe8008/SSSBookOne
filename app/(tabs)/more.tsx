@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, TouchableOpacity, Alert } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, Alert, Platform } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -33,21 +33,35 @@ export default function MoreScreen() {
   const fixAdminMutation = trpc.auth.fixAdmin.useMutation();
 
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            await logout();
-            router.replace("/login" as any);
+    if (Platform.OS === "web") {
+      console.log("[MoreScreen] Web logout confirm dialog");
+      if (window.confirm("Are you sure you want to logout?")) {
+        (async () => {
+          console.log("[MoreScreen] Logout button pressed");
+          await logout();
+          console.log("[MoreScreen] Logout completed, navigating to /login");
+          router.replace("/login" as any);
+        })();
+      }
+    } else {
+      Alert.alert(
+        "Logout",
+        "Are you sure you want to logout?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Logout",
+            style: "destructive",
+            onPress: async () => {
+              console.log("[MoreScreen] Logout button pressed");
+              await logout();
+              console.log("[MoreScreen] Logout completed, navigating to /login");
+              router.replace("/login" as any);
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   if (!isAuthenticated) {
@@ -349,7 +363,10 @@ export default function MoreScreen() {
         {/* Logout Button */}
         <TouchableOpacity
           className="bg-error/10 py-4 rounded-xl border border-error/30 items-center"
-          onPress={handleLogout}
+          onPress={() => {
+            console.log("[MoreScreen] Logout button direct onPress fired");
+            handleLogout();
+          }}
         >
           <Text className="text-base font-semibold text-error">Logout</Text>
         </TouchableOpacity>

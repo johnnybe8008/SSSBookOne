@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, FlatList } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, FlatList, Platform } from "react-native";
+import { Platform as RNPlatform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -76,10 +78,13 @@ export default function RecordSessionScreen() {
   const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
   const thirtyMinutesLater = new Date(now.getTime() + 30 * 60 * 1000);
   
-  const [manualInterviewStart, setManualInterviewStart] = useState(formatDateTimeLocal(now));
-  const [manualInterviewEnd, setManualInterviewEnd] = useState(formatDateTimeLocal(thirtyMinutesLater));
-  const [manualSessionStart, setManualSessionStart] = useState(formatDateTimeLocal(now));
-  const [manualSessionEnd, setManualSessionEnd] = useState(formatDateTimeLocal(oneHourLater));
+  const [manualInterviewStart, setManualInterviewStart] = useState(new Date(now));
+  const [manualInterviewEnd, setManualInterviewEnd] = useState(new Date(thirtyMinutesLater));
+  const [manualSessionStart, setManualSessionStart] = useState(new Date(now));
+  const [manualSessionEnd, setManualSessionEnd] = useState(new Date(oneHourLater));
+
+  // Picker modal visibility
+  const [showPicker, setShowPicker] = useState<{field: null | string, mode: 'date' | 'time'}>({field: null, mode: 'date'});
 
   // Fetch cases for selected client
   const { data: casesData, refetch: refetchCases } = trpc.cases.list.useQuery(
@@ -156,12 +161,45 @@ export default function RecordSessionScreen() {
   };
 
   // Create session mutation
+  const scrollViewRef = useRef<any>(null);
   const createSession = trpc.sessions.create.useMutation({
     onSuccess: () => {
       utils.sessions.invalidate();
-      Alert.alert("Success", "Session saved successfully", [
-        { text: "OK", onPress: () => router.back() }
-      ]);
+      // Reset all form state to initial values
+      setSelectedClient(null);
+      setSelectedCase(null);
+      setClientCases([]);
+      setShowClientModal(false);
+      setShowCaseModal(false);
+      setShowSessionTypeModal(false);
+      setShowSessionStatusModal(false);
+      setShowSessionResultModal(false);
+      setSessionTypeId(null);
+      setSessionStatusId(null);
+      setSessionResultId(null);
+      setNotes("");
+      setBillableHours("");
+      setInterviewRunning(false);
+      setInterviewEnded(false);
+      setInterviewSeconds(0);
+      setInterviewStartTime(null);
+      setSessionRunning(false);
+      setSessionEnded(false);
+      setSessionSeconds(0);
+      setSessionStartTime(null);
+      setUseManualTime(false);
+      const now = new Date();
+      const thirtyMinutesLater = new Date(now.getTime() + 30 * 60000);
+      const oneHourLater = new Date(now.getTime() + 60 * 60000);
+      setManualInterviewStart(new Date(now));
+      setManualInterviewEnd(new Date(thirtyMinutesLater));
+      setManualSessionStart(new Date(now));
+      setManualSessionEnd(new Date(oneHourLater));
+      // Scroll to top
+      if (scrollViewRef.current && scrollViewRef.current.scrollTo) {
+        scrollViewRef.current.scrollTo({ y: 0, animated: true });
+      }
+      Alert.alert("Success", "Session saved successfully. Ready for a new entry.");
     },
     onError: (error) => {
       console.error("Session creation error:", error);
@@ -273,22 +311,10 @@ export default function RecordSessionScreen() {
 
     if (useManualTime) {
       // Use manual time input - parse datetime-local format (YYYY-MM-DDTHH:MM)
-      if (manualInterviewStart) {
-        const parsed = new Date(manualInterviewStart);
-        interviewStart = isNaN(parsed.getTime()) ? undefined : parsed;
-      }
-      if (manualInterviewEnd) {
-        const parsed = new Date(manualInterviewEnd);
-        interviewEnd = isNaN(parsed.getTime()) ? undefined : parsed;
-      }
-      if (manualSessionStart) {
-        const parsed = new Date(manualSessionStart);
-        sessionStart = isNaN(parsed.getTime()) ? undefined : parsed;
-      }
-      if (manualSessionEnd) {
-        const parsed = new Date(manualSessionEnd);
-        sessionEnd = isNaN(parsed.getTime()) ? undefined : parsed;
-      }
+      interviewStart = manualInterviewStart;
+      interviewEnd = manualInterviewEnd;
+      sessionStart = manualSessionStart;
+      sessionEnd = manualSessionEnd;
     } else {
       // Use timer values
       interviewStart = interviewStartTime || undefined;
@@ -338,11 +364,14 @@ export default function RecordSessionScreen() {
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
-          </TouchableOpacity>
+      <View className="px-6 pt-4 pb-3 bg-background border-b border-border" style={{ position: 'relative' }}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ position: 'absolute', top: 16, left: 16, zIndex: 10, backgroundColor: '#e0e0e0', borderRadius: 16, padding: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+        >
+          <Text style={{ fontSize: 32, fontWeight: 'bold', color: colors.primary, fontFamily: 'inherit', lineHeight: 32 }}>&lt;</Text>
+        </TouchableOpacity>
+        <View className="flex-row items-center justify-center">
           <View>
             <Text className="text-2xl font-bold text-foreground">Record Session</Text>
             <Text className="text-sm text-muted mt-1">Track counseling session with dual timers</Text>
@@ -350,7 +379,7 @@ export default function RecordSessionScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
           {/* Client & Case Selection */}
           <View className="bg-surface border border-border rounded-2xl p-4">
@@ -491,23 +520,45 @@ export default function RecordSessionScreen() {
                 <View className="gap-2">
                   <View>
                     <Text className="text-sm text-muted mb-1">Start Time</Text>
-                    <TextInput
-                      className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                      placeholder="YYYY-MM-DDTHH:MM"
-                      placeholderTextColor={colors.muted}
-                      value={manualInterviewStart}
-                      onChangeText={setManualInterviewStart}
-                    />
+                    {RNPlatform.OS === 'web' ? (
+                      <input
+                        type="datetime-local"
+                        className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                        value={formatLocalDateTime(manualInterviewStart)}
+                        onChange={e => setManualInterviewStart(parseLocalDateTime(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        className="bg-background border border-border rounded-xl px-4 py-3"
+                        onPress={() => setShowPicker({field: 'manualInterviewStart', mode: 'date'})}
+                      >
+                        <Text className="text-base text-foreground">
+                          {manualInterviewStart.toLocaleString()}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                   <View>
                     <Text className="text-sm text-muted mb-1">End Time</Text>
-                    <TextInput
-                      className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                      placeholder="YYYY-MM-DDTHH:MM"
-                      placeholderTextColor={colors.muted}
-                      value={manualInterviewEnd}
-                      onChangeText={setManualInterviewEnd}
-                    />
+                    {RNPlatform.OS === 'web' ? (
+                      <input
+                        type="datetime-local"
+                        className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                        value={formatLocalDateTime(manualInterviewEnd)}
+                        onChange={e => setManualInterviewEnd(parseLocalDateTime(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        className="bg-background border border-border rounded-xl px-4 py-3"
+                        onPress={() => setShowPicker({field: 'manualInterviewEnd', mode: 'date'})}
+                      >
+                        <Text className="text-base text-foreground">
+                          {manualInterviewEnd.toLocaleString()}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               </View>
@@ -518,23 +569,112 @@ export default function RecordSessionScreen() {
                 <View className="gap-2">
                   <View>
                     <Text className="text-sm text-muted mb-1">Start Time</Text>
-                    <TextInput
-                      className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                      placeholder="YYYY-MM-DDTHH:MM"
-                      placeholderTextColor={colors.muted}
-                      value={manualSessionStart}
-                      onChangeText={setManualSessionStart}
-                    />
+                    {RNPlatform.OS === 'web' ? (
+                      <input
+                        type="datetime-local"
+                        className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                        value={formatLocalDateTime(manualSessionStart)}
+                        onChange={e => setManualSessionStart(parseLocalDateTime(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        className="bg-background border border-border rounded-xl px-4 py-3"
+                        onPress={() => setShowPicker({field: 'manualSessionStart', mode: 'date'})}
+                      >
+                        <Text className="text-base text-foreground">
+                          {manualSessionStart.toLocaleString()}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                   <View>
                     <Text className="text-sm text-muted mb-1">End Time</Text>
-                    <TextInput
-                      className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                      placeholder="YYYY-MM-DDTHH:MM"
-                      placeholderTextColor={colors.muted}
-                      value={manualSessionEnd}
-                      onChangeText={setManualSessionEnd}
-                    />
+                    {RNPlatform.OS === 'web' ? (
+                      <input
+                        type="datetime-local"
+                        className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                        value={formatLocalDateTime(manualSessionEnd)}
+                        onChange={e => setManualSessionEnd(parseLocalDateTime(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        className="bg-background border border-border rounded-xl px-4 py-3"
+                        onPress={() => setShowPicker({field: 'manualSessionEnd', mode: 'date'})}
+                      >
+                        <Text className="text-base text-foreground">
+                          {manualSessionEnd.toLocaleString()}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {/* DateTimePicker Modal */}
+                    {showPicker.field && (
+                      <DateTimePicker
+                        value={(() => {
+                          switch (showPicker.field) {
+                            case 'manualInterviewStart': return manualInterviewStart;
+                            case 'manualInterviewEnd': return manualInterviewEnd;
+                            case 'manualSessionStart': return manualSessionStart;
+                            case 'manualSessionEnd': return manualSessionEnd;
+                            default: return new Date();
+                          }
+                        })()}
+                        mode={showPicker.mode}
+                        is24Hour={true}
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(event, selectedDate) => {
+                          if (event.type === 'dismissed') {
+                            setShowPicker({field: null, mode: 'date'});
+                            return;
+                          }
+                          if (selectedDate) {
+                            // If picking date, open time picker next
+                            if (showPicker.mode === 'date') {
+                              setShowPicker({field: showPicker.field, mode: 'time'});
+                              // Save date part, keep time from current value
+                              const prev = (() => {
+                                switch (showPicker.field) {
+                                  case 'manualInterviewStart': return manualInterviewStart;
+                                  case 'manualInterviewEnd': return manualInterviewEnd;
+                                  case 'manualSessionStart': return manualSessionStart;
+                                  case 'manualSessionEnd': return manualSessionEnd;
+                                  default: return new Date();
+                                }
+                              })();
+                              const merged = new Date(selectedDate);
+                              merged.setHours(prev.getHours(), prev.getMinutes());
+                              switch (showPicker.field) {
+                                case 'manualInterviewStart': setManualInterviewStart(merged); break;
+                                case 'manualInterviewEnd': setManualInterviewEnd(merged); break;
+                                case 'manualSessionStart': setManualSessionStart(merged); break;
+                                case 'manualSessionEnd': setManualSessionEnd(merged); break;
+                              }
+                            } else {
+                              // Save time part, keep date from current value
+                              const prev = (() => {
+                                switch (showPicker.field) {
+                                  case 'manualInterviewStart': return manualInterviewStart;
+                                  case 'manualInterviewEnd': return manualInterviewEnd;
+                                  case 'manualSessionStart': return manualSessionStart;
+                                  case 'manualSessionEnd': return manualSessionEnd;
+                                  default: return new Date();
+                                }
+                              })();
+                              const merged = new Date(prev);
+                              merged.setHours(selectedDate.getHours(), selectedDate.getMinutes());
+                              switch (showPicker.field) {
+                                case 'manualInterviewStart': setManualInterviewStart(merged); break;
+                                case 'manualInterviewEnd': setManualInterviewEnd(merged); break;
+                                case 'manualSessionStart': setManualSessionStart(merged); break;
+                                case 'manualSessionEnd': setManualSessionEnd(merged); break;
+                              }
+                              setShowPicker({field: null, mode: 'date'});
+                            }
+                          }
+                        }}
+                      />
+                    )}
                   </View>
                 </View>
               </View>
@@ -840,4 +980,22 @@ export default function RecordSessionScreen() {
       </Modal>
     </ScreenContainer>
   );
+
+}
+
+// --- Utility functions for local datetime handling (web only) ---
+function formatLocalDateTime(date: Date) {
+  // Returns yyyy-MM-ddTHH:mm in local time, adjusted for timezone offset
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return `${local.getFullYear()}-${pad(local.getMonth()+1)}-${pad(local.getDate())}T${pad(local.getHours())}:${pad(local.getMinutes())}`;
+}
+
+function parseLocalDateTime(value: string) {
+  // value is yyyy-MM-ddTHH:mm, interpreted as local time, adjust for timezone offset
+  const [datePart, timePart] = value.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  const local = new Date(year, month - 1, day, hour, minute);
+  return new Date(local.getTime() + local.getTimezoneOffset() * 60000);
 }

@@ -25,9 +25,11 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
+      try{
         const user = await authenticateUser(input.email, input.password);
-        if (!user) {
-          throw new Error("Invalid email or password");
+       if (!user) {
+  console.error("Login failed: Invalid email or password for", input.email);
+  throw new Error("Invalid email or password");
         }
         
         // Create custom session token for email/password users
@@ -43,7 +45,11 @@ export const appRouter = router({
         });
         
         return { user, sessionToken, success: true };
-      }),
+      } catch (err) {
+    console.error("Login error:", err);
+    throw err;
+  }}
+),
     changePassword: protectedProcedure
       .input(
         z.object({
@@ -319,7 +325,14 @@ export const appRouter = router({
     listAll: protectedProcedure.query(() => db.getAllStaff()),
     list: protectedProcedure.input(z.object({ teamId: z.number() })).query(({ input }) => db.getStaffByTeamId(input.teamId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getStaffById(input.id)),
-    getByUserId: protectedProcedure.input(z.object({ userId: z.number() })).query(({ input }) => db.getStaffByUserId(input.userId)),
+    getByUserId: protectedProcedure.input(z.object({ userId: z.number() })).query(async ({ input }) => {
+      try {
+        return await db.getStaffByUserId(input.userId);
+      } catch (error) {
+        console.error('[tRPC][staff.getByUserId] Error:', error);
+        throw error;
+      }
+    }),
     create: adminOnlyProcedure
       .input(
         z.object({

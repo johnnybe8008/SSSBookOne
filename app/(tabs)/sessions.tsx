@@ -88,121 +88,123 @@ export default function SessionsScreen() {
         </View>
       )}
 
+      {/* Add Session Button at Top */}
+      <View className="px-6 pt-4 pb-2 flex-row justify-end">
+        <TouchableOpacity
+          className="bg-primary w-12 h-12 rounded-full items-center justify-center shadow-lg"
+          onPress={() => router.push("/record-session" as any)}
+          style={{ elevation: 8 }}
+        >
+          <IconSymbol name="plus.circle.fill" size={28} color={colors.background} />
+        </TouchableOpacity>
+      </View>
+
       {/* Session List */}
       <View className="flex-1">
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
-        {sessionsLoading ? (
-          <View className="items-center justify-center py-12">
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : sessions && sessions.length > 0 ? (
-          <View className="gap-4">
-            {sessions.map((session) => {
-              const canEdit = session.completedAt
-                ? (new Date().getTime() - new Date(session.completedAt).getTime()) / (1000 * 60 * 60) <= 48
-                : true;
+        <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
+          {sessionsLoading ? (
+            <View className="items-center justify-center py-12">
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : sessions && sessions.length > 0 ? (
+            <View className="gap-4">
+              {sessions.map((session) => {
+                const canEdit = session.completedAt
+                  ? (new Date().getTime() - new Date(session.completedAt).getTime()) / (1000 * 60 * 60) <= 48
+                  : true;
 
-              return (
-                <TouchableOpacity
-                  key={session.id}
-                  className="bg-surface rounded-2xl p-5 border border-border"
-                  onPress={() => {
-                    // Navigate to session detail
-                    router.push(`/session/${session.id}` as any);
-                  }}
-                >
-                  {/* Header with Client and Edit Indicator */}
-                  <View className="flex-row items-start justify-between mb-3">
-                    <View className="flex-1">
-                      <Text className="text-lg font-semibold text-foreground">Client #{session.clientId}</Text>
-                      <Text className="text-sm text-muted mt-1">Case #{session.caseId}</Text>
+                return (
+                  <TouchableOpacity
+                    key={session.id}
+                    className="bg-surface rounded-2xl p-5 border border-border"
+                    onPress={() => {
+                      // Navigate to session detail
+                      router.push(`/session/${session.id}` as any);
+                    }}
+                  >
+                    {/* Header with Client and Edit Indicator */}
+                    <View className="flex-row items-start justify-between mb-3">
+                      <View className="flex-1">
+                        <Text className="text-lg font-semibold text-foreground">Client #{session.clientId}</Text>
+                        <Text className="text-sm text-muted mt-1">Case #{session.caseId}</Text>
+                      </View>
+                      <View className="flex-row items-center gap-2">
+                        {canEdit && (
+                          <View className="px-3 py-1 bg-primary/20 rounded-full">
+                            <Text className="text-xs font-medium text-primary">Editable</Text>
+                          </View>
+                        )}
+                        <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                      </View>
                     </View>
-                    <View className="flex-row items-center gap-2">
-                      {canEdit && (
-                        <View className="px-3 py-1 bg-primary/20 rounded-full">
-                          <Text className="text-xs font-medium text-primary">Editable</Text>
+
+                    {/* Session Type and Status */}
+                    <View className="flex-row items-center gap-2 mb-3">
+                      <View className="px-3 py-1 bg-background rounded-full border border-border">
+                        <Text className="text-xs font-medium text-foreground">Type #{session.sessionTypeId}</Text>
+                      </View>
+                      <View
+                        className="px-3 py-1 rounded-full"
+                        style={{ backgroundColor: `${getStatusColor(session.sessionStatusId)}20` }}
+                      >
+                        <Text
+                          className="text-xs font-medium"
+                          style={{ color: getStatusColor(session.sessionStatusId) }}
+                        >
+                          Status #{session.sessionStatusId}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Date and Duration */}
+                    <View className="flex-row items-center gap-4 mb-3">
+                      <View className="flex-row items-center gap-2">
+                        <IconSymbol name="calendar" size={14} color={colors.muted} />
+                        <Text className="text-sm text-muted">
+                          {session.completedAt
+                            ? new Date(session.completedAt).toLocaleDateString()
+                            : session.scheduledDate
+                            ? new Date(session.scheduledDate).toLocaleDateString()
+                            : "Not scheduled"}
+                        </Text>
+                      </View>
+                      {session.sessionDuration && (
+                        <View className="flex-row items-center gap-2">
+                          <IconSymbol name="clock.fill" size={14} color={colors.muted} />
+                          <Text className="text-sm text-muted">{session.sessionDuration} min</Text>
                         </View>
                       )}
-                      <IconSymbol name="chevron.right" size={20} color={colors.muted} />
                     </View>
-                  </View>
 
-                  {/* Session Type and Status */}
-                  <View className="flex-row items-center gap-2 mb-3">
-                    <View className="px-3 py-1 bg-background rounded-full border border-border">
-                      <Text className="text-xs font-medium text-foreground">Type #{session.sessionTypeId}</Text>
-                    </View>
-                    <View
-                      className="px-3 py-1 rounded-full"
-                      style={{ backgroundColor: `${getStatusColor(session.sessionStatusId)}20` }}
-                    >
-                      <Text
-                        className="text-xs font-medium"
-                        style={{ color: getStatusColor(session.sessionStatusId) }}
-                      >
-                        Status #{session.sessionStatusId}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Date and Duration */}
-                  <View className="flex-row items-center gap-4 mb-3">
-                    <View className="flex-row items-center gap-2">
-                      <IconSymbol name="calendar" size={14} color={colors.muted} />
-                      <Text className="text-sm text-muted">
-                        {session.completedAt
-                          ? new Date(session.completedAt).toLocaleDateString()
-                          : session.scheduledDate
-                          ? new Date(session.scheduledDate).toLocaleDateString()
-                          : "Not scheduled"}
-                      </Text>
-                    </View>
-                    {session.sessionDuration && (
-                      <View className="flex-row items-center gap-2">
-                        <IconSymbol name="clock.fill" size={14} color={colors.muted} />
-                        <Text className="text-sm text-muted">{session.sessionDuration} min</Text>
+                    {/* Billable Hours */}
+                    {session.billableHours && (
+                      <View className="pt-3 border-t border-border">
+                        <Text className="text-sm text-muted">
+                          Billable Hours: <Text className="font-semibold text-primary">{session.billableHours} hrs</Text>
+                        </Text>
                       </View>
                     )}
-                  </View>
 
-                  {/* Billable Hours */}
-                  {session.billableHours && (
-                    <View className="pt-3 border-t border-border">
-                      <Text className="text-sm text-muted">
-                        Billable Hours: <Text className="font-semibold text-primary">{session.billableHours} hrs</Text>
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Notes Preview */}
-                  {session.notes && (
-                    <View className="pt-3 border-t border-border mt-3">
-                      <Text className="text-sm text-muted" numberOfLines={2}>
-                        {session.notes}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ) : (
-          <View className="items-center justify-center py-12">
-            <IconSymbol name="calendar" size={48} color={colors.muted} />
-            <Text className="text-base text-muted text-center mt-4">No sessions recorded yet</Text>
-            <Text className="text-sm text-muted text-center mt-2">Start by recording your first session</Text>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-primary w-16 h-16 rounded-full items-center justify-center shadow-lg"
-        onPress={() => router.push("/record-session" as any)}
-        style={{ elevation: 8 }}
-      >
-        <IconSymbol name="plus" size={32} color={colors.background} />
-      </TouchableOpacity>
+                    {/* Notes Preview */}
+                    {session.notes && (
+                      <View className="pt-3 border-t border-border mt-3">
+                        <Text className="text-sm text-muted" numberOfLines={2}>
+                          {session.notes}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : (
+            <View className="items-center justify-center py-12">
+              <IconSymbol name="calendar" size={48} color={colors.muted} />
+              <Text className="text-base text-muted text-center mt-4">No sessions recorded yet</Text>
+              <Text className="text-sm text-muted text-center mt-2">Start by recording your first session</Text>
+            </View>
+          )}
+        </ScrollView>
       </View>
     </ScreenContainer>
   );

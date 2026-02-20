@@ -14,10 +14,10 @@ describe("More Tab Configuration", () => {
   });
 
   it("should have correct app name", () => {
-    expect(appConfig.name).toBe("DoH Book One");
+    expect(appConfig.name).toBe("SSS Book One");
   });
 
   it("should have correct app slug", () => {
-    expect(appConfig.slug).toBe("doh-book-one");
+    expect(appConfig.slug).toBe("sss-book-one");
   });
 });

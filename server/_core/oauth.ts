@@ -80,7 +80,17 @@ export function registerOAuthRoutes(app: Express) {
         expiresInMs: ONE_YEAR_MS,
       });
 
-      const cookieOptions = getSessionCookieOptions(req);
+      // Patch: Set cookie for current host/IP, not localhost
+      // For production (e.g. SiteGround), set domain to your real domain and secure to true
+      const host = req.hostname || req.headers.host?.split(':')[0] || undefined;
+      const isLocal = host && (host === 'localhost' || host.startsWith('192.168.') || host.startsWith('127.'));
+      const cookieOptions = {
+        path: '/',
+        sameSite: 'lax',
+        secure: !isLocal,
+        httpOnly: true,
+        domain: isLocal ? undefined : host
+      };
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
       // Redirect to the frontend URL (Expo web on port 8081)
@@ -130,7 +140,12 @@ export function registerOAuthRoutes(app: Express) {
 
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     const cookieOptions = getSessionCookieOptions(req);
+    // Clear both the main session cookie and any fallback session_token cookie
     res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+    res.clearCookie('session_token', { ...cookieOptions, maxAge: -1 });
+    // Also try clearing with no domain for localhost/dev
+    res.clearCookie(COOKIE_NAME, { path: '/', sameSite: 'lax' });
+    res.clearCookie('session_token', { path: '/', sameSite: 'lax' });
     res.json({ success: true });
   });
 
