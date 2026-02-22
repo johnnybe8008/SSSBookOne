@@ -1,4 +1,4 @@
-import { createDefaultAdmin } from "./auth";
+// import { createDefaultAdmin } from "./auth";
 
 /**
  * Server initialization tasks
@@ -9,7 +9,7 @@ export async function initializeServer() {
   
   try {
     // Create default admin user if it doesn't exist
-    await createDefaultAdmin();
+    // await createDefaultAdmin();
     console.log("[Server] Initialization complete");
   } catch (error) {
     console.error("[Server] Initialization failed:", error);

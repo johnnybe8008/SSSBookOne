@@ -15,7 +15,7 @@ import { trpc } from "@/lib/trpc";
 export default function ChangePasswordScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { user } = useAuth();
+  const { staff } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

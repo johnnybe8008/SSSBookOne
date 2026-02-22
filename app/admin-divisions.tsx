@@ -5,11 +5,12 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Admin - Manage Divisions
  * 
- * Allows admin users to:
+ * Allows admin staff to:
  * - View all divisions for a company
  * - Add new divisions
  * - Edit existing divisions
@@ -19,7 +20,7 @@ export default function AdminDivisionsScreen() {
   const colors = useColors();
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data: user } = trpc.auth.me.useQuery();
+  const { staff } = useAuth();
   const params = useLocalSearchParams<{ companyId: string; companyName: string }>();
   
   const companyId = parseInt(params.companyId || "0");
@@ -70,17 +71,16 @@ export default function AdminDivisionsScreen() {
       Alert.alert("Validation Error", "Please enter division name");
       return;
     }
-    if (!user?.id) {
-      Alert.alert("Error", "User not authenticated");
+    if (!staff?.id) {
+      Alert.alert("Error", "Staff not authenticated");
       return;
     }
-
     createDivision.mutate({
       companyId,
       name: newDivisionName.trim(),
       description: newDivisionDescription.trim() || '',
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 

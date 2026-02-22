@@ -1,7 +1,7 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
-import { validateSession } from "../session-manager";
+import { validateSessionToken } from "../session-manager";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -22,14 +22,16 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
     const authHeader = opts.req.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.substring(7);
-      user = await validateSession(token);
+      user = await validateSessionToken(token);
     }
-    
-    // If no Authorization header, check for session token in cookies (for web)
+    // Debug log: print cookies and session token
+    console.log('[DEBUG] Incoming cookies:', opts.req.cookies);
     if (!user && opts.req.cookies) {
       const sessionToken = opts.req.cookies['session_token'];
+      console.log('[DEBUG] Session token from cookie:', sessionToken);
       if (sessionToken) {
-        user = await validateSession(sessionToken);
+        user = await validateSessionToken(sessionToken);
+        console.log('[DEBUG] Session lookup result:', user);
       }
     }
   }

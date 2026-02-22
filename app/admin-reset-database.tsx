@@ -9,7 +9,7 @@ import { useRouter } from "expo-router";
 /**
  * Admin - Reset Database
  * 
- * Allows admin users to clear all data from the database except admin users.
+ * Allows admin staff to clear all data from the database except admin staff accounts.
  * This is useful for starting fresh with a clean system.
  * 
  * WARNING: This action is irreversible!
@@ -85,7 +85,7 @@ export default function AdminResetDatabaseScreen() {
               <Text className="text-sm text-foreground">• All clients and their records</Text>
               <Text className="text-sm text-foreground">• All FSMs (Field Service Managers)</Text>
               <Text className="text-sm text-foreground">• All counseling sessions and cases</Text>
-              <Text className="text-sm text-foreground">• All staff members (except admin users)</Text>
+              <Text className="text-sm text-foreground">• All staff members (except admin staff)</Text>
               <Text className="text-sm text-foreground">• All groups and staff teams</Text>
               <Text className="text-sm text-foreground">• All notifications</Text>
             </View>
@@ -100,7 +100,7 @@ export default function AdminResetDatabaseScreen() {
               <Text className="flex-1 text-lg font-bold text-success">What Will Be Kept</Text>
             </View>
             <Text className="text-base text-foreground">
-              Only <Text className="font-bold">admin user accounts</Text> will be preserved. You will still be able to log in after the reset.
+              Only <Text className="font-bold">admin staff accounts</Text> will be preserved. You will still be able to log in after the reset.
             </Text>
           </View>
 

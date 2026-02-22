@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, TouchableOpacity, Alert, Platform } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, Alert, Platform, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -20,11 +20,11 @@ import Constants from "expo-constants";
 export default function MoreScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, staff, isAuthenticated, loading: authLoading, logout } = useAuth();
   const { role, isAdmin, canManageStaff, canManageOrganizations } = useStaffRole();
 
   // Get staff record for current user
-  const { data: staffRecord, refetch: refetchStaff } = trpc.staff.getByUserId.useQuery(
+  const { data: staffRecord, isLoading: staffLoading, refetch: refetchStaff } = trpc.staff.getByUserId.useQuery(
     { userId: user?.id || 0 },
     { enabled: !!user?.id }
   );
@@ -64,6 +64,13 @@ export default function MoreScreen() {
     }
   };
 
+  if (authLoading || staffLoading) {
+    return (
+      <ScreenContainer className="items-center justify-center">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ScreenContainer>
+    );
+  }
   if (!isAuthenticated) {
     return (
       <ScreenContainer className="items-center justify-center p-6">
@@ -93,36 +100,14 @@ export default function MoreScreen() {
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
         {/* Profile Section */}
         <View className="bg-surface rounded-2xl p-6 border border-border mb-6">
-          <View className="flex-row items-center gap-4">
-            <View className="w-16 h-16 bg-primary/20 rounded-full items-center justify-center">
-              <Text className="text-2xl font-bold text-primary">
-                {staffRecord?.name?.charAt(0) || user?.name?.charAt(0) || "U"}
-              </Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-xl font-bold text-foreground">{staffRecord?.name || user?.name || "User"}</Text>
-              <View className="flex-row items-center gap-2 mt-1">
-                {isAdmin && (
-                  <View className="px-3 py-1 bg-primary/20 rounded-full">
-                    <Text className="text-xs font-medium text-primary">Admin</Text>
-                  </View>
-                )}
-                {isVipRated && (
-                  <View className="px-3 py-1 bg-warning/20 rounded-full flex-row items-center gap-1">
-                    <IconSymbol name="star.fill" size={12} color={colors.warning} />
-                    <Text className="text-xs font-medium text-warning">VIP-rated</Text>
-                  </View>
-                )}
-                {!isAdmin && !isVipRated && (
-                  <View className="px-3 py-1 bg-muted/20 rounded-full">
-                    <Text className="text-xs font-medium text-muted">Staff</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-          {staffRecord?.email && (
-            <Text className="text-sm text-muted mt-4">{staffRecord.email}</Text>
+          <Text className="text-2xl font-semibold text-primary mb-1">
+            {staffRecord?.name || staff?.name || user?.name || "User"}
+          </Text>
+          <Text className="text-base text-muted mb-1">
+            {(staffRecord?.role || staff?.role) ? (staffRecord?.role || staff?.role).charAt(0).toUpperCase() + (staffRecord?.role || staff?.role).slice(1) : ""}
+          </Text>
+          {(staffRecord?.email || staff?.email) && (
+            <Text className="text-sm text-muted mb-1">{staffRecord?.email || staff?.email}</Text>
           )}
         </View>
 
@@ -177,8 +162,8 @@ export default function MoreScreen() {
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
             onPress={() => {
               Alert.alert(
-                "About DoH Book One",
-                "Version: " + (Constants.expoConfig?.version || "1.0.7") + "\n\nA mobile counseling tracker app for managing sessions, clients, and cases."
+                "About SSS Book One",
+                "Version: " + (Constants.expoConfig?.version || "1.8.1") + "\n\nA mobile counseling tracker app for managing sessions, clients, and cases."
               );
             }}
           >
@@ -373,7 +358,7 @@ export default function MoreScreen() {
 
         {/* App Version */}
         <Text className="text-xs text-muted text-center mt-6">
-          DoH Book One v{Constants.expoConfig?.version || "1.0.7"}
+          SSS Book One v{Constants.expoConfig?.version || "1.8.1"}
         </Text>
       </ScrollView>
     </ScreenContainer>

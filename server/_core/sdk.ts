@@ -4,7 +4,7 @@ import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
-import type { User } from "../../drizzle/schema";
+import type { Staff } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
 import type {
@@ -231,7 +231,7 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
-  async authenticateRequest(req: Request): Promise<User> {
+  async authenticateRequest(req: Request): Promise<Staff> {
     // Regular authentication flow
     const authHeader = req.headers.authorization || req.headers.Authorization;
     let token: string | undefined;
@@ -247,38 +247,38 @@ class SDKServer {
       throw ForbiddenError("Invalid session cookie");
     }
 
-    const sessionUserId = session.openId;
+    const sessionStaffId = session.openId;
     const signedInAt = new Date();
-    let user = await db.getUserByOpenId(sessionUserId);
+    let staffMember = await db.getStaffByOpenId(sessionStaffId);
 
-    // If user not in DB, sync from OAuth server automatically
-    if (!user) {
+    // If staff not in DB, sync from OAuth server automatically
+    if (!staffMember) {
       try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        const staffInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+        await db.upsertStaff({
+          openId: staffInfo.openId,
+          name: staffInfo.name || null,
+          email: staffInfo.email ?? null,
+          loginMethod: staffInfo.loginMethod ?? staffInfo.platform ?? null,
           lastSignedIn: signedInAt,
         });
-        user = await db.getUserByOpenId(userInfo.openId);
+        staffMember = await db.getStaffByOpenId(staffInfo.openId);
       } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+        console.error("[Auth] Failed to sync staff from OAuth:", error);
+        throw ForbiddenError("Failed to sync staff info");
       }
     }
 
-    if (!user) {
-      throw ForbiddenError("User not found");
+    if (!staffMember) {
+      throw ForbiddenError("Staff not found");
     }
 
-    await db.upsertUser({
-      openId: user.openId,
+    await db.upsertStaff({
+      openId: staffMember.openId,
       lastSignedIn: signedInAt,
     });
 
-    return user;
+    return staffMember;
   }
 }
 

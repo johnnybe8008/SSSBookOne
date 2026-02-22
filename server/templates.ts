@@ -31,7 +31,7 @@ export async function saveCompanyAsTemplate(
   companyId: number,
   templateName: string,
   templateDescription: string,
-  userId: number
+  staffId: number
 ): Promise<{ success: boolean; message: string; templateId?: number }> {
   const db = await getDb();
   if (!db) {
@@ -77,7 +77,7 @@ export async function saveCompanyAsTemplate(
       name: templateName,
       description: templateDescription || null,
       templateData: templateStructure as any,
-      createdBy: userId
+      createdBy: staffId
     });
 
     return {
@@ -100,7 +100,7 @@ export async function saveCompanyAsTemplate(
 export async function applyTemplateToCompany(
   templateId: number,
   companyId: number,
-  userId: number
+  staffId: number
 ): Promise<{ success: boolean; message: string; stats?: any }> {
   const db = await getDb();
   if (!db) {
@@ -137,8 +137,8 @@ export async function applyTemplateToCompany(
         code: divisionCode,
         name: divisionData.name,
         description: divisionData.description,
-        createdBy: userId,
-        updatedBy: userId
+        createdBy: staffId,
+        updatedBy: staffId
       });
       const divisionId = divisionResult[0].insertId;
       stats.divisionsCreated++;
@@ -156,8 +156,8 @@ export async function applyTemplateToCompany(
           code: departmentCode,
           name: departmentData.name,
           description: departmentData.description,
-          createdBy: userId,
-          updatedBy: userId
+          createdBy: staffId,
+          updatedBy: staffId
         });
         const departmentId = departmentResult[0].insertId;
         stats.departmentsCreated++;
@@ -175,8 +175,8 @@ export async function applyTemplateToCompany(
             code: teamCode,
             name: teamData.name,
             description: teamData.description,
-            createdBy: userId,
-            updatedBy: userId
+            createdBy: staffId,
+            updatedBy: staffId
           });
           stats.teamsCreated++;
         }

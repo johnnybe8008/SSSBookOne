@@ -3,54 +3,61 @@ import * as Auth from "@/lib/_core/auth";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
+
 type UseAuthOptions = {
   autoFetch?: boolean;
 };
 
 export function useAuth(options?: UseAuthOptions) {
   const { autoFetch = true } = options ?? {};
-  const [user, setUser] = useState<Auth.User | null>(null);
+  const [staff, setStaff] = useState<Auth.Staff | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchUser = useCallback(async () => {
-    console.log("[useAuth] fetchUser called");
+  const fetchStaff = useCallback(async () => {
+    console.log("[useAuth] fetchStaff called");
     try {
       setLoading(true);
       setError(null);
-
-      // Both web and native: use token-based auth
-      // (Web can't use cookies due to cross-origin restrictions between ports 8081 and 3000)
-      console.log("[useAuth] Native platform: checking for session token...");
-      const sessionToken = await Auth.getSessionToken();
-      console.log(
-        "[useAuth] Session token:",
-        sessionToken ? `present (${sessionToken.substring(0, 20)}...)` : "missing",
-      );
-      if (!sessionToken) {
-        console.log("[useAuth] No session token, setting user to null");
-        setUser(null);
+      // Always validate session with backend on web
+      let backendStaff = null;
+      if (Platform.OS === "web") {
+        try {
+          const { getApiBaseUrl } = await import("@/constants/oauth");
+          const apiBaseUrl = getApiBaseUrl();
+          const url = `${apiBaseUrl}/api/trpc/auth.me`;
+          console.log("[useAuth] Fetching staff from:", url);
+          const res = await fetch(url, { credentials: "include" });
+          const data = await res.json();
+          console.log("[useAuth] Full /auth.me tRPC response:", data);
+          // Try to extract staff from all possible locations
+          backendStaff = data?.result?.data?.json?.staff || data?.result?.data?.json || data?.result?.data || data?.result;
+          console.log("[useAuth] Backend /auth.me result (parsed staff):", backendStaff);
+        } catch (err) {
+          console.error("[useAuth] Backend /auth.me error:", err);
+        }
+      }
+      if (backendStaff && backendStaff.id) {
+        setStaff(backendStaff);
+        await Auth.setStaffInfo?.(backendStaff);
         return;
       }
-
-      // Use cached user info for native (token validates the session)
-      const cachedUser = await Auth.getUserInfo();
-      console.log("[useAuth] Cached user:", cachedUser);
-      if (cachedUser) {
-        console.log("[useAuth] Using cached user info");
-        setUser(cachedUser);
+      // Fallback to localStorage for native or if backend fails
+      const cachedStaff = await Auth.getStaffInfo();
+      console.log("[useAuth] Cached staff:", cachedStaff);
+      if (cachedStaff) {
+        setStaff(cachedStaff);
       } else {
-        console.log("[useAuth] No cached user, setting user to null");
-        setUser(null);
+        setStaff(null);
       }
     } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to fetch user");
-      console.error("[useAuth] fetchUser error:", error);
+      const error = err instanceof Error ? err : new Error("Failed to fetch staff");
+      console.error("[useAuth] fetchStaff error:", error);
       setError(error);
-      setUser(null);
+      setStaff(null);
     } finally {
       setLoading(false);
-      console.log("[useAuth] fetchUser completed, loading:", false);
+      console.log("[useAuth] fetchStaff completed, loading:", false);
     }
   }, []);
 
@@ -61,54 +68,51 @@ export function useAuth(options?: UseAuthOptions) {
       console.log("[useAuth] Api.logout() resolved");
     } catch (err) {
       console.error("[Auth] Logout API call failed:", err);
-      // Continue with logout even if API call fails
     } finally {
       await Auth.removeSessionToken();
-      await Auth.clearUserInfo();
-      setUser(null);
+      await Auth.clearStaffInfo();
+      setStaff(null);
       setError(null);
       console.log("[useAuth] Local logout cleanup complete");
     }
   }, []);
 
-  const isAuthenticated = useMemo(() => Boolean(user), [user]);
+  const isAuthenticated = useMemo(() => Boolean(staff), [staff]);
 
   useEffect(() => {
     console.log("[useAuth] useEffect triggered, autoFetch:", autoFetch, "platform:", Platform.OS);
     if (autoFetch) {
-      // Both web and native: check for cached user info first for faster initial load
-      Auth.getUserInfo().then((cachedUser) => {
-        console.log("[useAuth] Cached user check:", cachedUser);
-        if (cachedUser) {
-          console.log("[useAuth] Setting cached user immediately");
-          setUser(cachedUser);
+      Auth.getStaffInfo().then((cachedStaff) => {
+        console.log("[useAuth] Cached staff check:", cachedStaff);
+        if (cachedStaff) {
+          console.log("[useAuth] Setting cached staff immediately");
+          setStaff(cachedStaff);
           setLoading(false);
         } else {
-          // No cached user, check session token
-          fetchUser();
+          fetchStaff();
         }
       });
     } else {
       console.log("[useAuth] autoFetch disabled, setting loading to false");
       setLoading(false);
     }
-  }, [autoFetch, fetchUser]);
+  }, [autoFetch, fetchStaff]);
 
   useEffect(() => {
     console.log("[useAuth] State updated:", {
-      hasUser: !!user,
+      hasStaff: !!staff,
       loading,
       isAuthenticated,
       error: error?.message,
     });
-  }, [user, loading, isAuthenticated, error]);
+  }, [staff, loading, isAuthenticated, error]);
 
   return {
-    user,
+    staff,
     loading,
     error,
     isAuthenticated,
-    refresh: fetchUser,
+    refresh: fetchStaff,
     logout,
   };
 }

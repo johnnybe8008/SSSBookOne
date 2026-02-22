@@ -5,17 +5,19 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/hooks/use-auth";
 import * as DocumentPicker from "expo-document-picker";
 
 /**
  * Admin - Client CSV Import
  * 
- * Allows admin users to bulk import clients from CSV files.
+ * Allows admin staff to bulk import clients from CSV files.
  */
 export default function AdminCSVImportClientsScreen() {
   const colors = useColors();
   const router = useRouter();
   const utils = trpc.useUtils();
+  const { staff } = useAuth();
   const [csvText, setCsvText] = useState("");
   const [importResult, setImportResult] = useState<any>(null);
   const [showHelp, setShowHelp] = useState(false);

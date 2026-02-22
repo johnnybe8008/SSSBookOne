@@ -30,6 +30,13 @@ export const API_BASE_URL = env.apiBaseUrl;
  * URL pattern: https://PORT-sandboxid.region.domain
  */
 export function getApiBaseUrl(): string {
+
+  // Debug: log the API_BASE_URL and env
+  if (typeof window !== "undefined") {
+    // Only log in browser
+    console.log("[getApiBaseUrl] API_BASE_URL:", API_BASE_URL);
+    console.log("[getApiBaseUrl] process.env.EXPO_PUBLIC_API_BASE_URL:", process.env.EXPO_PUBLIC_API_BASE_URL);
+  }
   // If API_BASE_URL is set, use it
   if (API_BASE_URL) {
     return API_BASE_URL.replace(/\/$/, "");
@@ -49,8 +56,9 @@ export function getApiBaseUrl(): string {
   return "";
 }
 
+
 export const SESSION_TOKEN_KEY = "app_session_token";
-export const USER_INFO_KEY = "manus-runtime-user-info";
+export const STAFF_INFO_KEY = "manus-runtime-staff-info";
 
 const encodeState = (value: string) => {
   if (typeof globalThis.btoa === "function") {

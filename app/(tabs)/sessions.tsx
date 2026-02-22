@@ -5,6 +5,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
+import { useStaffRole } from "@/hooks/use-staff-role";
 import { useRouter } from "expo-router";
 
 /**
@@ -19,6 +20,7 @@ export default function SessionsScreen() {
   const colors = useColors();
   const router = useRouter();
   const { user } = useAuth();
+  const { isAdmin } = useStaffRole();
   const [showFilters, setShowFilters] = useState(false);
 
   // Get staff record for current user
@@ -27,11 +29,19 @@ export default function SessionsScreen() {
     { enabled: !!user?.id }
   );
 
-  // Get all sessions for staff
-  const { data: sessions, isLoading: sessionsLoading } = trpc.sessions.listByStaff.useQuery(
-    { staffId: staffRecord?.id || 0 },
-    { enabled: !!staffRecord?.id }
-  );
+  // Debug: log staffRecord and staffId
+  if (!isAdmin) {
+    // eslint-disable-next-line no-console
+    console.log('Staff user:', user, 'staffRecord:', staffRecord, 'staffId used:', staffRecord?.id);
+  }
+
+  // Get sessions: all for admin, only own for staff
+  const { data: sessions, isLoading: sessionsLoading } = isAdmin
+    ? trpc.sessions.listAll.useQuery()
+    : trpc.sessions.listByStaff.useQuery(
+        { staffId: staffRecord?.id || 0 },
+        { enabled: !!staffRecord?.id }
+      );
 
   // Get session types and statuses for filtering
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery();
@@ -108,7 +118,9 @@ export default function SessionsScreen() {
             </View>
           ) : sessions && sessions.length > 0 ? (
             <View className="gap-4">
-              {sessions.map((session) => {
+              {[...sessions]
+                .sort((a, b) => new Date(b.sessionStartTime || b.createdAt).getTime() - new Date(a.sessionStartTime || a.createdAt).getTime())
+                .map((session) => {
                 const canEdit = session.completedAt
                   ? (new Date().getTime() - new Date(session.completedAt).getTime()) / (1000 * 60 * 60) <= 48
                   : true;

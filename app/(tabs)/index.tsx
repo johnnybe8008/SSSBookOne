@@ -19,7 +19,7 @@ import { useRouter } from "expo-router";
  */
 export default function DashboardScreen() {
   const colors = useColors();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, staff, isAuthenticated, loading: authLoading } = useAuth();
   const { canWrite } = useStaffRole();
   const router = useRouter();
 
@@ -52,6 +52,7 @@ export default function DashboardScreen() {
     { enabled: !!staffRecord?.id }
   );
 
+  // Show loading indicator while authenticating or loading staff info
   if (authLoading || staffLoading) {
     return (
       <ScreenContainer className="items-center justify-center">
@@ -67,7 +68,7 @@ export default function DashboardScreen() {
   if (!isAuthenticated) {
     return (
       <ScreenContainer className="items-center justify-center p-6">
-        <Text className="text-xl font-semibold text-foreground mb-4">Welcome to DoH Book One</Text>
+        <Text className="text-xl font-semibold text-foreground mb-4">Welcome to SSS Book One</Text>
         <Text className="text-base text-muted text-center mb-6">
           Please log in to access your counseling sessions and client information.
         </Text>
@@ -90,7 +91,14 @@ export default function DashboardScreen() {
           {/* Welcome Header */}
           <View>
             <Text className="text-3xl font-bold text-foreground">Welcome back,</Text>
-            <Text className="text-2xl font-semibold text-primary">{staffRecord?.name || user?.name || "Staff"}</Text>
+            <Text className="text-2xl font-semibold text-primary">
+              {staffRecord?.name || staff?.name || user?.name || user?.email || ""}
+            </Text>
+            {((staffRecord?.role || staff?.role) && (staffRecord?.role || staff?.role) !== (staffRecord?.name || staff?.name || user?.name || user?.email)) && (
+              <Text className="text-base text-muted mt-1">
+                {(staffRecord?.role || staff?.role)?.charAt(0).toUpperCase() + (staffRecord?.role || staff?.role)?.slice(1)}
+              </Text>
+            )}
             <Text className="text-sm text-muted mt-1">{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Text>
           </View>
 

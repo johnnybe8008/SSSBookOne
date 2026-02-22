@@ -15,7 +15,8 @@ export default function AdminClientOrganizationsScreen() {
   const colors = useColors();
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data: user } = trpc.auth.me.useQuery();
+  const { data: staff, isLoading: staffLoading, error: staffError } = trpc.auth.me.useQuery();
+  console.log('[DEBUG] staff:', staff, 'loading:', staffLoading, 'error:', staffError);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,6 +72,7 @@ export default function AdminClientOrganizationsScreen() {
 
   // Queries
   const { data: companies, isLoading } = trpc.companies.list.useQuery();
+  console.log('[DEBUG] companies:', companies, 'loading:', isLoading);
 
   // Filtered companies based on search query
   const filteredCompanies = useMemo(() => {
@@ -90,6 +92,7 @@ export default function AdminClientOrganizationsScreen() {
     { companyId: expandedCompanyId || 0 },
     { enabled: expandedCompanyId !== null }
   );
+  // ...existing code...
   const { data: departments } = trpc.departments.list.useQuery(
     { divisionId: expandedDivisionId || 0 },
     { enabled: expandedDivisionId !== null }
@@ -217,47 +220,47 @@ export default function AdminClientOrganizationsScreen() {
 
   // Handlers
   const handleCreateCompany = () => {
-    if (!newCompanyName.trim() || !user?.id) return;
+    if (!newCompanyName.trim() || !staff?.id) return;
     createCompany.mutate({
       name: newCompanyName,
       address: newCompanyAddress || undefined,
       phone: newCompanyPhone || undefined,
       email: newCompanyEmail || undefined,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
   const handleCreateDivision = (companyId: number) => {
-    if (!newDivisionName.trim() || !user?.id) return;
+    if (!newDivisionName.trim() || !staff?.id) return;
     createDivision.mutate({
       companyId,
       name: newDivisionName,
       description: newDivisionDescription,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
   const handleCreateDept = (divisionId: number) => {
-    if (!newDeptName.trim() || !user?.id) return;
+    if (!newDeptName.trim() || !staff?.id) return;
     createDept.mutate({
       divisionId,
       name: newDeptName,
       description: newDeptDescription,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
   const handleCreateTeam = (deptId: number) => {
-    if (!newTeamName.trim() || !user?.id) return;
+    if (!newTeamName.trim() || !staff?.id) return;
     createTeam.mutate({
       departmentId: deptId,
       name: newTeamName,
       description: newTeamDescription,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -299,14 +302,14 @@ export default function AdminClientOrganizationsScreen() {
   };
 
   const handleUpdateCompany = () => {
-    if (!editCompanyName.trim() || !user?.id || !editingCompanyId) return;
+    if (!editCompanyName.trim() || !staff?.id || !editingCompanyId) return;
     updateCompany.mutate({
       id: editingCompanyId,
       name: editCompanyName,
       address: editCompanyAddress || undefined,
       phone: editCompanyPhone || undefined,
       email: editCompanyEmail || undefined,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -317,12 +320,12 @@ export default function AdminClientOrganizationsScreen() {
   };
 
   const handleUpdateDivision = () => {
-    if (!editDivisionName.trim() || !user?.id || !editingDivisionId) return;
+    if (!editDivisionName.trim() || !staff?.id || !editingDivisionId) return;
     updateDivision.mutate({
       id: editingDivisionId,
       name: editDivisionName,
       description: editDivisionDescription,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -333,12 +336,12 @@ export default function AdminClientOrganizationsScreen() {
   };
 
   const handleUpdateDept = () => {
-    if (!editDeptName.trim() || !user?.id || !editingDeptId) return;
+    if (!editDeptName.trim() || !staff?.id || !editingDeptId) return;
     updateDept.mutate({
       id: editingDeptId,
       name: editDeptName,
       description: editDeptDescription,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -349,12 +352,12 @@ export default function AdminClientOrganizationsScreen() {
   };
 
   const handleUpdateTeam = () => {
-    if (!editTeamName.trim() || !user?.id || !editingTeamId) return;
+    if (!editTeamName.trim() || !staff?.id || !editingTeamId) return;
     updateTeam.mutate({
       id: editingTeamId,
       name: editTeamName,
       description: editTeamDescription,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 

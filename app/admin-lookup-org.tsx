@@ -5,6 +5,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useRouter } from "expo-router";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Admin - Organizational Lookup Tables
@@ -18,6 +19,7 @@ export default function AdminLookupOrgScreen() {
   const colors = useColors();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const { staff } = useAuth();
 
   // Fetch all organizational data for search
   const { data: divisions, isLoading: divisionsLoading } = trpc.divisions.list.useQuery({ companyId: 0 });

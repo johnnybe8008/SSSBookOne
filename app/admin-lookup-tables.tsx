@@ -5,6 +5,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/hooks/use-auth";
 
 type TableType = "types" | "statuses" | "results";
 
@@ -17,7 +18,7 @@ interface EditingItem {
 /**
  * Admin - Manage Lookup Tables
  * 
- * Allows admin users to manage:
+ * Allows admin staff to manage:
  * - Session Types
  * - Session Statuses
  * - Session Results
@@ -26,7 +27,7 @@ export default function AdminLookupTablesScreen() {
   const colors = useColors();
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data: user } = trpc.auth.me.useQuery();
+  const { staff } = useAuth();
 
   const [activeTable, setActiveTable] = useState<TableType>("types");
   const [isAdding, setIsAdding] = useState(false);
@@ -118,17 +119,16 @@ export default function AdminLookupTablesScreen() {
       Alert.alert("Validation Error", "Please enter a name");
       return;
     }
-    if (!user?.id) {
-      Alert.alert("Error", "User not authenticated");
+    if (!staff?.id) {
+      Alert.alert("Error", "Staff not authenticated");
       return;
     }
-
     const input = {
       name: formData.name.trim(),
       description: formData.description.trim() || undefined,
       isActive: 1,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     };
 
     switch (activeTable) {
@@ -150,16 +150,15 @@ export default function AdminLookupTablesScreen() {
       Alert.alert("Validation Error", "Please enter a name");
       return;
     }
-    if (!user?.id) {
-      Alert.alert("Error", "User not authenticated");
+    if (!staff?.id) {
+      Alert.alert("Error", "Staff not authenticated");
       return;
     }
-
     const input = {
       id: editingItem.id,
       name: formData.name.trim(),
       description: formData.description.trim() || undefined,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     };
 
     switch (activeTable) {
@@ -194,8 +193,8 @@ export default function AdminLookupTablesScreen() {
           text: action.charAt(0).toUpperCase() + action.slice(1),
           style: newIsActive === 0 ? "destructive" : "default",
           onPress: () => {
-            if (!user?.id) return;
-            const input = { id, isActive: newIsActive, updatedBy: user.id };
+            if (!staff?.id) return;
+            const input = { id, isActive: newIsActive, updatedBy: staff.id };
             switch (activeTable) {
               case "types":
                 updateType.mutate(input);

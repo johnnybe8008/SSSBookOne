@@ -1,31 +1,31 @@
 import { getDb } from "./db";
-import { users, staff, groups, teams } from "../drizzle/schema";
+import { staff, groups, teams } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 /**
  * Manually fix admin account by creating staff record if missing
  * This can be called via API endpoint to fix existing installations
  */
-export async function fixAdminAccount(userId: number) {
+export async function fixAdminAccount(staffId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Check if user exists
-  const [user] = await db
+  // Check if staff exists
+  const [staffMember] = await db
     .select()
-    .from(users)
-    .where(eq(users.id, userId))
+    .from(staff)
+    .where(eq(staff.id, staffId))
     .limit(1);
 
-  if (!user) {
-    throw new Error("User not found");
+  if (!staffMember) {
+    throw new Error("Staff not found");
   }
 
-  // Check if user already has a staff record
+  // Check if staff already has a staff record
   const [existingStaff] = await db
     .select()
     .from(staff)
-    .where(eq(staff.userId, userId))
+    .where(eq(staff.id, staffId))
     .limit(1);
 
   if (existingStaff) {
@@ -40,8 +40,8 @@ export async function fixAdminAccount(userId: number) {
     const groupResult = await db.insert(groups).values({
       name: "Default Group",
       description: "Default organizational group",
-      createdBy: userId,
-      updatedBy: userId,
+      createdBy: staffId,
+      updatedBy: staffId,
     });
     groupId = (groupResult as any).insertId;
   } else {
@@ -61,8 +61,8 @@ export async function fixAdminAccount(userId: number) {
       groupId,
       name: "Default Team",
       description: "Default organizational team",
-      createdBy: userId,
-      updatedBy: userId,
+      createdBy: staffId,
+      updatedBy: staffId,
     });
     teamId = (teamResult as any).insertId;
   } else {
@@ -72,13 +72,13 @@ export async function fixAdminAccount(userId: number) {
   // Create staff record
   await db.insert(staff).values({
     teamId,
-    userId,
-    name: user.name || "Admin",
-    email: user.email,
+    staffId,
+    name: staffMember.name || "Admin",
+    email: staffMember.email,
     isAdmin: 1,
     isVipRated: 1,
-    createdBy: userId,
-    updatedBy: userId,
+    createdBy: staffId,
+    updatedBy: staffId,
   });
 
   return { success: true, message: "Staff record created successfully" };

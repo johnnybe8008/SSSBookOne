@@ -16,7 +16,7 @@ export default function AdminBulkReassignScreen() {
   const colors = useColors();
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data: user } = trpc.auth.me.useQuery();
+  const { data: staff } = trpc.auth.me.useQuery();
 
   // Filter state
   const [filterCompanyId, setFilterCompanyId] = useState<number>(0);

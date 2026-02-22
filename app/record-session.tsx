@@ -126,17 +126,17 @@ export default function RecordSessionScreen() {
       setClientCases(casesData);
       
       // If no cases exist, auto-generate a new case
-      if (casesData.length === 0 && selectedClient && user?.id) {
+      if (casesData.length === 0 && selectedClient && staff?.id) {
         const caseNumber = `CASE-${selectedClient.id}-${Date.now()}`;
         createCase.mutate({
           caseNumber,
           clientId: selectedClient.id,
-          createdByStaffId: user.id,
+          createdByStaffId: staff.id,
           startDate: new Date(),
           status: "Active",
           notes: "Auto-generated case",
-          createdBy: user.id,
-          updatedBy: user.id,
+          createdBy: staff.id,
+          updatedBy: staff.id,
         });
       } else if (casesData.length === 1) {
         // Auto-select if only one case
@@ -299,8 +299,8 @@ export default function RecordSessionScreen() {
       Alert.alert("Validation Error", "Please select session type and status");
       return;
     }
-    if (!user?.id) {
-      Alert.alert("Error", "User not authenticated");
+    if (!staff?.id) {
+      Alert.alert("Error", "Staff not authenticated");
       return;
     }
 
@@ -337,7 +337,7 @@ export default function RecordSessionScreen() {
     const sessionData = {
       caseId: selectedCase.id,
       clientId: selectedClient.id,
-      staffId: user.id,
+      staffId: staff.id,
       sessionTypeId,
       sessionStatusId,
       sessionResultId: sessionResultId || undefined,
@@ -349,8 +349,8 @@ export default function RecordSessionScreen() {
       sessionDuration,
       billableHours: billableHours.trim() || undefined,
       notes: notes.trim() || undefined,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     };
 
     console.log("Creating session with data:", sessionData);

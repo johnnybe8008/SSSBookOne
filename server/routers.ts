@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router, writeAccessProcedure, adminOnlyProcedure } from "./_core/trpc";
 import * as db from "./db";
-import { authenticateUser, changePassword } from "./auth";
+import { authenticateStaff, changePassword } from "./auth";
 import { fixAdminAccount } from "./fix-admin";
 import { createSession } from "./session-manager";
 import { resetDatabase } from "./reset-database";
@@ -26,15 +26,13 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
       try{
-        const user = await authenticateUser(input.email, input.password);
-       if (!user) {
-  console.error("Login failed: Invalid email or password for", input.email);
-  throw new Error("Invalid email or password");
+        const staffRecord = await authenticateStaff(input.email, input.password);
+        if (!staffRecord) {
+          console.error("Login failed: Invalid email or password for", input.email);
+          throw new Error("Invalid email or password");
         }
-        
-        // Create custom session token for email/password users
-        const sessionToken = await createSession(user.id);
-        
+        // Create custom session token for email/password staff
+        const sessionToken = await createSession(staffRecord.id);
         // Set session token as HTTP-only cookie for web platform
         ctx.res.cookie('session_token', sessionToken, {
           httpOnly: true,
@@ -43,8 +41,7 @@ export const appRouter = router({
           maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
           path: '/'
         });
-        
-        return { user, sessionToken, success: true };
+        return { staff: staffRecord, sessionToken, success: true };
       } catch (err) {
     console.error("Login error:", err);
     throw err;
@@ -86,7 +83,7 @@ export const appRouter = router({
       }
       // Only allow admin users to reset database
       if (ctx.user.role !== 'admin') {
-        throw new Error("Only admin users can reset the database");
+        throw new Error("Only admin staff can reset the database");
       }
       const result = await resetDatabase(ctx.user.id);
       return result;
@@ -325,11 +322,11 @@ export const appRouter = router({
     listAll: protectedProcedure.query(() => db.getAllStaff()),
     list: protectedProcedure.input(z.object({ teamId: z.number() })).query(({ input }) => db.getStaffByTeamId(input.teamId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getStaffById(input.id)),
-    getByUserId: protectedProcedure.input(z.object({ userId: z.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
       try {
-        return await db.getStaffByUserId(input.userId);
+        return await db.getStaffById(input.id);
       } catch (error) {
-        console.error('[tRPC][staff.getByUserId] Error:', error);
+        console.error('[tRPC][staff.getById] Error:', error);
         throw error;
       }
     }),

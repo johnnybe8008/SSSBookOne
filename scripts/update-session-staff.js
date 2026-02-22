@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 async function updateSessionStaff() {
   const connection = await mysql.createConnection({
     host: 'localhost',
-    user: 'root',
+    staff: 'root',
     password: '',
     database: 'doh_book_one'
   });

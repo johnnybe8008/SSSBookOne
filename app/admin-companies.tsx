@@ -5,6 +5,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/hooks/use-auth";
 
 interface EditingCompany {
   id: number;
@@ -17,7 +18,7 @@ interface EditingCompany {
 /**
  * Admin - Manage Companies
  * 
- * Allows admin users to:
+ * Allows admin staff to:
  * - View all companies
  * - Add new companies with full contact info
  * - Edit existing companies
@@ -27,7 +28,7 @@ export default function AdminCompaniesScreen() {
   const colors = useColors();
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data: user } = trpc.auth.me.useQuery();
+  const { staff } = useAuth();
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingCompany, setEditingCompany] = useState<EditingCompany | null>(null);
@@ -139,18 +140,17 @@ export default function AdminCompaniesScreen() {
       Alert.alert("Validation Error", "Please enter company name");
       return;
     }
-    if (!user?.id) {
-      Alert.alert("Error", "User not authenticated");
+    if (!staff?.id) {
+      Alert.alert("Error", "Staff not authenticated");
       return;
     }
-
     createCompany.mutate({
       name: formData.name.trim(),
       address: formData.address.trim() || undefined,
       phone: formData.phone.trim() || undefined,
       email: formData.email.trim() || undefined,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -160,8 +160,8 @@ export default function AdminCompaniesScreen() {
       Alert.alert("Validation Error", "Please enter company name");
       return;
     }
-    if (!user?.id) {
-      Alert.alert("Error", "User not authenticated");
+    if (!staff?.id) {
+      Alert.alert("Error", "Staff not authenticated");
       return;
     }
 
@@ -171,7 +171,7 @@ export default function AdminCompaniesScreen() {
       address: formData.address.trim() || undefined,
       phone: formData.phone.trim() || undefined,
       email: formData.email.trim() || undefined,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 

@@ -16,10 +16,10 @@ import {
 import { sql } from "drizzle-orm";
 
 /**
- * Reset Database - Clear all data except admin user
+ * Reset Database - Clear all data except admin staff
  * 
  * This function deletes all records from all tables except:
- * - The admin user (isAdmin = true)
+ * - Admin staff (role = 'admin')
  * 
  * Use with caution! This is irreversible.
  */
@@ -46,12 +46,12 @@ export async function resetDatabase(adminUserId: number): Promise<{ success: boo
     await db.delete(teams);
     await db.delete(groups);
     
-    // Delete all staff except admin users
+    // Delete all staff except admin staff
     await db.delete(staff).where(sql`role != 'admin'`);
     
     return {
       success: true,
-      message: "Database reset successfully. All data cleared except admin users."
+      message: "Database reset successfully. All data cleared except admin staff."
     };
   } catch (error: any) {
     console.error("Database reset error:", error);

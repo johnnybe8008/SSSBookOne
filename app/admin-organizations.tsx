@@ -15,7 +15,7 @@ export default function AdminOrganizationsScreen() {
   const colors = useColors();
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data: user } = trpc.auth.me.useQuery();
+  const { data: staff } = trpc.auth.me.useQuery();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -171,35 +171,35 @@ export default function AdminOrganizationsScreen() {
 
   // Handlers
   const handleCreateOrg = () => {
-    if (!newOrgName.trim() || !user?.id) return;
+    if (!newOrgName.trim() || !staff?.id) return;
     createOrg.mutate({
       name: newOrgName,
       description: newOrgDescription,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
   const handleCreateDept = (orgId: number) => {
-    if (!newDeptName.trim() || !user?.id) return;
+    if (!newDeptName.trim() || !staff?.id) return;
     createDept.mutate({
       organizationId: orgId,
       name: newDeptName,
       description: newDeptDescription,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
   const handleCreateTeam = (deptId: number) => {
-    if (!newTeamName.trim() || !user?.id) return;
+    if (!newTeamName.trim() || !staff?.id) return;
     createTeam.mutate({
       groupId: expandedOrgId!,
       staffDepartmentId: deptId,
       name: newTeamName,
       description: newTeamDescription,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -234,7 +234,7 @@ export default function AdminOrganizationsScreen() {
   };
 
   const handleUpdateOrg = () => {
-    if (!editOrgName.trim() || !user?.id || !editingOrgId) return;
+    if (!editOrgName.trim() || !staff?.id || !editingOrgId) return;
     updateOrg.mutate({
       id: editingOrgId,
       name: editOrgName,
@@ -242,7 +242,7 @@ export default function AdminOrganizationsScreen() {
       address: editOrgAddress,
       phone: editOrgPhone,
       email: editOrgEmail,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -253,12 +253,12 @@ export default function AdminOrganizationsScreen() {
   };
 
   const handleUpdateDept = () => {
-    if (!editDeptName.trim() || !user?.id || !editingDeptId) return;
+    if (!editDeptName.trim() || !staff?.id || !editingDeptId) return;
     updateDept.mutate({
       id: editingDeptId,
       name: editDeptName,
       description: editDeptDescription,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -269,12 +269,12 @@ export default function AdminOrganizationsScreen() {
   };
 
   const handleUpdateTeam = () => {
-    if (!editTeamName.trim() || !user?.id || !editingTeamId) return;
+    if (!editTeamName.trim() || !staff?.id || !editingTeamId) return;
     updateTeam.mutate({
       id: editingTeamId,
       name: editTeamName,
       description: editTeamDescription,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 

@@ -4,7 +4,7 @@ import { router } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { trpc } from "@/lib/trpc";
-import * as Auth from "@/lib/_core/auth";
+import { setStaffInfo, setSessionToken } from "@/lib/_core/auth";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -22,34 +22,40 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const result = await loginMutation.mutateAsync({ email, password });
-      
-      if (result.success && result.user) {
-        // Store user info using Auth helpers
-        const userInfo: Auth.User = {
-          id: result.user.id,
-          openId: result.user.openId || `email-${result.user.id}`,
-          name: result.user.name,
-          email: result.user.email,
-          loginMethod: "email-password",
-          lastSignedIn: new Date(),
+      console.log('[Login] Mutation result:', result);
+      if (result.success && result.staff) {
+        // Store staff info using Auth helpers
+        const staffInfo = {
+          id: result.staff.id,
+          name: result.staff.name,
+          email: result.staff.email,
+          phone: result.staff.phone,
+          role: result.staff.role,
+          lastSignedIn: result.staff.lastSignedIn,
         };
-        
-        await Auth.setUserInfo(userInfo);
+        await setStaffInfo(staffInfo);
+        console.log('[Login] Staff info set:', staffInfo);
         // Store the real session token from backend
         if (result.sessionToken) {
-          await Auth.setSessionToken(result.sessionToken);
+          await setSessionToken(result.sessionToken);
+          console.log('[Login] Session token set:', result.sessionToken);
+          // Set session token as cookie for web
+          // On web, do not set or read session_token cookie from JS. Backend handles session via HttpOnly cookie.
         }
-        
-        // Check if user must change password
-        if (result.user.mustChangePassword === 1) {
+        // Check if staff must change password
+        if (result.staff.mustChangePassword === 1) {
+          console.log('[Login] Navigating to change-password');
           router.replace("/change-password" as any);
+          console.log('[Login] router.replace to /change-password called');
         } else {
-          // Navigate to home
+          console.log('[Login] Navigating to home');
           router.replace("/(tabs)");
+          console.log('[Login] router.replace to /(tabs) called');
         }
       }
     } catch (error: any) {
       Alert.alert("Login Failed", error.message || "Invalid email or password");
+      console.error('[Login] Error:', error);
     } finally {
       setLoading(false);
     }

@@ -5,11 +5,12 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Admin - Manage FSMs (Field Service Managers / Referral Sources)
  * 
- * Allows admin users to:
+ * Allows admin staff to:
  * - View all FSMs
  * - Add new FSMs
  * - Edit existing FSMs
@@ -19,7 +20,7 @@ export default function AdminFSMsScreen() {
   const colors = useColors();
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data: user } = trpc.auth.me.useQuery();
+  const { staff } = useAuth();
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingFSM, setEditingFSM] = useState<any | null>(null);
@@ -99,11 +100,10 @@ export default function AdminFSMsScreen() {
       Alert.alert("Validation Error", "Please enter FSM name");
       return;
     }
-    if (!user?.id) {
-      Alert.alert("Error", "User not authenticated");
+    if (!staff?.id) {
+      Alert.alert("Error", "Staff not authenticated");
       return;
     }
-
     createFSM.mutate({
       name: formData.name.trim(),
       organization: formData.organization.trim() || undefined,
@@ -112,8 +112,8 @@ export default function AdminFSMsScreen() {
       mobilePhone: formData.mobilePhone.trim() || undefined,
       address: formData.address.trim() || undefined,
       notes: formData.notes.trim() || undefined,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: staff.id,
+      updatedBy: staff.id,
     });
   };
 
@@ -123,11 +123,10 @@ export default function AdminFSMsScreen() {
       Alert.alert("Validation Error", "Please enter FSM name");
       return;
     }
-    if (!user?.id) {
-      Alert.alert("Error", "User not authenticated");
+    if (!staff?.id) {
+      Alert.alert("Error", "Staff not authenticated");
       return;
     }
-
     updateFSM.mutate({
       id: editingFSM.id,
       name: formData.name.trim(),
@@ -137,7 +136,7 @@ export default function AdminFSMsScreen() {
       mobilePhone: formData.mobilePhone.trim() || undefined,
       address: formData.address.trim() || undefined,
       notes: formData.notes.trim() || undefined,
-      updatedBy: user.id,
+      updatedBy: staff.id,
     });
   };
 
