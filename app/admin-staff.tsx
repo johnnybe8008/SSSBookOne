@@ -11,7 +11,7 @@ import { Picker } from "@react-native-picker/picker";
 export default function AdminStaffScreen() {
   const colors = useColors();
   const { data: allStaff, isLoading } = trpc.staff.listAll.useQuery();
-  const { data: organizations } = trpc.groups.list.useQuery();
+  const { data: organizations } = trpc.organizations.list.useQuery();
   const { data: staffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
   const { data: teams } = trpc.teams.list.useQuery({ groupId: 0 });
 

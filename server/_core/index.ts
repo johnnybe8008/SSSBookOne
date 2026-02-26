@@ -29,27 +29,36 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  const app = express();
+    const app = express();
+    // Enable CORS for all routes - reflect the request origin to support credentials
+    app.use((req, res, next) => {
+      const origin = req.headers.origin;
+      if (origin) {
+        res.header("Access-Control-Allow-Origin", origin);
+      }
+      res.header(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+      );
+      res.header("Access-Control-Allow-Credentials", "true");
+
+      // Handle preflight requests
+      if (req.method === "OPTIONS") {
+        res.sendStatus(200);
+        return;
+      }
+      next();
+    });
   const server = createServer(app);
 
-  // Enable CORS for all routes - reflect the request origin to support credentials
-  app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header("Access-Control-Allow-Origin", origin);
-    }
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-    );
-    res.header("Access-Control-Allow-Credentials", "true");
-
-    // Handle preflight requests
-    if (req.method === "OPTIONS") {
-      res.sendStatus(200);
-      return;
-    }
+  // Log all incoming tRPC requests and errors (must be after app is initialized)
+  app.use('/api/trpc', (req, res, next) => {
+    console.log('[tRPC][INCOMING]', req.method, req.originalUrl, req.body);
+    res.on('finish', () => {
+      if (res.statusCode >= 400) {
+        console.error('[tRPC][ERROR]', req.method, req.originalUrl, res.statusCode);
+      }
+    });
     next();
   });
 

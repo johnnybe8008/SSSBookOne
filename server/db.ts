@@ -15,7 +15,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertStaff,
   staff,
-  groups,
+  organizations,
   staffDepartments,
   teams,
   staff,
@@ -31,7 +31,7 @@ import {
   sessionResults,
   sessions,
   notifications,
-  type InsertGroup,
+  type InsertOrganization,
   type InsertStaffDepartment,
   type InsertTeam,
   type InsertStaff,
@@ -162,40 +162,58 @@ export async function getStaffByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getStaffById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(staff).where(eq(staff.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
 // ============================================================================
 // STAFF ORGANIZATION
 // ============================================================================
 
-export async function getAllGroups() {
+export async function getAllOrganizations() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(groups).orderBy(asc(groups.name));
+  // Explicitly select all columns, including address, phone, and email
+  return db.select({
+    id: organizations.id,
+    name: organizations.name,
+    address: organizations.address,
+    phone: organizations.phone,
+    email: organizations.email,
+    createdAt: organizations.createdAt,
+    createdBy: organizations.createdBy,
+    updatedAt: organizations.updatedAt,
+    updatedBy: organizations.updatedBy,
+  }).from(organizations).orderBy(asc(organizations.name));
 }
 
-export async function getGroupById(id: number) {
+export async function getOrganizationById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(groups).where(eq(groups.id, id));
+  const result = await db.select().from(organizations).where(eq(organizations.id, id));
   return result[0] || null;
 }
 
-export async function createGroup(data: InsertGroup) {
+export async function createOrganization(data: InsertOrganization) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result: any = await db.insert(groups).values(data);
+  const result: any = await db.insert(organizations).values(data);
   return result.insertId as number;
 }
 
-export async function updateGroup(id: number, data: Partial<InsertGroup>) {
+export async function updateOrganization(id: number, data: Partial<InsertOrganization>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(groups).set(data).where(eq(groups.id, id));
+  await db.update(organizations).set(data).where(eq(organizations.id, id));
 }
 
-export async function deleteGroup(id: number) {
+export async function deleteOrganization(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.delete(groups).where(eq(groups.id, id));
+  await db.delete(organizations).where(eq(organizations.id, id));
 }
 
 // Staff Departments
@@ -229,20 +247,30 @@ export async function updateStaffDepartment(id: number, data: Partial<InsertStaf
   await db.update(staffDepartments).set(data).where(eq(staffDepartments.id, id));
 }
 
-export async function deleteStaffDepartment(id: number) {
+export async function deleteStaffDepartment(id: number, organizationId?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.delete(staffDepartments).where(eq(staffDepartments.id, id));
+  console.log('[deleteStaffDepartment] called with:', { id, organizationId });
+  if (organizationId) {
+    console.log('[deleteStaffDepartment] Deleting with id and organizationId');
+    await db.delete(staffDepartments).where(
+      and(eq(staffDepartments.id, id), eq(staffDepartments.organizationId, organizationId))
+    );
+  } else {
+    console.log('[deleteStaffDepartment] Deleting with id only');
+    await db.delete(staffDepartments).where(eq(staffDepartments.id, id));
+  }
+  console.log('[deleteStaffDepartment] Delete attempted');
 }
 
-export async function getTeamsByGroupId(groupId: number) {
+export async function getTeamsByOrganizationId(organizationId: number) {
   const db = await getDb();
   if (!db) return [];
-  // If groupId is 0, return all teams
-  if (groupId === 0) {
+  // If organizationId is 0, return all teams
+  if (organizationId === 0) {
     return db.select().from(teams).orderBy(asc(teams.name));
   }
-  return db.select().from(teams).where(eq(teams.groupId, groupId)).orderBy(asc(teams.name));
+  return db.select().from(teams).where(eq(teams.organizationId, organizationId)).orderBy(asc(teams.name));
 }
 
 export async function getTeamById(id: number) {
@@ -283,18 +311,13 @@ export async function getStaffByTeamId(teamId: number) {
   return db.select().from(staff).where(eq(staff.teamId, teamId)).orderBy(asc(staff.name));
 }
 
-export async function getStaffById(id: number) {
+export async function getAllCasesByClientId(clientId: number) {
   const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(staff).where(eq(staff.id, id));
-  return result[0] || null;
+  if (!db) return [];
+  return db.select().from(cases).where(eq(cases.clientId, clientId)).orderBy(desc(cases.startDate));
 }
 
-export async function deleteStaff(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(staff).where(eq(staff.id, id));
-}
+
 
 // ============================================================================
 // CLIENT ORGANIZATION

@@ -1,3 +1,4 @@
+// ...existing code...
 import { useState, useMemo } from "react";
 import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
@@ -5,46 +6,101 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
-
+export default function AdminClientOrganizationsScreen() {
+                  // ...existing code...
+                // Handler for creating a new company
+                const handleCreateCompany = () => {
+                  createCompany.mutate({
+                    name: newCompanyName,
+                    description: newCompanyDescription,
+                    address: newCompanyAddress,
+                    phone: newCompanyPhone,
+                    email: newCompanyEmail,
+                    divisionId: selectedDivisionId,
+                    departmentId: selectedDepartmentId,
+                    teamId: selectedTeamId,
+                    createdBy: staff?.id || 0,
+                    updatedBy: staff?.id || 0,
+                  });
+                };
+              // New Company email state
+              const [newCompanyEmail, setNewCompanyEmail] = useState("");
+            // New Company phone state
+            const [newCompanyPhone, setNewCompanyPhone] = useState("");
+          // New Company address state
+          const [newCompanyAddress, setNewCompanyAddress] = useState("");
+        // New Company description state
+        const [newCompanyDescription, setNewCompanyDescription] = useState("");
+      // New Company name state
+      const [newCompanyName, setNewCompanyName] = useState("");
+    // Search Bar state
+    const [searchQuery, setSearchQuery] = useState("");
+    // Companies data
+    const { data: companies } = trpc.companies.all.useQuery();
+    // Filtered companies based on searchQuery
+    const filteredCompanies = useMemo(() => {
+      if (!companies) return [];
+      if (!searchQuery.trim()) return companies;
+      const lowerQuery = searchQuery.toLowerCase();
+      return companies.filter(
+        (company) =>
+          company.name?.toLowerCase().includes(lowerQuery) ||
+          company.address?.toLowerCase().includes(lowerQuery) ||
+          company.email?.toLowerCase().includes(lowerQuery)
+      );
+    }, [companies, searchQuery]);
+  // ...existing code...
+  // Add Company state
+  const [isAddingCompany, setIsAddingCompany] = useState(false);
+  const colors = useColors();
+  const router = useRouter();
+  const utils = trpc.useUtils();
+  const { data: staff, isLoading: staffLoading, error: staffError } = trpc.auth.me.useQuery();
+  // Fetch divisions data
+  const { data: divisions, isLoading: divisionsLoading, error: divisionsError } = trpc.divisions.all.useQuery();
+  // Alias for compatibility with existing code
+  const allDivisions = divisions;
+  // Fetch departments data
+  const { data: departments, isLoading: departmentsLoading, error: departmentsError } = trpc.departments.all.useQuery();
+  // Alias for compatibility with existing code
+  const allDepartments = departments;
+  // Fetch teams data
+  const { data: teams, isLoading: teamsLoading, error: teamsError } = trpc.companyTeams.all.useQuery();
+  // Alias for compatibility with existing code
+  const allTeams = teams;
+    // ...existing code...
+  // ...existing code...
 /**
  * Admin - Manage Client Organizations
  * 
  * Four-level hierarchy: Companies → Divisions → Departments → Teams
  */
-export default function AdminClientOrganizationsScreen() {
-  const colors = useColors();
-  const router = useRouter();
-  const utils = trpc.useUtils();
-  const { data: staff, isLoading: staffLoading, error: staffError } = trpc.auth.me.useQuery();
-  console.log('[DEBUG] staff:', staff, 'loading:', staffLoading, 'error:', staffError);
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Company state
-  const [isAddingCompany, setIsAddingCompany] = useState(false);
-  const [newCompanyName, setNewCompanyName] = useState("");
-  const [newCompanyDescription, setNewCompanyDescription] = useState("");
-  const [newCompanyAddress, setNewCompanyAddress] = useState("");
-  const [newCompanyPhone, setNewCompanyPhone] = useState("");
-  const [newCompanyEmail, setNewCompanyEmail] = useState("");
   const [expandedCompanyId, setExpandedCompanyId] = useState<number | null>(null);
-
+  // Division/Department selectors for new company
+  const [selectedDivisionId, setSelectedDivisionId] = useState<number | null>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [divisionSearch, setDivisionSearch] = useState("");
+  const [departmentSearch, setDepartmentSearch] = useState("");
+  const [teamSearch, setTeamSearch] = useState("");
+  const [showCreateDivision, setShowCreateDivision] = useState(false);
+  const [showCreateDepartment, setShowCreateDepartment] = useState(false);
+  const [showCreateTeam, setShowCreateTeam] = useState(false);
+  // ...existing code...
+  const [newDepartmentName, setNewDepartmentName] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
   // Division state
   const [isAddingDivision, setIsAddingDivision] = useState<number | null>(null);
   const [newDivisionName, setNewDivisionName] = useState("");
   const [newDivisionDescription, setNewDivisionDescription] = useState("");
   const [expandedDivisionId, setExpandedDivisionId] = useState<number | null>(null);
-
   // Department state
   const [isAddingDepartment, setIsAddingDepartment] = useState<number | null>(null);
   const [newDeptName, setNewDeptName] = useState("");
   const [newDeptDescription, setNewDeptDescription] = useState("");
   const [expandedDeptId, setExpandedDeptId] = useState<number | null>(null);
-
   // Team state
   const [isAddingTeam, setIsAddingTeam] = useState<number | null>(null);
-  const [newTeamName, setNewTeamName] = useState("");
   const [newTeamDescription, setNewTeamDescription] = useState("");
 
   // Edit state for companies
@@ -69,39 +125,7 @@ export default function AdminClientOrganizationsScreen() {
   const [editingTeamId, setEditingTeamId] = useState<number | null>(null);
   const [editTeamName, setEditTeamName] = useState("");
   const [editTeamDescription, setEditTeamDescription] = useState("");
-
-  // Queries
-  const { data: companies, isLoading } = trpc.companies.list.useQuery();
-  console.log('[DEBUG] companies:', companies, 'loading:', isLoading);
-
-  // Filtered companies based on search query
-  const filteredCompanies = useMemo(() => {
-    if (!companies) return [];
-    if (!searchQuery.trim()) return companies;
-    
-    const query = searchQuery.toLowerCase();
-    return companies.filter(company => 
-      company.name.toLowerCase().includes(query) ||
-      company.address?.toLowerCase().includes(query) ||
-      company.phone?.toLowerCase().includes(query) ||
-      company.email?.toLowerCase().includes(query) ||
-      company.contactPerson?.toLowerCase().includes(query)
-    );
-  }, [companies, searchQuery]);
-  const { data: divisions } = trpc.divisions.list.useQuery(
-    { companyId: expandedCompanyId || 0 },
-    { enabled: expandedCompanyId !== null }
-  );
   // ...existing code...
-  const { data: departments } = trpc.departments.list.useQuery(
-    { divisionId: expandedDivisionId || 0 },
-    { enabled: expandedDivisionId !== null }
-  );
-  const { data: teams } = trpc.companyTeams.list.useQuery(
-    { departmentId: expandedDeptId || 0 },
-    { enabled: expandedDeptId !== null }
-  );
-
   // Mutations
   const createCompany = trpc.companies.create.useMutation({
     onSuccess: () => {
@@ -218,28 +242,190 @@ export default function AdminClientOrganizationsScreen() {
     onError: (error) => Alert.alert("Error", error.message),
   });
 
-  // Handlers
-  const handleCreateCompany = () => {
-    if (!newCompanyName.trim() || !staff?.id) return;
-    createCompany.mutate({
-      name: newCompanyName,
-      address: newCompanyAddress || undefined,
-      phone: newCompanyPhone || undefined,
-      email: newCompanyEmail || undefined,
-      createdBy: staff.id,
-      updatedBy: staff.id,
-    });
-  };
+    // ...existing code...
+
+  // Handler functions must be above the main return
+  // ...existing code...
+
+  // ...existing code...
+
+  // ...existing code...
+        <ScrollView style={{ maxHeight: 120 }}>
+          {allDivisions && allDivisions
+            .filter(d => d.name.toLowerCase().includes(divisionSearch.toLowerCase()))
+            .map(d => (
+              <TouchableOpacity
+                key={d.id}
+                onPress={() => setSelectedDivisionId(d.id)}
+                style={{ backgroundColor: selectedDivisionId === d.id ? colors.primary + '20' : 'transparent' }}
+                className="py-2 px-2 border-b border-border"
+              >
+                <Text style={{ color: colors.foreground }} className="font-medium">{d.name}</Text>
+              </TouchableOpacity>
+            ))}
+        </ScrollView>
+        {/* Create Division Modal */}
+        {showCreateDivision && (
+                      <>
+                        <Text style={{ color: 'orange', fontSize: 12, marginBottom: 4 }}>
+                          companyId: {expandedCompanyId?.toString() || 'null'} | staff.id: {staff?.id?.toString() || 'null'}
+                        </Text>
+                        <View className="absolute top-0 left-0 right-0 bg-background p-4 z-10 border border-primary rounded-xl">
+                          <Text className="text-lg font-semibold mb-2">Create New Division</Text>
+                          <TextInput
+                            value={newDivisionName}
+                            onChangeText={setNewDivisionName}
+                            placeholder="Division Name"
+                            className="bg-background border border-border rounded-xl px-4 py-3 mb-2"
+                          />
+                          {/* Debug payload display */}
+                          <Text style={{ color: 'red', fontSize: 12, marginBottom: 8 }}>
+                            {JSON.stringify({
+                              companyId: expandedCompanyId,
+                              name: newDivisionName,
+                              description: newDivisionDescription,
+                              createdBy: staff?.id,
+                              updatedBy: staff?.id,
+                            }, null, 2)}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => {
+                              if (!newDivisionName.trim() || !newDivisionDescription.trim() || !staff?.id || !expandedCompanyId) return;
+                              handleCreateDivision(expandedCompanyId);
+                              setShowCreateDivision(false);
+                              setNewDivisionName("");
+                              setNewDivisionDescription("");
+                            }}
+                            className="bg-primary py-2 rounded-xl mb-2"
+                          >
+                            <Text className="text-background text-center font-semibold">Add</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => setShowCreateDivision(false)}>
+                            <Text className="text-center text-primary font-medium">Cancel</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+        )}
+      <>
+        <TextInput
+          value={departmentSearch}
+          onChangeText={setDepartmentSearch}
+          placeholder="Search departments..."
+          placeholderTextColor={colors.muted}
+          className="bg-background border border-border rounded-xl px-4 py-3 mb-2"
+        />
+        <TouchableOpacity onPress={() => setShowCreateDepartment(true)} className="mb-2">
+          <Text className="text-primary font-medium">+ Create New Department</Text>
+        </TouchableOpacity>
+        <ScrollView style={{ maxHeight: 120 }}>
+          {allDepartments && allDepartments
+            .filter(d => d.name.toLowerCase().includes(departmentSearch.toLowerCase()))
+            .map(d => (
+              <TouchableOpacity
+                key={d.id}
+                onPress={() => setSelectedDepartmentId(d.id)}
+                style={{ backgroundColor: selectedDepartmentId === d.id ? colors.primary + '20' : 'transparent' }}
+                className="py-2 px-2 border-b border-border"
+              >
+                <Text style={{ color: colors.foreground }} className="font-medium">{d.name}</Text>
+              </TouchableOpacity>
+            ))}
+        </ScrollView>
+      </>
+      {/* Create Department Modal */}
+      {showCreateDepartment && (
+        <View className="absolute top-0 left-0 right-0 bg-background p-4 z-10 border border-primary rounded-xl">
+          <Text className="text-lg font-semibold mb-2">Create New Department</Text>
+          <TextInput
+            value={newDepartmentName}
+            onChangeText={setNewDepartmentName}
+            placeholder="Department Name"
+            className="bg-background border border-border rounded-xl px-4 py-3 mb-2"
+          />
+          <TouchableOpacity
+            onPress={() => {
+              if (!newDepartmentName.trim()) return;
+              createDept.mutate({ name: newDepartmentName, createdBy: staff.id, updatedBy: staff.id });
+              setShowCreateDepartment(false);
+              setNewDepartmentName("");
+            }}
+            className="bg-primary py-2 rounded-xl mb-2"
+          >
+            <Text className="text-background text-center font-semibold">Create</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowCreateDepartment(false)}>
+            <Text className="text-center text-primary">Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {/* End of all modals and selectors */}
+      <>
+        {/* Team Selector (required) */}
+        <Text className="text-sm font-medium text-foreground mb-2 mt-2">Team *</Text>
+        <TextInput
+          value={teamSearch}
+          onChangeText={setTeamSearch}
+          placeholder="Search teams..."
+          placeholderTextColor={colors.muted}
+          className="bg-background border border-border rounded-xl px-4 py-3 mb-2"
+        />
+        <TouchableOpacity onPress={() => setShowCreateTeam(true)} className="mb-2">
+          <Text className="text-primary font-medium">+ Create New Team</Text>
+        </TouchableOpacity>
+        <ScrollView style={{ maxHeight: 120 }}>
+          {allTeams && allTeams
+            .filter(t => t.name.toLowerCase().includes(teamSearch.toLowerCase()))
+            .map(t => (
+              <TouchableOpacity
+                key={t.id}
+                onPress={() => setSelectedTeamId(t.id)}
+                style={{ backgroundColor: selectedTeamId === t.id ? colors.primary + '20' : 'transparent' }}
+                className="py-2 px-2 border-b border-border"
+              >
+                <Text style={{ color: colors.foreground }} className="font-medium">{t.name}</Text>
+              </TouchableOpacity>
+            ))}
+        </ScrollView>
+      </>
+      {/* Create Team Modal */}
+      {showCreateTeam && (
+        <View className="absolute top-0 left-0 right-0 bg-background p-4 z-10 border border-primary rounded-xl">
+          <Text className="text-lg font-semibold mb-2">Create New Team</Text>
+          <TextInput
+            value={newTeamName}
+            onChangeText={setNewTeamName}
+            placeholder="Team Name"
+            className="bg-background border border-border rounded-xl px-4 py-3 mb-2"
+          />
+          <TouchableOpacity
+            onPress={() => {
+              if (!newTeamName.trim()) return;
+              createTeam.mutate({ name: newTeamName, createdBy: staff.id, updatedBy: staff.id });
+              setShowCreateTeam(false);
+              setNewTeamName("");
+            }}
+            className="bg-primary py-2 rounded-xl mb-2"
+          >
+            <Text className="text-background text-center font-semibold">Create</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowCreateTeam(false)}>
+            <Text className="text-center text-primary">Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
   const handleCreateDivision = (companyId: number) => {
-    if (!newDivisionName.trim() || !staff?.id) return;
-    createDivision.mutate({
-      companyId,
+    if (!newDivisionName.trim() || !newDivisionDescription.trim() || !staff?.id) return;
+    const validCompanyId = companyId || editingCompanyId;
+    const payload = {
+      companyId: validCompanyId,
       name: newDivisionName,
       description: newDivisionDescription,
       createdBy: staff.id,
       updatedBy: staff.id,
-    });
+    };
+    console.log('Division Payload:', payload);
+    createDivision.mutate(payload);
   };
 
   const handleCreateDept = (divisionId: number) => {
@@ -294,6 +480,7 @@ export default function AdminClientOrganizationsScreen() {
 
   const handleStartEditCompany = (company: any) => {
     setEditingCompanyId(company.id);
+    setExpandedCompanyId(company.id); // Ensure expandedCompanyId is set when editing
     setEditCompanyName(company.name);
     setEditCompanyDescription(company.description || "");
     setEditCompanyAddress(company.address || "");
@@ -309,6 +496,9 @@ export default function AdminClientOrganizationsScreen() {
       address: editCompanyAddress || undefined,
       phone: editCompanyPhone || undefined,
       email: editCompanyEmail || undefined,
+      divisionId: selectedDivisionId,
+      departmentId: selectedDepartmentId,
+      teamId: selectedTeamId,
       updatedBy: staff.id,
     });
   };
@@ -319,21 +509,7 @@ export default function AdminClientOrganizationsScreen() {
     setEditDivisionDescription(division.description || "");
   };
 
-  const handleUpdateDivision = () => {
-    if (!editDivisionName.trim() || !staff?.id || !editingDivisionId) return;
-    updateDivision.mutate({
-      id: editingDivisionId,
-      name: editDivisionName,
-      description: editDivisionDescription,
-      updatedBy: staff.id,
-    });
-  };
-
-  const handleStartEditDept = (dept: any) => {
-    setEditingDeptId(dept.id);
-    setEditDeptName(dept.name);
-    setEditDeptDescription(dept.description || "");
-  };
+  // ...existing code...
 
   const handleUpdateDept = () => {
     if (!editDeptName.trim() || !staff?.id || !editingDeptId) return;
@@ -361,17 +537,32 @@ export default function AdminClientOrganizationsScreen() {
     });
   };
 
-  if (isLoading) {
+  if (staffLoading || divisionsLoading || departmentsLoading || teamsLoading) {
     return (
-      <ScreenContainer className="items-center justify-center">
-        <ActivityIndicator size="large" color={colors.primary} />
-      </ScreenContainer>
+      <>
+        <View style={{ padding: 8 }}>
+          <Text style={{ color: 'orange', fontSize: 14 }}>
+            Debug: expandedCompanyId = {(typeof expandedCompanyId !== 'undefined' ? expandedCompanyId?.toString() : 'null')} | staff.id = {(staff && typeof staff.id !== 'undefined' ? staff.id?.toString() : 'null')}
+          </Text>
+        </View>
+        <ScreenContainer className="items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+        </ScreenContainer>
+      </>
     );
   }
 
   return (
     <ScreenContainer>
       <ScrollView className="flex-1 p-4">
+          {/* Back Button */}
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="flex-row items-center gap-2 mb-4"
+          >
+            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+            <Text className="text-primary text-base font-semibold">Back</Text>
+          </TouchableOpacity>
         {/* Header */}
         <View className="flex-row items-center justify-between mb-4">
           <TouchableOpacity onPress={() => router.back()}>
@@ -401,75 +592,267 @@ export default function AdminClientOrganizationsScreen() {
             <Text className="text-background font-semibold text-center">+ Add Company</Text>
           </TouchableOpacity>
         ) : (
-          <View style={{ backgroundColor: colors.surface }} className="p-4 rounded-lg mb-4">
-            <Text className="text-foreground font-semibold mb-2">New Company</Text>
-            <TextInput
-              value={newCompanyName}
-              onChangeText={setNewCompanyName}
-              placeholder="Company Name"
-              placeholderTextColor={colors.muted}
-              style={{ backgroundColor: colors.background, color: colors.foreground }}
-              className="px-3 py-2 rounded mb-2"
-            />
-            <TextInput
-              value={newCompanyDescription}
-              onChangeText={setNewCompanyDescription}
-              placeholder="Description (optional)"
-              placeholderTextColor={colors.muted}
-              style={{ backgroundColor: colors.background, color: colors.foreground }}
-              className="px-3 py-2 rounded mb-2"
-              multiline
-            />
-            <TextInput
-              value={newCompanyAddress}
-              onChangeText={setNewCompanyAddress}
-              placeholder="Address (optional)"
-              placeholderTextColor={colors.muted}
-              style={{ backgroundColor: colors.background, color: colors.foreground }}
-              className="px-3 py-2 rounded mb-2"
-            />
-            <TextInput
-              value={newCompanyPhone}
-              onChangeText={setNewCompanyPhone}
-              placeholder="Phone (optional)"
-              placeholderTextColor={colors.muted}
-              style={{ backgroundColor: colors.background, color: colors.foreground }}
-              className="px-3 py-2 rounded mb-2"
-            />
-            <TextInput
-              value={newCompanyEmail}
-              onChangeText={setNewCompanyEmail}
-              placeholder="Email (optional)"
-              placeholderTextColor={colors.muted}
-              style={{ backgroundColor: colors.background, color: colors.foreground }}
-              className="px-3 py-2 rounded mb-3"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <View className="flex-row gap-2">
-              <TouchableOpacity
-                onPress={handleCreateCompany}
-                style={{ backgroundColor: colors.primary }}
-                className="flex-1 px-4 py-2 rounded"
-              >
-                <Text className="text-background font-semibold text-center">Create</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setIsAddingCompany(false);
-                  setNewCompanyName("");
-                  setNewCompanyDescription("");
-                  setNewCompanyAddress("");
-                  setNewCompanyPhone("");
-                  setNewCompanyEmail("");
-                }}
-                style={{ backgroundColor: colors.border }}
-                className="flex-1 px-4 py-2 rounded"
-              >
-                <Text className="text-foreground font-semibold text-center">Cancel</Text>
-              </TouchableOpacity>
+            <View style={{ backgroundColor: colors.background }} className="p-4 rounded-lg mb-4">
+              <Text className="text-foreground font-semibold mb-3">Add New Company</Text>
+              <TextInput
+                value={newCompanyName}
+                onChangeText={setNewCompanyName}
+                placeholder="Company Name"
+                placeholderTextColor={colors.muted}
+                style={{ backgroundColor: colors.background, color: colors.foreground }}
+                className="px-3 py-2 rounded mb-2"
+              />
+              <TextInput
+                value={newCompanyDescription}
+                onChangeText={setNewCompanyDescription}
+                placeholder="Description (optional)"
+                placeholderTextColor={colors.muted}
+                style={{ backgroundColor: colors.background, color: colors.foreground }}
+                className="px-3 py-2 rounded mb-2"
+                multiline
+              />
+              <TextInput
+                value={newCompanyAddress}
+                onChangeText={setNewCompanyAddress}
+                placeholder="Address (optional)"
+                placeholderTextColor={colors.muted}
+                style={{ backgroundColor: colors.background, color: colors.foreground }}
+                className="px-3 py-2 rounded mb-2"
+              />
+              <TextInput
+                value={newCompanyPhone}
+                onChangeText={setNewCompanyPhone}
+                placeholder="Phone (optional)"
+                placeholderTextColor={colors.muted}
+                style={{ backgroundColor: colors.background, color: colors.foreground }}
+                className="px-3 py-2 rounded mb-2"
+              />
+              <TextInput
+                value={newCompanyEmail}
+                onChangeText={setNewCompanyEmail}
+                placeholder="Email (optional)"
+                placeholderTextColor={colors.muted}
+                style={{ backgroundColor: colors.background, color: colors.foreground }}
+                className="px-3 py-2 rounded mb-3"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {/* Division Selector */}
+              <View className="flex-row items-center mb-1">
+                <Text className="text-foreground font-semibold">Division</Text>
+                <TouchableOpacity onPress={() => setShowCreateDivision(true)} className="ml-2">
+                  <Text style={{ color: colors.primary, fontSize: 18 }}>+</Text>
+                </TouchableOpacity>
+              </View>
+              <View className="mb-2">
+                {allDivisions?.length ? (
+                  allDivisions.map((d) => (
+                    <TouchableOpacity
+                      key={d.id}
+                      onPress={() => setSelectedDivisionId(d.id)}
+                      style={{ backgroundColor: selectedDivisionId === d.id ? colors.primary + '20' : 'transparent' }}
+                      className="px-2 py-1 rounded mb-1"
+                    >
+                      <Text style={{ color: colors.foreground }}>{d.name}</Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text className="text-muted">No divisions found</Text>
+                )}
+                {showCreateDivision && (
+                  <View className="mt-2">
+                    <TextInput
+                      value={newDivisionName}
+                      onChangeText={setNewDivisionName}
+                      placeholder="New Division Name"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-2 py-1 rounded mb-1"
+                    />
+                    <TextInput
+                      value={newDivisionDescription}
+                      onChangeText={setNewDivisionDescription}
+                      placeholder="Description (optional)"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-2 py-1 rounded mb-1"
+                    />
+                    <View className="flex-row gap-2 mt-1">
+                      <TouchableOpacity
+                        onPress={() => handleCreateDivision()}
+                        style={{ backgroundColor: colors.primary }}
+                        className="px-3 py-1 rounded"
+                      >
+                        <Text className="text-background font-semibold text-center">Add</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowCreateDivision(false);
+                          setNewDivisionName("");
+                          setNewDivisionDescription("");
+                        }}
+                        style={{ backgroundColor: colors.border }}
+                        className="px-3 py-1 rounded"
+                      >
+                        <Text className="text-foreground font-semibold text-center">Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+              {/* Department Selector */}
+              <View className="flex-row items-center mb-1">
+                <Text className="text-foreground font-semibold">Department</Text>
+                <TouchableOpacity onPress={() => setShowCreateDepartment(true)} className="ml-2">
+                  <Text style={{ color: colors.primary, fontSize: 18 }}>+</Text>
+                </TouchableOpacity>
+              </View>
+              <View className="mb-2">
+                {allDepartments?.length ? (
+                  allDepartments.map((d) => (
+                    <TouchableOpacity
+                      key={d.id}
+                      onPress={() => setSelectedDepartmentId(d.id)}
+                      style={{ backgroundColor: selectedDepartmentId === d.id ? colors.primary + '20' : 'transparent' }}
+                      className="px-2 py-1 rounded mb-1"
+                    >
+                      <Text style={{ color: colors.foreground }}>{d.name}</Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text className="text-muted">No departments found</Text>
+                )}
+                {showCreateDepartment && (
+                  <View className="mt-2">
+                    <TextInput
+                      value={newDepartmentName}
+                      onChangeText={setNewDepartmentName}
+                      placeholder="New Department Name"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-2 py-1 rounded mb-1"
+                    />
+                    <TextInput
+                      value={newDeptDescription}
+                      onChangeText={setNewDeptDescription}
+                      placeholder="Description (optional)"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-2 py-1 rounded mb-1"
+                    />
+                    <View className="flex-row gap-2 mt-1">
+                      <TouchableOpacity
+                        onPress={() => handleCreateDepartment()}
+                        style={{ backgroundColor: colors.primary }}
+                        className="px-3 py-1 rounded"
+                      >
+                        <Text className="text-background font-semibold text-center">Add</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowCreateDepartment(false);
+                          setNewDepartmentName("");
+                          setNewDeptDescription("");
+                        }}
+                        style={{ backgroundColor: colors.border }}
+                        className="px-3 py-1 rounded"
+                      >
+                        <Text className="text-foreground font-semibold text-center">Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+              {/* Team Selector */}
+              <View className="flex-row items-center mb-1">
+                <Text className="text-foreground font-semibold">Team</Text>
+                <TouchableOpacity onPress={() => setShowCreateTeam(true)} className="ml-2">
+                  <Text style={{ color: colors.primary, fontSize: 18 }}>+</Text>
+                </TouchableOpacity>
+              </View>
+              <View className="mb-3">
+                {allTeams?.length ? (
+                  allTeams.map((t) => (
+                    <TouchableOpacity
+                      key={t.id}
+                      onPress={() => setSelectedTeamId(t.id)}
+                      style={{ backgroundColor: selectedTeamId === t.id ? colors.primary + '20' : 'transparent' }}
+                      className="px-2 py-1 rounded mb-1"
+                    >
+                      <Text style={{ color: colors.foreground }}>{t.name}</Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text className="text-muted">No teams found</Text>
+                )}
+                {showCreateTeam && (
+                  <View className="mt-2">
+                    <TextInput
+                      value={newTeamName}
+                      onChangeText={setNewTeamName}
+                      placeholder="New Team Name"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-2 py-1 rounded mb-1"
+                    />
+                    <TextInput
+                      value={newTeamDescription}
+                      onChangeText={setNewTeamDescription}
+                      placeholder="Description (optional)"
+                      placeholderTextColor={colors.muted}
+                      style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                      className="px-2 py-1 rounded mb-1"
+                    />
+                    <View className="flex-row gap-2 mt-1">
+                      <TouchableOpacity
+                        onPress={() => handleCreateTeam()}
+                        style={{ backgroundColor: colors.primary }}
+                        className="px-3 py-1 rounded"
+                      >
+                        <Text className="text-background font-semibold text-center">Add</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowCreateTeam(false);
+                          setNewTeamName("");
+                          setNewTeamDescription("");
+                        }}
+                        style={{ backgroundColor: colors.border }}
+                        className="px-3 py-1 rounded"
+                      >
+                        <Text className="text-foreground font-semibold text-center">Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  onPress={handleCreateCompany}
+                  style={{ backgroundColor: colors.primary }}
+                  className="flex-1 px-4 py-2 rounded"
+                >
+                  <Text className="text-background font-semibold text-center">Create</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingCompany(false);
+                    setNewCompanyName("");
+                    setNewCompanyDescription("");
+                    setNewCompanyAddress("");
+                    setNewCompanyPhone("");
+                    setNewCompanyEmail("");
+                    setSelectedDivisionId(null);
+                    setSelectedDepartmentId(null);
+                    setSelectedTeamId(null);
+                  }}
+                  style={{ backgroundColor: colors.border }}
+                  className="flex-1 px-4 py-2 rounded"
+                >
+                  <Text className="text-foreground font-semibold text-center">Cancel</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
         )}
 
         {/* Companies List */}
@@ -547,6 +930,194 @@ export default function AdminClientOrganizationsScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
+                <View className="flex-row items-center mb-1">
+                  <Text className="text-foreground font-semibold">Division</Text>
+                  <TouchableOpacity onPress={() => setShowCreateDivision(true)} className="ml-2">
+                    <Text style={{ color: colors.primary, fontSize: 18 }}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <View className="mb-2">
+                  {allDivisions?.length ? (
+                    allDivisions.map((d) => (
+                      <TouchableOpacity
+                        key={d.id}
+                        onPress={() => setSelectedDivisionId(d.id)}
+                        style={{ backgroundColor: selectedDivisionId === d.id ? colors.primary + '20' : 'transparent' }}
+                        className="px-2 py-1 rounded mb-1"
+                      >
+                        <Text style={{ color: colors.foreground }}>{d.name}</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text className="text-muted">No divisions found</Text>
+                  )}
+                  {showCreateDivision && (
+                    <View className="mt-2">
+                      <TextInput
+                        value={newDivisionName}
+                        onChangeText={setNewDivisionName}
+                        placeholder="New Division Name"
+                        placeholderTextColor={colors.muted}
+                        style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                        className="px-2 py-1 rounded mb-1"
+                      />
+                      <TextInput
+                        value={newDivisionDescription}
+                        onChangeText={setNewDivisionDescription}
+                        placeholder="Description (optional)"
+                        placeholderTextColor={colors.muted}
+                        style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                        className="px-2 py-1 rounded mb-1"
+                      />
+                      <View className="flex-row gap-2 mt-1">
+                        <TouchableOpacity
+                          onPress={() => handleCreateDivision()}
+                          style={{ backgroundColor: colors.primary }}
+                          className="px-3 py-1 rounded"
+                        >
+                          <Text className="text-background font-semibold text-center">Add</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowCreateDivision(false);
+                            setNewDivisionName("");
+                            setNewDivisionDescription("");
+                          }}
+                          style={{ backgroundColor: colors.border }}
+                          className="px-3 py-1 rounded"
+                        >
+                          <Text className="text-foreground font-semibold text-center">Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
+                {/* Department Selector */}
+                <View className="flex-row items-center mb-1">
+                  <Text className="text-foreground font-semibold">Department</Text>
+                  <TouchableOpacity onPress={() => setShowCreateDepartment(true)} className="ml-2">
+                    <Text style={{ color: colors.primary, fontSize: 18 }}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <View className="mb-2">
+                  {allDepartments?.length ? (
+                    allDepartments.map((d) => (
+                      <TouchableOpacity
+                        key={d.id}
+                        onPress={() => setSelectedDepartmentId(d.id)}
+                        style={{ backgroundColor: selectedDepartmentId === d.id ? colors.primary + '20' : 'transparent' }}
+                        className="px-2 py-1 rounded mb-1"
+                      >
+                        <Text style={{ color: colors.foreground }}>{d.name}</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text className="text-muted">No departments found</Text>
+                  )}
+                  {showCreateDepartment && (
+                    <View className="mt-2">
+                      <TextInput
+                        value={newDepartmentName}
+                        onChangeText={setNewDepartmentName}
+                        placeholder="New Department Name"
+                        placeholderTextColor={colors.muted}
+                        style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                        className="px-2 py-1 rounded mb-1"
+                      />
+                      <TextInput
+                        value={newDeptDescription}
+                        onChangeText={setNewDeptDescription}
+                        placeholder="Description (optional)"
+                        placeholderTextColor={colors.muted}
+                        style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                        className="px-2 py-1 rounded mb-1"
+                      />
+                      <View className="flex-row gap-2 mt-1">
+                        <TouchableOpacity
+                          onPress={() => handleCreateDepartment()}
+                          style={{ backgroundColor: colors.primary }}
+                          className="px-3 py-1 rounded"
+                        >
+                          <Text className="text-background font-semibold text-center">Add</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowCreateDepartment(false);
+                            setNewDepartmentName("");
+                            setNewDeptDescription("");
+                          }}
+                          style={{ backgroundColor: colors.border }}
+                          className="px-3 py-1 rounded"
+                        >
+                          <Text className="text-foreground font-semibold text-center">Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
+                {/* Team Selector */}
+                <View className="flex-row items-center mb-1">
+                  <Text className="text-foreground font-semibold">Team</Text>
+                  <TouchableOpacity onPress={() => setShowCreateTeam(true)} className="ml-2">
+                    <Text style={{ color: colors.primary, fontSize: 18 }}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <View className="mb-3">
+                  {allTeams?.length ? (
+                    allTeams.map((t) => (
+                      <TouchableOpacity
+                        key={t.id}
+                        onPress={() => setSelectedTeamId(t.id)}
+                        style={{ backgroundColor: selectedTeamId === t.id ? colors.primary + '20' : 'transparent' }}
+                        className="px-2 py-1 rounded mb-1"
+                      >
+                        <Text style={{ color: colors.foreground }}>{t.name}</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text className="text-muted">No teams found</Text>
+                  )}
+                  {showCreateTeam && (
+                    <View className="mt-2">
+                      <TextInput
+                        value={newTeamName}
+                        onChangeText={setNewTeamName}
+                        placeholder="New Team Name"
+                        placeholderTextColor={colors.muted}
+                        style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                        className="px-2 py-1 rounded mb-1"
+                      />
+                      <TextInput
+                        value={newTeamDescription}
+                        onChangeText={setNewTeamDescription}
+                        placeholder="Description (optional)"
+                        placeholderTextColor={colors.muted}
+                        style={{ backgroundColor: colors.surface, color: colors.foreground }}
+                        className="px-2 py-1 rounded mb-1"
+                      />
+                      <View className="flex-row gap-2 mt-1">
+                        <TouchableOpacity
+                          onPress={() => handleCreateTeam()}
+                          style={{ backgroundColor: colors.primary }}
+                          className="px-3 py-1 rounded"
+                        >
+                          <Text className="text-background font-semibold text-center">Add</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowCreateTeam(false);
+                            setNewTeamName("");
+                            setNewTeamDescription("");
+                          }}
+                          style={{ backgroundColor: colors.border }}
+                          className="px-3 py-1 rounded"
+                        >
+                          <Text className="text-foreground font-semibold text-center">Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
                 <View className="flex-row gap-2">
                   <TouchableOpacity
                     onPress={handleUpdateCompany}

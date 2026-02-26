@@ -12,7 +12,6 @@ type TableType = "types" | "statuses" | "results";
 interface EditingItem {
   id: number;
   name: string;
-  description?: string;
 }
 
 /**
@@ -32,7 +31,6 @@ export default function AdminLookupTablesScreen() {
   const [activeTable, setActiveTable] = useState<TableType>("types");
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
-  const [formData, setFormData] = useState({ name: "", description: "" });
 
   // Fetch data for all tables
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery();
@@ -111,7 +109,7 @@ export default function AdminLookupTablesScreen() {
   const resetForm = () => {
     setIsAdding(false);
     setEditingItem(null);
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "" });
   };
 
   const handleCreate = () => {
@@ -125,7 +123,6 @@ export default function AdminLookupTablesScreen() {
     }
     const input = {
       name: formData.name.trim(),
-      description: formData.description.trim() || undefined,
       isActive: 1,
       createdBy: staff.id,
       updatedBy: staff.id,
@@ -157,7 +154,6 @@ export default function AdminLookupTablesScreen() {
     const input = {
       id: editingItem.id,
       name: formData.name.trim(),
-      description: formData.description.trim() || undefined,
       updatedBy: staff.id,
     };
 
@@ -175,8 +171,8 @@ export default function AdminLookupTablesScreen() {
   };
 
   const handleEdit = (item: any) => {
-    setEditingItem({ id: item.id, name: item.name, description: item.description });
-    setFormData({ name: item.name, description: item.description || "" });
+    setEditingItem({ id: item.id, name: item.name });
+    setFormData({ name: item.name });
     setIsAdding(false);
   };
 
@@ -319,19 +315,6 @@ export default function AdminLookupTablesScreen() {
                 />
               </View>
 
-              <View>
-                <Text className="text-sm font-medium text-foreground mb-2">Description</Text>
-                <TextInput
-                  className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                  placeholder="Enter description (optional)"
-                  placeholderTextColor={colors.muted}
-                  value={formData.description}
-                  onChangeText={(text) => setFormData({ ...formData, description: text })}
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-              </View>
 
               <View className="flex-row gap-2">
                 <TouchableOpacity
@@ -364,9 +347,6 @@ export default function AdminLookupTablesScreen() {
                 <View className="flex-row items-start justify-between mb-2">
                   <View className="flex-1 mr-3">
                     <Text className="text-base font-semibold text-foreground">{item.name}</Text>
-                    {item.description && (
-                      <Text className="text-sm text-muted mt-1">{item.description}</Text>
-                    )}
                     {item.isActive === 0 && (
                       <View className="mt-2">
                         <View className="px-2 py-1 bg-error/20 rounded self-start">

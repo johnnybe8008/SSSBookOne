@@ -1,7 +1,7 @@
+import DateTimePicker from "@/components/ui/DateTimePicker";
 import { useState, useMemo, useEffect } from "react";
 import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator, Modal, Alert, Platform } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { ScreenContainer } from "@/components/screen-container";

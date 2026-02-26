@@ -114,7 +114,6 @@ export default function MoreScreen() {
         {/* Settings Section */}
         <View className="bg-surface rounded-2xl border border-border mb-6 overflow-hidden">
           <Text className="text-sm font-semibold text-muted px-6 pt-4 pb-2">Settings</Text>
-
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
             onPress={() => {
@@ -127,11 +126,10 @@ export default function MoreScreen() {
             </View>
             <IconSymbol name="chevron.right" size={20} color={colors.muted} />
           </TouchableOpacity>
-
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
             onPress={() => {
-              Alert.alert("Notifications", "Notification settings will be implemented in a future update");
+              Alert.alert("Notifications", "Notification settings will be implemented in a future update.");
             }}
           >
             <View className="flex-row items-center gap-3">
@@ -140,56 +138,13 @@ export default function MoreScreen() {
             </View>
             <IconSymbol name="chevron.right" size={20} color={colors.muted} />
           </TouchableOpacity>
-
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-            onPress={() => {
-              // Trigger manual sync
-              Alert.alert("Sync", "Manual sync functionality will be implemented");
-            }}
-          >
-            <View className="flex-row items-center gap-3">
-              <IconSymbol name="clock.fill" size={20} color={colors.foreground} />
-              <Text className="text-base text-foreground">Sync Data</Text>
-            </View>
-            <View className="flex-row items-center gap-2">
-              <Text className="text-sm text-success">Synced</Text>
-              <IconSymbol name="checkmark.circle.fill" size={16} color={colors.success} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-            onPress={() => {
-              Alert.alert(
-                "About SSS Book One",
-                "Version: " + (Constants.expoConfig?.version || "1.8.1") + "\n\nA mobile counseling tracker app for managing sessions, clients, and cases."
-              );
-            }}
+            onPress={() => router.push("/about" as any)}
           >
             <View className="flex-row items-center gap-3">
               <IconSymbol name="exclamationmark.triangle.fill" size={20} color={colors.foreground} />
               <Text className="text-base text-foreground">About</Text>
-            </View>
-            <IconSymbol name="chevron.right" size={20} color={colors.muted} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-            onPress={async () => {
-              try {
-                const result = await fixAdminMutation.mutateAsync();
-                Alert.alert("Success", result.message || "Admin account fixed successfully. Please restart the app.");
-                // Refetch staff record to update UI
-                refetchStaff();
-              } catch (error: any) {
-                Alert.alert("Error", error.message || "Failed to fix admin account");
-              }
-            }}
-          >
-            <View className="flex-row items-center gap-3">
-              <IconSymbol name="wrench.fill" size={20} color={colors.warning} />
-              <Text className="text-base text-foreground">Fix Admin Account</Text>
             </View>
             <IconSymbol name="chevron.right" size={20} color={colors.muted} />
           </TouchableOpacity>
@@ -358,7 +313,7 @@ export default function MoreScreen() {
 
         {/* App Version */}
         <Text className="text-xs text-muted text-center mt-6">
-          SSS Book One v{Constants.expoConfig?.version || "1.8.1"}
+          SSS Book One v{Constants.expoConfig?.version || "2.0.0"}
         </Text>
       </ScrollView>
     </ScreenContainer>

@@ -1,3 +1,4 @@
+import DateTimePicker from "@/components/ui/DateTimePicker";
 import { useState, useEffect, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform, Modal, FlatList } from "react-native";
@@ -7,7 +8,6 @@ import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
-import DateTimePicker from "@react-native-community/datetimepicker";
 
 /**
  * Add Client Screen
@@ -179,23 +179,29 @@ export default function AddClientScreen() {
   }, [companyTeams, teamSearchQuery]);
   
   // Fetch referral source options based on type
-  const { data: allClients } = trpc.clients.list.useQuery({ departmentId: 0 }, { enabled: referralSourceType === "client" });
-  const { data: allStaff } = trpc.staff.list.useQuery({ teamId: 0 }, { enabled: referralSourceType === "staff" });
+  const { data: allClients } = trpc.clients.listAll.useQuery(undefined, { enabled: referralSourceType === "client" });
+  const { data: allStaff } = trpc.staff.listAll.useQuery(undefined, { enabled: referralSourceType === "staff" });
   const { data: fsms } = trpc.fsms.list.useQuery(undefined, { enabled: referralSourceType === "fsm" });
 
   // Filtered referral sources for search
   const filteredClientReferrals = useMemo(() => {
     if (!allClients) return [];
-    if (!clientReferralSearchQuery.trim()) return allClients;
-    const query = clientReferralSearchQuery.toLowerCase();
-    return allClients.filter(c => c.name.toLowerCase().includes(query));
+    let filtered = allClients;
+    if (clientReferralSearchQuery.trim()) {
+      const query = clientReferralSearchQuery.toLowerCase();
+      filtered = allClients.filter(c => c.name.toLowerCase().includes(query));
+    }
+    return filtered.slice().sort((a, b) => a.name.localeCompare(b.name));
   }, [allClients, clientReferralSearchQuery]);
 
   const filteredStaffReferrals = useMemo(() => {
     if (!allStaff) return [];
-    if (!staffReferralSearchQuery.trim()) return allStaff;
-    const query = staffReferralSearchQuery.toLowerCase();
-    return allStaff.filter(s => s.name.toLowerCase().includes(query));
+    let filtered = allStaff;
+    if (staffReferralSearchQuery.trim()) {
+      const query = staffReferralSearchQuery.toLowerCase();
+      filtered = allStaff.filter(s => s.name.toLowerCase().includes(query));
+    }
+    return filtered.slice().sort((a, b) => a.name.localeCompare(b.name));
   }, [allStaff, staffReferralSearchQuery]);
 
   const filteredFsms = useMemo(() => {
@@ -251,6 +257,8 @@ export default function AddClientScreen() {
       setNewCompanyPhone("");
       setNewCompanyEmail("");
       setNewCompanyContact("");
+      // Optionally scroll to top or focus company field
+      // No navigation, just close modal and set company
       Alert.alert("Success", "Company created successfully");
     },
     onError: (error) => {
@@ -367,11 +375,16 @@ export default function AddClientScreen() {
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+      <View className="px-6 pt-4 pb-3 bg-background border-b border-border flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-foreground">Add New Client</Text>
+        </View>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text className="text-base font-medium text-primary">Cancel</Text>
         </TouchableOpacity>
-        <Text className="text-2xl font-bold text-foreground">Add New Client</Text>
       </View>
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
@@ -437,25 +450,40 @@ export default function AddClientScreen() {
             {/* Date of Birth Input */}
             <View>
               <Text className="text-sm font-medium text-foreground mb-2">Date of Birth</Text>
-              <TouchableOpacity
-                className="bg-background border border-border rounded-xl px-4 py-3"
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text className={`text-base ${dateOfBirth ? "text-foreground" : "text-muted"}`}>
-                  {dateOfBirth ? dateOfBirth.toLocaleDateString() : "Select date of birth"}
-                </Text>
-              </TouchableOpacity>
+              {Platform.OS === "web" ? (
+                <DateTimePicker
+                  value={dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : ""}
+                  mode="date"
+                  onChange={val => {
+                    // Accept string from input, convert to Date
+                    if (val && typeof val === "string") {
+                      const parsed = new Date(val);
+                      if (!isNaN(parsed.getTime())) setDateOfBirth(parsed);
+                    }
+                  }}
+                  disabled={false}
+                />
+              ) : (
+                <TouchableOpacity
+                  className="bg-background border border-border rounded-xl px-4 py-3"
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text className={`text-base ${dateOfBirth ? "text-foreground" : "text-muted"}`}>
+                    {dateOfBirth ? dateOfBirth.toLocaleDateString() : "Select date of birth"}
+                  </Text>
+                </TouchableOpacity>
+              )}
               {dateOfBirth && (
                 <Text className="text-xs text-muted mt-1">
                   Age: {Math.floor((Date.now() - dateOfBirth.getTime()) / (365.25 * 24 * 60 * 60 * 1000))}
                 </Text>
               )}
-              {showDatePicker && (
+              {Platform.OS !== "web" && showDatePicker && (
                 <DateTimePicker
                   value={dateOfBirth || new Date()}
                   mode="date"
                   display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={(event, selectedDate) => {
+                  onChange={(_event, selectedDate) => {
                     setShowDatePicker(Platform.OS === "ios");
                     if (selectedDate) {
                       setDateOfBirth(selectedDate);

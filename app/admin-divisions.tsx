@@ -29,7 +29,6 @@ export default function AdminDivisionsScreen() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [newDivisionName, setNewDivisionName] = useState("");
-  const [newDivisionDescription, setNewDivisionDescription] = useState("");
 
   // Fetch divisions (all if companyId=0, or specific company)
   const { data: divisions, isLoading } = trpc.divisions.list.useQuery({ companyId });
@@ -45,7 +44,6 @@ export default function AdminDivisionsScreen() {
       utils.companyTeams.invalidate();
       setIsAdding(false);
       setNewDivisionName("");
-      setNewDivisionDescription("");
       Alert.alert("Success", "Division created successfully");
     },
     onError: (error) => {
@@ -78,7 +76,6 @@ export default function AdminDivisionsScreen() {
     createDivision.mutate({
       companyId,
       name: newDivisionName.trim(),
-      description: newDivisionDescription.trim() || '',
       createdBy: staff.id,
       updatedBy: staff.id,
     });
@@ -159,19 +156,6 @@ export default function AdminDivisionsScreen() {
                 />
               </View>
 
-              <View>
-                <Text className="text-sm font-medium text-foreground mb-2">Description</Text>
-                <TextInput
-                  className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                  placeholder="Enter description (optional)"
-                  placeholderTextColor={colors.muted}
-                  value={newDivisionDescription}
-                  onChangeText={setNewDivisionDescription}
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-              </View>
 
               <TouchableOpacity
                 className="bg-primary py-3 rounded-full items-center"
@@ -202,9 +186,6 @@ export default function AdminDivisionsScreen() {
                       <Text className="text-sm text-primary mt-1">Company: {company.name}</Text>
                     )}
                     <Text className="text-xs text-muted mt-1">ID: {division.id} | Code: {division.code}</Text>
-                    {division.description && (
-                      <Text className="text-sm text-muted mt-1">{division.description}</Text>
-                    )}
                   </View>
                   <View className="flex-row gap-2">
                     <TouchableOpacity

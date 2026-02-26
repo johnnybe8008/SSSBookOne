@@ -141,9 +141,6 @@ function DivisionsTab({ divisions, companies, colors, router, isLoading }: any) 
                       <Text className="text-lg font-semibold text-foreground">{division.name}</Text>
                     </View>
                     <Text className="text-xs text-muted">ID: {division.id}</Text>
-                  {division.description && (
-                    <Text className="text-sm text-muted mt-1">{division.description}</Text>
-                  )}
                   {company && (
                     <Text className="text-xs text-muted mt-2">Company: {company.name}</Text>
                   )}
@@ -204,9 +201,6 @@ function DepartmentsTab({ departments, allDivisions, companies, colors, router, 
                     <Text className="text-lg font-semibold text-foreground">{department.name}</Text>
                   </View>
                   <Text className="text-xs text-muted">ID: {department.id}</Text>
-                  {department.description && (
-                    <Text className="text-sm text-muted mt-1">{department.description}</Text>
-                  )}
                   {division && company && (
                     <Text className="text-xs text-muted mt-2">
                       {company.name} → {division.name}
@@ -270,9 +264,6 @@ function CompanyTeamsTab({ companyTeams, allDepartments, allDivisions, companies
                     <Text className="text-lg font-semibold text-foreground">{team.name}</Text>
                   </View>
                   <Text className="text-xs text-muted">ID: {team.id}</Text>
-                  {team.description && (
-                    <Text className="text-sm text-muted mt-1">{team.description}</Text>
-                  )}
                   {department && division && company && (
                     <Text className="text-xs text-muted mt-2">
                       {company.name} → {division.name} → {department.name}

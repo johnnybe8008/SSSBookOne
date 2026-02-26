@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { router } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -22,7 +22,7 @@ export default function AdminStaffAddScreen() {
   const [teamId, setTeamId] = useState<number | null>(null);
 
   // Fetch staff organizational data
-  const { data: organizations } = trpc.groups.list.useQuery();
+  const { data: organizations } = trpc.organizations.list.useQuery();
   // Fetch all staff departments (0 = all)
   const { data: allStaffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
   // Fetch all teams (0 = all)
@@ -80,6 +80,33 @@ export default function AdminStaffAddScreen() {
       updatedBy: 1,
     });
   };
+
+  const [showDeptModal, setShowDeptModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [newDeptName, setNewDeptName] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
+
+  const createDepartment = trpc.staffDepartments.create.useMutation({
+    onSuccess: () => {
+      utils.staffDepartments.invalidate();
+      setShowDeptModal(false);
+      setNewDeptName("");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to create department");
+    },
+  });
+
+  const createTeam = trpc.teams.create.useMutation({
+    onSuccess: () => {
+      utils.teams.invalidate();
+      setShowTeamModal(false);
+      setNewTeamName("");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to create team");
+    },
+  });
 
   return (
     <ScreenContainer className="p-4">
@@ -258,42 +285,64 @@ export default function AdminStaffAddScreen() {
 
             {/* Department Picker */}
             {groupId && (
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={staffDepartmentId}
-                    onValueChange={(value) => {
-                      setStaffDepartmentId(value);
-                      setTeamId(null);
-                    }}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Department" value={null} />
-                    {staffDepartments?.map((dept: any) => (
-                      <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
-                    ))}
-                  </Picker>
+              <View className="mb-4 flex-row items-center">
+                <View style={{ flex: 1 }}>
+                  <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
+                  <View className="bg-surface border border-border rounded-lg">
+                    <Picker
+                      selectedValue={staffDepartmentId}
+                      onValueChange={(value) => {
+                        setStaffDepartmentId(value);
+                        setTeamId(null);
+                      }}
+                      style={{ color: colors.foreground }}
+                    >
+                      <Picker.Item label={staffDepartments?.length === 0 ? "No departments found" : "Select Department"} value={null} />
+                      {staffDepartments?.map((dept: any) => (
+                        <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
+                      ))}
+                    </Picker>
+                  </View>
+                  {staffDepartments?.length === 0 && (
+                    <Text className="text-xs text-muted mt-2">No departments found for this organization.</Text>
+                  )}
                 </View>
+                <TouchableOpacity
+                  onPress={() => setShowDeptModal(true)}
+                  className="ml-2 bg-primary rounded-full w-10 h-10 items-center justify-center"
+                >
+                  <Text className="text-background text-xl font-bold">+</Text>
+                </TouchableOpacity>
               </View>
             )}
 
             {/* Team Picker */}
             {staffDepartmentId && (
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
-                <View className="bg-surface border border-border rounded-lg">
-                  <Picker
-                    selectedValue={teamId}
-                    onValueChange={setTeamId}
-                    style={{ color: colors.foreground }}
-                  >
-                    <Picker.Item label="Select Team" value={null} />
-                    {teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).map((team: any) => (
-                      <Picker.Item key={team.id} label={team.name} value={team.id} />
-                    ))}
-                  </Picker>
+              <View className="mb-4 flex-row items-center">
+                <View style={{ flex: 1 }}>
+                  <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
+                  <View className="bg-surface border border-border rounded-lg">
+                    <Picker
+                      selectedValue={teamId}
+                      onValueChange={setTeamId}
+                      style={{ color: colors.foreground }}
+                    >
+                      <Picker.Item label={teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).length === 0 ? "No teams found" : "Select Team"} value={null} />
+                      {teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).map((team: any) => (
+                        <Picker.Item key={team.id} label={team.name} value={team.id} />
+                      ))}
+                    </Picker>
+                  </View>
+                  {teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).length === 0 && (
+                    <Text className="text-xs text-muted mt-2">No teams found for this department.</Text>
+                  )}
                 </View>
+                <TouchableOpacity
+                  onPress={() => setShowTeamModal(true)}
+                  className="ml-2 bg-primary rounded-full w-10 h-10 items-center justify-center"
+                >
+                  <Text className="text-background text-xl font-bold">+</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -328,6 +377,80 @@ export default function AdminStaffAddScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Department Modal */}
+      <Modal visible={showDeptModal} transparent animationType="slide">
+        <View className="flex-1 justify-center items-center bg-black/30">
+          <View className="bg-surface p-6 rounded-xl w-80">
+            <Text className="text-lg font-bold mb-4">Add Department</Text>
+            <TextInput
+              value={newDeptName}
+              onChangeText={setNewDeptName}
+              placeholder="Department Name"
+              className="bg-background border border-border rounded-lg p-3 mb-4"
+            />
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => setShowDeptModal(false)}
+                className="flex-1 bg-muted rounded-lg p-3 items-center"
+              >
+                <Text className="text-foreground font-semibold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!newDeptName.trim() || !groupId) return;
+                  createDepartment.mutate({
+                    organizationId: groupId,
+                    name: newDeptName.trim(),
+                    createdBy: 1,
+                    updatedBy: 1,
+                  });
+                }}
+                className="flex-1 bg-success rounded-lg p-3 items-center"
+              >
+                <Text className="text-background font-semibold">Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Team Modal */}
+      <Modal visible={showTeamModal} transparent animationType="slide">
+        <View className="flex-1 justify-center items-center bg-black/30">
+          <View className="bg-surface p-6 rounded-xl w-80">
+            <Text className="text-lg font-bold mb-4">Add Team</Text>
+            <TextInput
+              value={newTeamName}
+              onChangeText={setNewTeamName}
+              placeholder="Team Name"
+              className="bg-background border border-border rounded-lg p-3 mb-4"
+            />
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => setShowTeamModal(false)}
+                className="flex-1 bg-muted rounded-lg p-3 items-center"
+              >
+                <Text className="text-foreground font-semibold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!newTeamName.trim() || !staffDepartmentId) return;
+                  createTeam.mutate({
+                    staffDepartmentId: staffDepartmentId,
+                    name: newTeamName.trim(),
+                    createdBy: 1,
+                    updatedBy: 1,
+                  });
+                }}
+                className="flex-1 bg-success rounded-lg p-3 items-center"
+              >
+                <Text className="text-background font-semibold">Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }

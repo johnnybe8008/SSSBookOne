@@ -24,28 +24,23 @@ export type InsertAuthSession = typeof authSessions.$inferInsert;
 // STAFF ORGANIZATION
 // ============================================================================
 
-export const groups = mysqlTable("groups", {
+export const organizations = mysqlTable("organizations", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
   address: text("address"),
   phone: varchar("phone", { length: 50 }),
-  email: varchar("email", { length: 255 }),
+  email: varchar("email", { length: 320 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").notNull(),
 });
 
-// Staff Departments - middle layer between organizations (groups) and teams
+// Staff Departments - middle layer between organizations and teams
 export const staffDepartments = mysqlTable("staffDepartments", {
   id: int("id").autoincrement().primaryKey(),
-  organizationId: int("organizationId").notNull(), // Link to organization (group)
+  organizationId: int("organizationId").notNull(), // Link to organization
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  address: text("address"),
-  phone: varchar("phone", { length: 50 }),
-  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -57,13 +52,9 @@ export type InsertStaffDepartment = typeof staffDepartments.$inferInsert;
 
 export const teams = mysqlTable("teams", {
   id: int("id").autoincrement().primaryKey(),
-  groupId: int("groupId").notNull(), // Link to group for staff organization (DEPRECATED - use staffDepartmentId)
+  organizationId: int("organizationId"), // Link to organization for staff organization (DEPRECATED - use staffDepartmentId)
   staffDepartmentId: int("staffDepartmentId"), // Link to staff department
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  address: text("address"),
-  phone: varchar("phone", { length: 50 }),
-  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -74,12 +65,7 @@ export const teams = mysqlTable("teams", {
 export const companyTeams = mysqlTable("companyTeams", {
   id: int("id").autoincrement().primaryKey(),
   departmentId: int("departmentId").notNull(), // Link to department in company hierarchy
-  code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., CTEAM-001)
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description").notNull(), // Mandatory description
-  address: text("address"),
-  phone: varchar("phone", { length: 50 }),
-  email: varchar("email", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -89,7 +75,7 @@ export const companyTeams = mysqlTable("companyTeams", {
 // Staff table
 export const staff = mysqlTable("staff", {
   id: int("id").autoincrement().primaryKey(),
-  groupId: int("groupId"),
+  organizationId: int("organizationId"),
   staffDepartmentId: int("staffDepartmentId"),
   teamId: int("teamId"),
   name: varchar("name", { length: 255 }).notNull(),
@@ -129,12 +115,8 @@ export const companies = mysqlTable("companies", {
 export const divisions = mysqlTable("divisions", {
   id: int("id").autoincrement().primaryKey(),
   companyId: int("companyId").notNull(),
-  code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., DIV-001)
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description").notNull(), // Mandatory description
-  address: text("address"),
-  phone: varchar("phone", { length: 50 }),
-  email: varchar("email", { length: 255 }),
+  description: text("description"), // Optional description
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -144,12 +126,8 @@ export const divisions = mysqlTable("divisions", {
 export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
   divisionId: int("divisionId").notNull(),
-  code: varchar("code", { length: 50 }).notNull().unique(), // Auto-generated unique code (e.g., DEPT-001)
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description").notNull(), // Mandatory description
-  address: text("address"),
-  phone: varchar("phone", { length: 50 }),
-  email: varchar("email", { length: 255 }),
+  description: text("description"), // Optional description
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -332,8 +310,8 @@ export const notifications = mysqlTable("notifications", {
 // TYPE EXPORTS
 // ============================================================================
 
-export type Group = typeof groups.$inferSelect;
-export type InsertGroup = typeof groups.$inferInsert;
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = typeof organizations.$inferInsert;
 
 export type Team = typeof teams.$inferSelect;
 export type InsertTeam = typeof teams.$inferInsert;

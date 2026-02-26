@@ -23,6 +23,7 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.substring(7);
       user = await validateSessionToken(token);
+      console.log('[DEBUG] validateSessionToken (Authorization header):', token, user);
     }
     // Debug log: print cookies and session token
     console.log('[DEBUG] Incoming cookies:', opts.req.cookies);
@@ -31,7 +32,7 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
       console.log('[DEBUG] Session token from cookie:', sessionToken);
       if (sessionToken) {
         user = await validateSessionToken(sessionToken);
-        console.log('[DEBUG] Session lookup result:', user);
+        console.log('[DEBUG] validateSessionToken (cookie):', sessionToken, user);
       }
     }
   }
@@ -40,11 +41,14 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
   let staffRole: "admin" | "counselor" | "viewer" | null = null;
   if (user) {
     try {
-      const { getStaffByUserId } = await import("../db");
-      const staff = await getStaffByUserId(user.id);
+      const { getStaffById } = await import("../db");
+      const staff = await getStaffById(user.id);
       staffRole = (staff as any)?.role || null;
+      console.log('[DEBUG] Staff record:', staff);
+      console.log('[DEBUG] Staff role:', staffRole);
     } catch (error) {
       // Staff record not found, leave role as null
+      console.log('[DEBUG] Staff record not found for user:', user);
     }
   }
 

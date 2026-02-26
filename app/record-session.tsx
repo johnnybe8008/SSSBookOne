@@ -1,7 +1,7 @@
+import DateTimePicker from '@/components/ui/DateTimePicker';
 import { useState, useEffect, useRef } from "react";
 import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, FlatList, Platform } from "react-native";
 import { Platform as RNPlatform } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";

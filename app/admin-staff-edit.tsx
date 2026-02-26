@@ -8,6 +8,11 @@ import { trpc } from "@/lib/trpc";
 import { OrganizationalBreadcrumbs } from "@/components/organizational-breadcrumbs";
 
 export default function AdminStaffEditScreen() {
+    // Modal and input state for department/team creation
+    const [showDeptAddModal, setShowDeptAddModal] = useState(false);
+    const [showTeamAddModal, setShowTeamAddModal] = useState(false);
+    const [newDeptName, setNewDeptName] = useState("");
+    const [newTeamName, setNewTeamName] = useState("");
   const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const staffId = id ? parseInt(id) : 0;
@@ -37,7 +42,7 @@ export default function AdminStaffEditScreen() {
   const [teamSearch, setTeamSearch] = useState("");
 
   // Fetch staff organizational data
-  const { data: organizations } = trpc.groups.list.useQuery();
+  const { data: organizations } = trpc.organizations.list.useQuery();
   // Fetch all staff departments (0 = all)
   const { data: allStaffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
   // Fetch all teams (0 = all)
@@ -54,7 +59,7 @@ export default function AdminStaffEditScreen() {
   const teams = staffDepartmentId
     ? allTeams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId)
     : groupId
-    ? allTeams?.filter((t: any) => t.groupId === groupId && !t.staffDepartmentId)
+    ? allTeams?.filter((t: any) => t.organizationId === groupId && !t.staffDepartmentId)
     : [];
 
   // Filtered lists for modal selectors
@@ -88,13 +93,12 @@ export default function AdminStaffEditScreen() {
       setIsVipRated(staff.isVipRated === 1);
       setStaffDepartmentId((staff as any).staffDepartmentId || null);
       setTeamId(staff.teamId || null);
-      
-      // Set groupId from staff data or look it up from team
-      if ((staff as any).groupId) {
-        setGroupId((staff as any).groupId);
+      // Set groupId (organizationId) from staff data or look it up from team
+      if ((staff as any).organizationId) {
+        setGroupId((staff as any).organizationId);
       } else if (staff.teamId && allTeams) {
         const team = allTeams.find((t: any) => t.id === staff.teamId);
-        setGroupId(team?.groupId || null);
+        setGroupId(team?.organizationId || null);
       } else {
         setGroupId(null);
       }
@@ -193,6 +197,33 @@ export default function AdminStaffEditScreen() {
     );
   }
 
+  // ...existing code...
+
+  // ...existing code...
+
+  const handleAddDepartment = () => {
+    if (!newDeptName.trim() || !groupId) return;
+    createDepartment.mutate({
+      organizationId: groupId,
+      name: newDeptName.trim(),
+      createdBy: 1,
+      updatedBy: 1,
+    });
+  };
+
+  const handleAddTeam = () => {
+    if (!newTeamName.trim() || !staffDepartmentId || !groupId) return;
+    createTeam.mutate({
+      groupId: groupId,
+      staffDepartmentId: staffDepartmentId,
+      name: newTeamName.trim(),
+      createdBy: 1,
+      updatedBy: 1,
+    });
+  };
+
+  // ...existing code...
+
   return (
     <ScreenContainer className="p-4">
       <ScrollView>
@@ -215,7 +246,7 @@ export default function AdminStaffEditScreen() {
             const team = teams.find((t: any) => t.id === teamId);
             if (team) {
               const breadcrumbs: string[] = [];
-              const org = organizations?.find((o: any) => o.id === team.groupId);
+              const org = organizations?.find((o: any) => o.id === team.organizationId);
               if (org) breadcrumbs.push(org.name);
               const dept = staffDepartments?.find((d: any) => d.id === team.staffDepartmentId);
               if (dept) breadcrumbs.push(dept.name);
@@ -386,32 +417,54 @@ export default function AdminStaffEditScreen() {
 
             {/* Staff Department Selector */}
             {groupId && (
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
+              <View className="mb-4 flex-row items-center">
+                <View style={{ flex: 1 }}>
+                  <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowStaffDepartmentModal(true)}
+                    className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                  >
+                    <Text className="text-base" style={{ color: colors.foreground }}>
+                      {staffDepartmentId ? staffDepartments?.find((d: any) => d.id === staffDepartmentId)?.name : (staffDepartments?.length === 0 ? "No departments found" : "Select Department")}
+                    </Text>
+                    <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                  </TouchableOpacity>
+                  {staffDepartments?.length === 0 && (
+                    <Text className="text-xs text-muted mt-2">No departments found for this organization.</Text>
+                  )}
+                </View>
                 <TouchableOpacity
-                  onPress={() => setShowStaffDepartmentModal(true)}
-                  className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                  onPress={() => setShowDeptAddModal(true)}
+                  className="ml-2 bg-primary rounded-full w-10 h-10 items-center justify-center"
                 >
-                  <Text className="text-base" style={{ color: colors.foreground }}>
-                    {staffDepartmentId ? staffDepartments?.find((d: any) => d.id === staffDepartmentId)?.name : "Select Department"}
-                  </Text>
-                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                  <Text className="text-background text-xl font-bold">+</Text>
                 </TouchableOpacity>
               </View>
             )}
 
             {/* Team Selector */}
             {groupId && (
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
+              <View className="mb-4 flex-row items-center">
+                <View style={{ flex: 1 }}>
+                  <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowTeamModal(true)}
+                    className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                  >
+                    <Text className="text-base" style={{ color: colors.foreground }}>
+                      {teamId ? teams?.find((t: any) => t.id === teamId)?.name : (teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).length === 0 ? "No teams found" : "Select Team")}
+                    </Text>
+                    <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                  </TouchableOpacity>
+                  {teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).length === 0 && (
+                    <Text className="text-xs text-muted mt-2">No teams found for this department.</Text>
+                  )}
+                </View>
                 <TouchableOpacity
-                  onPress={() => setShowTeamModal(true)}
-                  className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
+                  onPress={() => setShowTeamAddModal(true)}
+                  className="ml-2 bg-primary rounded-full w-10 h-10 items-center justify-center"
                 >
-                  <Text className="text-base" style={{ color: colors.foreground }}>
-                    {teamId ? teams?.find((t: any) => t.id === teamId)?.name : "Select Team"}
-                  </Text>
-                  <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+                  <Text className="text-background text-xl font-bold">+</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -574,6 +627,81 @@ export default function AdminStaffEditScreen() {
                 </TouchableOpacity>
               )}
             />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Department Add Modal */}
+      <Modal visible={showDeptAddModal} transparent animationType="slide">
+        <View className="flex-1 justify-center items-center bg-black/30">
+          <View className="bg-surface p-6 rounded-xl w-80">
+            <Text className="text-lg font-bold mb-4">Add Department</Text>
+            <TextInput
+              value={newDeptName}
+              onChangeText={setNewDeptName}
+              placeholder="Department Name"
+              className="bg-background border border-border rounded-lg p-3 mb-4"
+            />
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => setShowDeptAddModal(false)}
+                className="flex-1 bg-muted rounded-lg p-3 items-center"
+              >
+                <Text className="text-foreground font-semibold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!newDeptName.trim() || !groupId) return;
+                  createDepartment.mutate({
+                    organizationId: groupId,
+                    name: newDeptName.trim(),
+                    createdBy: 1,
+                    updatedBy: 1,
+                  });
+                }}
+                className="flex-1 bg-success rounded-lg p-3 items-center"
+              >
+                <Text className="text-background font-semibold">Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Team Add Modal */}
+      <Modal visible={showTeamAddModal} transparent animationType="slide">
+        <View className="flex-1 justify-center items-center bg-black/30">
+          <View className="bg-surface p-6 rounded-xl w-80">
+            <Text className="text-lg font-bold mb-4">Add Team</Text>
+            <TextInput
+              value={newTeamName}
+              onChangeText={setNewTeamName}
+              placeholder="Team Name"
+              className="bg-background border border-border rounded-lg p-3 mb-4"
+            />
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => setShowTeamAddModal(false)}
+                className="flex-1 bg-muted rounded-lg p-3 items-center"
+              >
+                <Text className="text-foreground font-semibold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!newTeamName.trim() || !staffDepartmentId || !groupId) return;
+                  createTeam.mutate({
+                    groupId: groupId,
+                    staffDepartmentId: staffDepartmentId,
+                    name: newTeamName.trim(),
+                    createdBy: 1,
+                    updatedBy: 1,
+                  });
+                }}
+                className="flex-1 bg-success rounded-lg p-3 items-center"
+              >
+                <Text className="text-background font-semibold">Add</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

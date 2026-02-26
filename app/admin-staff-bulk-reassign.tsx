@@ -25,7 +25,7 @@ export default function AdminStaffBulkReassignScreen() {
   const [selectedStaffIds, setSelectedStaffIds] = useState<number[]>([]);
 
   // Fetch organizational data
-  const { data: organizations } = trpc.groups.list.useQuery();
+  const { data: organizations } = trpc.organizations.list.useQuery();
   // Fetch all staff departments and teams (0 = all)
   const { data: allStaffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
   const { data: allTeams } = trpc.teams.list.useQuery({ groupId: 0 });
