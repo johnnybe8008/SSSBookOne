@@ -392,7 +392,7 @@ export default function AdminOrganizationsScreen() {
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.primary }}>{'<'}</Text>
             </TouchableOpacity>
-            <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 18, color: '#222', textAlign: 'center' }}>Update organization information</Text>
+            <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 18, color: '#222', textAlign: 'center' }}>{editingOrg == null ? 'Add New Organization' : 'Update organization information'}</Text>
             <View style={{ width: 28 }} />
           </View>
           {formError ? <Text style={{ color: '#d32f2f', fontSize: 16, marginBottom: 12 }}>{formError}</Text> : null}
