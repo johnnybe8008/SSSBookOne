@@ -96,7 +96,7 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, async () => {
+  server.listen(port, '0.0.0.0', async () => {
     console.log(`[api] server listening on port ${port}`);
     // Run initialization tasks
     await initializeServer();

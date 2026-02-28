@@ -1,5 +1,5 @@
 import { TextInput, FlatList, ScrollView, Modal, Alert, Linking, Text, View, TouchableOpacity, StyleSheet } from 'react-native';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
@@ -25,6 +25,12 @@ export default function AdminOrganizationsScreen() {
   const { staff } = useAuth();
   const utils = trpc.useUtils();
   const router = useRouter();
+
+  // Local staging for departments and teams
+  const [pendingDepartments, setPendingDepartments] = useState<any[]>([]);
+  const [pendingTeams, setPendingTeams] = useState<any[]>([]);
+  // Track if we are in create mode (no editingOrg)
+  const isCreateMode = !editingOrg;
   // ...existing code...
 
   // State for selected team name (fixes missing setSelectedTeamName)
@@ -186,16 +192,24 @@ export default function AdminOrganizationsScreen() {
 
   // Handlers
   const handleAssignDepartment = (dept: StaffDepartment) => {
-    if (!editingOrg?.id || !staff?.id) {
-      setAddDeptError("Missing organization or staff context");
-      return;
+    if (isCreateMode) {
+      setPendingDepartments((prev) => {
+        // Prevent duplicates by name
+        if (prev.some((d) => d.name === dept.name)) return prev;
+        return [...prev, { name: dept.name, teams: [] }];
+      });
+    } else {
+      if (!editingOrg?.id || !staff?.id) {
+        setAddDeptError("Missing organization or staff context");
+        return;
+      }
+      addDepartmentMutation.mutate({
+        name: dept.name,
+        organizationId: Number(editingOrg.id),
+        createdBy: staff.id,
+        updatedBy: staff.id,
+      });
     }
-    addDepartmentMutation.mutate({
-      name: dept.name,
-      organizationId: Number(editingOrg.id),
-      createdBy: staff.id,
-      updatedBy: staff.id,
-    });
   };
 
   const handleAddDepartment = () => {
@@ -204,66 +218,88 @@ export default function AdminOrganizationsScreen() {
     setAddDeptError("");
   };
 
+  // Save department to local state (staging)
   const handleDeptSave = () => {
+    console.log('[DEBUG] handleDeptSave called', { newDeptName, pendingDepartments });
     if (!newDeptName.trim()) {
       setAddDeptError("Department name is required");
       return;
     }
-    if (!editingOrg?.id || !staff?.id) {
-      setAddDeptError("Missing organization or staff context");
-      return;
+    // Only add to local state in create mode
+    if (isCreateMode) {
+      setPendingDepartments((prev) => {
+        const next = [...prev, { name: newDeptName, teams: [] }];
+        console.log('[DEBUG] pendingDepartments after add', next);
+        return next;
+      });
+      setTimeout(() => {
+        setAddDeptModalVisible(false);
+        setNewDeptName("");
+        setAddDeptError("");
+      }, 0);
+    } else {
+      // Existing org: use backend mutation
+      if (!editingOrg?.id || !staff?.id) {
+        setAddDeptError("Missing organization or staff context");
+        return;
+      }
+      addDepartmentMutation.mutate({
+        name: newDeptName,
+        organizationId: Number(editingOrg.id),
+        createdBy: staff.id,
+        updatedBy: staff.id,
+      });
     }
-    addDepartmentMutation.mutate({
-      name: newDeptName,
-      organizationId: Number(editingOrg.id),
-      createdBy: staff.id,
-      updatedBy: staff.id,
-    });
   };
 
-  const handleRemoveDepartment = (deptId: number) => {
-    Alert.alert("Debug", `handleRemoveDepartment called for department ${deptId}`);
-    Alert.alert("Debug", "About to show confirmation dialog for department " + deptId);
-    const dept = (allDepartments ?? []).find((d: StaffDepartment) => d.id === deptId);
-    const teamsInDept = (allTeams ?? []).filter((t: Team) => t.staffDepartmentId === deptId);
-    const deptName = dept?.name || "this department";
-    const teamCount = teamsInDept.length;
-    let warningMsg = `Are you sure you want to remove ${deptName}?`;
-    if (teamCount > 0) {
-      warningMsg += `\n\nWarning: This will also delete ${teamCount} team${teamCount > 1 ? 's' : ''} within this department.`;
-    }
-    // Use window.confirm on web, Alert.alert on native
-    if (typeof window !== 'undefined' && window.confirm) {
-      if (window.confirm(warningMsg)) {
-        try {
-          console.log('Calling removeDepartmentMutation.mutate', { id: deptId, organizationId: editingOrg?.id });
-          removeDepartmentMutation.mutate({ id: deptId, organizationId: editingOrg?.id });
-        } catch (err) {
-          console.error("Mutation error", err);
-        }
-      }
+  const handleRemoveDepartment = (deptIdOrName: number | string) => {
+    if (isCreateMode) {
+      setPendingDepartments((prev) => prev.filter((d, idx) => (typeof deptIdOrName === 'number' ? idx !== deptIdOrName : d.name !== deptIdOrName)));
     } else {
-      Alert.alert(
-        "Remove Department",
-        warningMsg,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Remove",
-            style: "destructive",
-            onPress: () => {
-              console.log("Triggering department delete mutation", deptId);
-              Alert.alert("Debug", `Deleting department ${deptId}`);
-              try {
-                console.log('Calling removeDepartmentMutation.mutate', { id: deptId, organizationId: editingOrg?.id });
-                removeDepartmentMutation.mutate({ id: deptId, organizationId: editingOrg?.id });
-              } catch (err) {
-                console.error("Mutation error", err);
-              }
+      // Existing org: use backend mutation
+      Alert.alert("Debug", `handleRemoveDepartment called for department ${deptIdOrName}`);
+      Alert.alert("Debug", "About to show confirmation dialog for department " + deptIdOrName);
+      const dept = (allDepartments ?? []).find((d: StaffDepartment) => d.id === deptIdOrName);
+      const teamsInDept = (allTeams ?? []).filter((t: Team) => t.staffDepartmentId === deptIdOrName);
+      const deptName = dept?.name || "this department";
+      const teamCount = teamsInDept.length;
+      let warningMsg = `Are you sure you want to remove ${deptName}?`;
+      if (teamCount > 0) {
+        warningMsg += `\n\nWarning: This will also delete ${teamCount} team${teamCount > 1 ? 's' : ''} within this department.`;
+      }
+      // Use window.confirm on web, Alert.alert on native
+      if (typeof window !== 'undefined' && window.confirm) {
+        if (window.confirm(warningMsg)) {
+          try {
+            console.log('Calling removeDepartmentMutation.mutate', { id: deptIdOrName, organizationId: editingOrg?.id });
+            removeDepartmentMutation.mutate({ id: deptIdOrName, organizationId: editingOrg?.id });
+          } catch (err) {
+            console.error("Mutation error", err);
+          }
+        }
+      } else {
+        Alert.alert(
+          "Remove Department",
+          warningMsg,
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Remove",
+              style: "destructive",
+              onPress: () => {
+                console.log("Triggering department delete mutation", deptIdOrName);
+                Alert.alert("Debug", `Deleting department ${deptIdOrName}`);
+                try {
+                  console.log('Calling removeDepartmentMutation.mutate', { id: deptIdOrName, organizationId: editingOrg?.id });
+                  removeDepartmentMutation.mutate({ id: deptIdOrName, organizationId: editingOrg?.id });
+                } catch (err) {
+                  console.error("Mutation error", err);
+                }
+              },
             },
-          },
-        ]
-      );
+          ]
+        );
+      }
     }
   };
 
@@ -278,7 +314,24 @@ export default function AdminOrganizationsScreen() {
     setModalVisible(true);
   };
 
-  const handleFormSubmit = () => {
+  // Add debug logging and visible error/status output
+  const createOrgMutation = trpc.organizations.create.useMutation({
+    onSuccess: (data) => {
+      console.log('[CREATE ORG SUCCESS]', data);
+      setModalVisible(false);
+      setEditingOrg(null);
+      setFormData({ name: '', address: '', email: '', phone: '' });
+      setFormError('');
+      setSearchQuery(""); // Clear search bar after add
+      utils?.organizations?.list?.invalidate?.();
+    },
+    onError: (err) => {
+      console.error('[CREATE ORG ERROR]', err);
+      setFormError(err.message || 'Failed to add organization');
+    },
+  });
+  const handleFormSubmit = async () => {
+    console.log('[DEBUG] Save button pressed', formData, pendingDepartments, pendingTeams);
     if (!formData.name.trim()) {
       setFormError("Name is required");
       return;
@@ -291,8 +344,45 @@ export default function AdminOrganizationsScreen() {
       setFormError("Staff authentication required");
       return;
     }
-    // TODO: Implement updateOrg and createOrg mutations
-    setModalVisible(false);
+    if (editingOrg) {
+      // TODO: Implement updateOrg mutation if needed
+      setFormError('Editing not implemented');
+    } else {
+      // 1. Create org, then 2. create departments, then 3. create teams
+      createOrgMutation.mutate({ ...formData, createdBy: staff.id, updatedBy: staff.id }, {
+        onSuccess: async (orgResult: any) => {
+          const orgId = orgResult?.insertId || orgResult?.id;
+          // 2. Create departments
+          for (const dept of pendingDepartments) {
+            const deptResult = await addDepartmentMutation.mutateAsync({
+              name: dept.name,
+              organizationId: orgId,
+              createdBy: staff.id,
+              updatedBy: staff.id,
+            });
+            const deptId = deptResult?.insertId || deptResult?.id;
+            // 3. Create teams for this department
+            for (const team of dept.teams || []) {
+              await addTeamMutation.mutateAsync({
+                name: team.name,
+                staffDepartmentId: deptId,
+                organizationId: orgId,
+                createdBy: staff.id,
+                updatedBy: staff.id,
+              });
+            }
+          }
+          setPendingDepartments([]);
+          setPendingTeams([]);
+          setModalVisible(false);
+          setEditingOrg(null);
+          setFormData({ name: '', address: '', email: '', phone: '' });
+          setFormError('');
+          setSearchQuery("");
+          utils?.organizations?.list?.invalidate?.();
+        },
+      });
+    }
   };
 
   // Organization delete mutation
@@ -439,10 +529,18 @@ export default function AdminOrganizationsScreen() {
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.primary }}>{'<'}</Text>
             </TouchableOpacity>
-            <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 18, color: '#222', textAlign: 'center' }}>Update organization information</Text>
+            <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 18, color: '#222', textAlign: 'center' }}>
+              {isCreateMode ? 'Add New Staff Organization' : 'Update organization information'}
+            </Text>
             <View style={{ width: 28 }} />
           </View>
           {formError ? <Text style={{ color: '#d32f2f', fontSize: 16, marginBottom: 12 }}>{formError}</Text> : null}
+          {/* Debug: show mutation error and status */}
+          <Text style={{ color: '#c00', fontSize: 12, marginBottom: 8 }}>
+            {createOrgMutation.isError ? `Error: ${createOrgMutation.error?.message}` : ''}
+            {createOrgMutation.isLoading ? 'Saving...' : ''}
+            {createOrgMutation.isSuccess ? 'Saved!' : ''}
+          </Text>
           {/* Name */}
           <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Name *</Text>
           <TextInput
@@ -485,46 +583,43 @@ export default function AdminOrganizationsScreen() {
           />
           {/* Departments */}
           <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Departments</Text>
+          {/* Debug: Show pendingDepartments and teams */}
+          {/* Debug display of isCreateMode and editingOrg removed */}
+          {/* Debug display of pendingDepartments removed */}
           {/* Departments listed horizontally, each with nested teams below */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              {Array.from(new Set((allDepartments ?? []).map((d: any) => d.id)))
-                .map((deptId) => {
-                  const dept = (allDepartments ?? []).find((d: any) => d.id === deptId);
-                  if (!dept) return null;
-                  return (
-                    <View key={dept.id} style={{ marginRight: 24, alignItems: 'center' }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4 }}>
-                        <Text style={{ color: '#333', marginRight: 4 }}>{dept.name}</Text>
-                        <TouchableOpacity
-                          onPress={() => handleRemoveDepartment(dept.id)}
-                        >
-                          <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
-                        </TouchableOpacity>
-                      </View>
-                      {/* Teams for this department, listed vertically and left-aligned */}
-                      <View style={{ marginTop: 4, alignItems: 'flex-start' }}>
-                        {(allTeams ?? []).filter((team: Team) => team.staffDepartmentId === dept.id).length === 0 ? (
-                          <Text style={{ color: '#888', fontStyle: 'italic' }}>No teams</Text>
-                        ) : (
-                          (allTeams ?? [])
-                            .filter((team: Team) => team.staffDepartmentId === dept.id)
-                            .map((team: Team) => (
-                              <View key={team.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4, marginRight: 0 }}>
-                                <Text style={{ color: '#333', marginRight: 4 }}>{team.name}</Text>
-                                <TouchableOpacity
-                                  onPress={() => handleRemoveTeam(team.id, team.name)}
-                                >
-                                  <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
-                                </TouchableOpacity>
-                              </View>
-                            ))
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
-              {(allDepartments ?? []).length === 0 && (
+              {(isCreateMode ? pendingDepartments : allDepartments)?.map((dept: any, idx: number) => (
+                <View key={dept.id || dept.name || idx} style={{ marginRight: 24, alignItems: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4 }}>
+                    <Text style={{ color: '#333', marginRight: 4 }}>{dept.name}</Text>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveDepartment(isCreateMode ? idx : dept.id)}
+                    >
+                      <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {/* Teams for this department, listed vertically and left-aligned */}
+                  <View style={{ marginTop: 4, alignItems: 'flex-start' }}>
+                    {(() => {
+                      const deptTeams = isCreateMode
+                        ? dept.teams ?? []
+                        : (allTeams ?? []).filter((team: any) => team.staffDepartmentId === dept.id);
+                      return deptTeams.length === 0 ? (
+                        <Text style={{ color: '#888', fontStyle: 'italic' }}>No teams</Text>
+                      ) : (
+                        deptTeams.map((team: any, tIdx: number) => (
+                          <View key={team.id || team.name || tIdx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4, marginRight: 0 }}>
+                            <Text style={{ color: '#333', marginRight: 4 }}>{team.name}</Text>
+                            {/* Remove button logic can be added here if needed */}
+                          </View>
+                        ))
+                      );
+                    })()}
+                  </View>
+                </View>
+              ))}
+              {(isCreateMode ? pendingDepartments : allDepartments)?.length === 0 && (
                 <Text style={{ color: '#888', fontStyle: 'italic', paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eee', borderRadius: 16 }}>
                   No departments assigned
                 </Text>
@@ -606,10 +701,7 @@ export default function AdminOrganizationsScreen() {
                 {newDeptName.trim() !== '' &&
                   !(allDepartmentsGlobal ?? []).some((dept: any) => dept.name.toLowerCase() === newDeptName.trim().toLowerCase()) && (
                     <TouchableOpacity
-                      onPress={() => {
-                        handleDeptSave();
-                        setAddDeptModalVisible(false);
-                      }}
+                      onPress={handleDeptSave}
                       style={{ backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, marginTop: 8 }}
                     >
                       <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Create "{newDeptName.trim()}"</Text>
@@ -638,13 +730,13 @@ export default function AdminOrganizationsScreen() {
                 <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Select Department</Text>
                 <View style={{ marginBottom: 16 }}>
                   <ScrollView style={{ maxHeight: 120 }}>
-                    {(allDepartments ?? []).map((dept: any) => (
+                    {(isCreateMode ? pendingDepartments : allDepartments)?.map((dept: any, idx: number) => (
                       <TouchableOpacity
-                        key={dept.id}
-                        style={{ backgroundColor: selectedDeptId === dept.id ? colors.primary : '#eee', borderRadius: 8, padding: 10, marginBottom: 6 }}
-                        onPress={() => setSelectedDeptId(dept.id)}
+                        key={dept.id || dept.name || idx}
+                        style={{ backgroundColor: selectedDeptId === (dept.id ?? idx) ? colors.primary : '#eee', borderRadius: 8, padding: 10, marginBottom: 6 }}
+                        onPress={() => setSelectedDeptId(dept.id ?? idx)}
                       >
-                        <Text style={{ color: selectedDeptId === dept.id ? '#fff' : '#333' }}>{dept.name}</Text>
+                        <Text style={{ color: selectedDeptId === (dept.id ?? idx) ? '#fff' : '#333' }}>{dept.name}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -685,17 +777,26 @@ export default function AdminOrganizationsScreen() {
                           key={name}
                           style={{ backgroundColor: '#cce5ff', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 6, marginHorizontal: 8 }}
                           onPress={() => {
-                            if (!selectedDeptId) {
+                            if (selectedDeptId === null || selectedDeptId === undefined) {
                               setNewTeamError("Please select a department before creating a team.");
                               return;
                             }
-                            addTeamMutation.mutate({
-                              organizationId: editingOrg?.id ? Number(editingOrg.id) : 0,
-                              staffDepartmentId: selectedDeptId!,
-                              name,
-                              createdBy: staff?.id!,
-                              updatedBy: staff?.id!,
-                            } as any);
+                            if (isCreateMode) {
+                              setPendingDepartments(prev => prev.map((dept, idx) =>
+                                idx === selectedDeptId ? { ...dept, teams: [...(dept.teams || []), { name }] } : dept
+                              ));
+                              setTeamSearch("");
+                              setNewTeamError("");
+                              setAddTeamModalVisible(false);
+                            } else {
+                              addTeamMutation.mutate({
+                                organizationId: editingOrg?.id ? Number(editingOrg.id) : 0,
+                                staffDepartmentId: selectedDeptId!,
+                                name,
+                                createdBy: staff?.id!,
+                                updatedBy: staff?.id!,
+                              } as any);
+                            }
                           }}
                         >
                           <Text style={{ color: '#007bff' }}>{name}</Text>
@@ -708,10 +809,18 @@ export default function AdminOrganizationsScreen() {
                   !(allTeams ?? []).some((team: any) => team.name.toLowerCase() === teamSearch.trim().toLowerCase()) && (
                     <TouchableOpacity
                       onPress={() => {
-                        if (!selectedDeptId) {
+                        if (selectedDeptId === null || selectedDeptId === undefined) {
                           setNewTeamError("Please select a department before creating a team.");
                           return;
                         }
+                        if (isCreateMode) {
+                          setPendingDepartments(prev => prev.map((dept, idx) =>
+                            idx === selectedDeptId ? { ...dept, teams: [...(dept.teams || []), { name: teamSearch.trim() }] } : dept
+                          ));
+                          setTeamSearch("");
+                          setNewTeamError("");
+                          setAddTeamModalVisible(false);
+                        } else {
                           addTeamMutation.mutate({
                             organizationId: editingOrg?.id ? Number(editingOrg.id) : 0,
                             staffDepartmentId: selectedDeptId!,
@@ -719,6 +828,7 @@ export default function AdminOrganizationsScreen() {
                             createdBy: staff?.id!,
                             updatedBy: staff?.id!,
                           } as any);
+                        }
                       }}
                       style={{ backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, marginTop: 8 }}
                     >

@@ -19,12 +19,15 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
     try {
       // First try Manus OAuth authentication (for OAuth users)
       user = await sdk.authenticateRequest(opts.req);
+      console.log('[DEBUG] Authenticated via OAuth (sdk.authenticateRequest)');
     } catch (error) {
+      console.log('[DEBUG] OAuth authentication failed, falling back to custom session token:', error);
       // If OAuth fails, try custom session token (for email/password users)
       // Check Authorization header first (for native apps)
       const authHeader = opts.req.headers.authorization;
       if (authHeader && authHeader.startsWith("Bearer ")) {
         const token = authHeader.substring(7);
+        console.log('[DEBUG] Trying validateSessionToken with Authorization header:', token);
         user = await validateSessionToken(token);
         console.log('[DEBUG] validateSessionToken (Authorization header):', token, user);
       }

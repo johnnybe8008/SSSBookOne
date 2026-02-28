@@ -19,10 +19,14 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 export async function createSession(staffId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  // Enforce one session per staff: delete all existing sessions for this staffId
+  console.log('[createSession] Deleting existing sessions for staffId:', staffId);
+  await db.delete(authSessions).where(eq(authSessions.staffId, staffId));
   // Generate a secure random token
   const token = crypto.randomBytes(32).toString("base64url");
   // Set expiration to 1 year from now
   const expiresAt = new Date(Date.now() + ONE_YEAR_MS);
+  console.log('[createSession] Creating session:', { staffId, token, expiresAt });
   // Store in database (staffId)
   await db.insert(authSessions).values({
     staffId,
@@ -43,6 +47,7 @@ export async function validateSessionToken(token: string): Promise<any> {
   }
   // Find session that matches token and hasn't expired
   const now = new Date();
+  console.log('[validateSessionToken] Checking token:', JSON.stringify(token), 'now:', now.toISOString());
   const [session] = await db
     .select()
     .from(authSessions)
@@ -53,6 +58,7 @@ export async function validateSessionToken(token: string): Promise<any> {
       )
     )
     .limit(1);
+  console.log('[validateSessionToken] Session found:', session);
   if (!session) {
     console.error(`[validateSessionToken] No valid session found for token: ${token}`);
     return null;
@@ -66,6 +72,7 @@ export async function validateSessionToken(token: string): Promise<any> {
   if (!staffRecord) {
     console.error(`[validateSessionToken] No staff found for session.staffId: ${session.staffId}`);
   }
+  console.log('[validateSessionToken] Staff record found:', staffRecord);
   return staffRecord || null;
 }
 

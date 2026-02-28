@@ -1,3 +1,11 @@
+// Create a new organization
+export async function createOrganization(input) {
+  const db = await getDb();
+  // Remove id if present, as it should be auto-incremented
+  const { id, ...data } = input;
+  const [result] = await db.insert(organizations).values(data);
+  return result;
+}
 // Delete a staff department by ID and cascade delete its teams
 export async function deleteStaffDepartment(id, organizationId) {
   const db = await getDb();
