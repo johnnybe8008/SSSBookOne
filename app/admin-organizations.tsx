@@ -485,35 +485,53 @@ export default function AdminOrganizationsScreen() {
           />
           {/* Departments */}
           <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Departments</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-            {(allDepartments ?? [])
-              .map((dept: StaffDepartment) => (
-                <View key={dept.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginRight: 8, marginBottom: 4 }}>
-                  <Text style={{ color: '#333', marginRight: 4 }}>{dept.name}</Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      console.log('Delete X pressed for department', dept.id);
-                      Alert.alert('Debug', 'Calling handleRemoveDepartment for ' + dept.id);
-                      try {
-                        handleRemoveDepartment(dept.id);
-                        console.log('handleRemoveDepartment successfully called', dept.id);
-                        Alert.alert('Debug', 'handleRemoveDepartment successfully called for ' + dept.id);
-                      } catch (err) {
-                        console.error('handleRemoveDepartment error', err);
-                        Alert.alert('Debug', 'handleRemoveDepartment error: ' + String(err));
-                      }
-                    }}
-                  >
-                    <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            {(allDepartments ?? []).length === 0 && (
-              <Text style={{ color: '#888', fontStyle: 'italic', paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eee', borderRadius: 16 }}>
-                No departments assigned
-              </Text>
-            )}
-          </View>
+          {/* Departments listed horizontally, each with nested teams below */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              {Array.from(new Set((allDepartments ?? []).map((d: any) => d.id)))
+                .map((deptId) => {
+                  const dept = (allDepartments ?? []).find((d: any) => d.id === deptId);
+                  if (!dept) return null;
+                  return (
+                    <View key={dept.id} style={{ marginRight: 24, alignItems: 'center' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4 }}>
+                        <Text style={{ color: '#333', marginRight: 4 }}>{dept.name}</Text>
+                        <TouchableOpacity
+                          onPress={() => handleRemoveDepartment(dept.id)}
+                        >
+                          <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {/* Teams for this department, listed vertically and left-aligned */}
+                      <View style={{ marginTop: 4, alignItems: 'flex-start' }}>
+                        {(allTeams ?? []).filter((team: Team) => team.staffDepartmentId === dept.id).length === 0 ? (
+                          <Text style={{ color: '#888', fontStyle: 'italic' }}>No teams</Text>
+                        ) : (
+                          (allTeams ?? [])
+                            .filter((team: Team) => team.staffDepartmentId === dept.id)
+                            .map((team: Team) => (
+                              <View key={team.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4, marginRight: 0 }}>
+                                <Text style={{ color: '#333', marginRight: 4 }}>{team.name}</Text>
+                                <TouchableOpacity
+                                  onPress={() => handleRemoveTeam(team.id, team.name)}
+                                >
+                                  <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
+                                </TouchableOpacity>
+                              </View>
+                            ))
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              {(allDepartments ?? []).length === 0 && (
+                <Text style={{ color: '#888', fontStyle: 'italic', paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eee', borderRadius: 16 }}>
+                  No departments assigned
+                </Text>
+              )}
+            </View>
+          </ScrollView>
+
           {/* Add Department Button */}
           <View style={{ marginBottom: 8 }}>
             <TouchableOpacity
@@ -521,6 +539,15 @@ export default function AdminOrganizationsScreen() {
               onPress={handleAddDepartment}
             >
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Add Department</Text>
+            </TouchableOpacity>
+          </View>
+          {/* Add Team Button below Add Department */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <TouchableOpacity
+              onPress={() => setAddTeamModalVisible(true)}
+              style={{ backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start' }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Add Team</Text>
             </TouchableOpacity>
           </View>
           {/* Department Selector Modal */}
@@ -595,50 +622,8 @@ export default function AdminOrganizationsScreen() {
               </View>
             </View>
           </Modal>
-          {/* Teams nested under each department, with Add Team button at the top */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <TouchableOpacity
-              onPress={() => setAddTeamModalVisible(true)}
-              style={{ backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start' }}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Add Team</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ marginBottom: 16 }}>
-            {(allDepartments ?? []).map((dept: any) => (
-              <View key={dept.id} style={{ marginBottom: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginRight: 8 }}>
-                  <Text style={{ color: '#333', marginRight: 4 }}>{dept.name}</Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      handleRemoveDepartment(dept.id);
-                    }}
-                  >
-                    <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
-                  </TouchableOpacity>
-                </View>
-                {/* Teams for this department */}
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginLeft: 8, marginTop: 4 }}>
-                  {(allTeams ?? []).filter((team: Team) => team.staffDepartmentId === dept.id).length === 0 ? (
-                    <Text style={{ color: '#888', fontStyle: 'italic' }}>No teams</Text>
-                  ) : (
-                    (allTeams ?? [])
-                      .filter((team: Team) => team.staffDepartmentId === dept.id)
-                      .map((team: Team) => (
-                        <View key={team.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginRight: 8, marginBottom: 4 }}>
-                          <Text style={{ color: '#333', marginRight: 4 }}>{team.name}</Text>
-                          <TouchableOpacity
-                            onPress={() => handleRemoveTeam(team.id, team.name)}
-                          >
-                            <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))
-                  )}
-                </View>
-              </View>
-            ))}
-          </View>
+          {/* Teams for each department, above Add Team button */}
+          {/* Only horizontal department/team list remains above */}
           {/* Add Team Modal */}
           <Modal
             visible={addTeamModalVisible}

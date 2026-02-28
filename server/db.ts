@@ -1,3 +1,18 @@
+// Delete a staff department by ID and cascade delete its teams
+export async function deleteStaffDepartment(id, organizationId) {
+  const db = await getDb();
+  // Delete teams under this department
+  await db.delete(teams).where(eq(teams.staffDepartmentId, id));
+  // Delete the department itself
+  await db.delete(staffDepartments).where(eq(staffDepartments.id, id));
+  return { success: true };
+}
+// Delete a team by ID
+export async function deleteTeam(id) {
+  const db = await getDb();
+  await db.delete(teams).where(eq(teams.id, id));
+  return { success: true };
+}
 // Create a new staff department
 export async function createStaffDepartment(input) {
   const db = await getDb();
