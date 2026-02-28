@@ -37,7 +37,10 @@ export async function createSession(staffId: number) {
  */
 export async function validateSessionToken(token: string): Promise<any> {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    console.error('[validateSessionToken] getDb() returned null');
+    return null;
+  }
   // Find session that matches token and hasn't expired
   const now = new Date();
   const [session] = await db
@@ -51,6 +54,7 @@ export async function validateSessionToken(token: string): Promise<any> {
     )
     .limit(1);
   if (!session) {
+    console.error(`[validateSessionToken] No valid session found for token: ${token}`);
     return null;
   }
   // Get the associated staff (use staffId)
@@ -59,6 +63,9 @@ export async function validateSessionToken(token: string): Promise<any> {
     .from(staff)
     .where(eq(staff.id, session.staffId))
     .limit(1);
+  if (!staffRecord) {
+    console.error(`[validateSessionToken] No staff found for session.staffId: ${session.staffId}`);
+  }
   return staffRecord || null;
 }
 

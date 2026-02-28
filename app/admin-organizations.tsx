@@ -1,4 +1,3 @@
-
 import { TextInput, FlatList, ScrollView, Modal, Alert, Linking, Text, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
@@ -28,44 +27,51 @@ export default function AdminOrganizationsScreen() {
   const router = useRouter();
   // ...existing code...
 
-                  {/* Render team list after hooks are initialized, using useMemo for safety */}
-                  {(() => {
-                    // Defensive: fallback to [] if undefined for any reason
-                    let teamListContent = null;
-                    try {
-                      const safeAllTeamsGlobal = Array.isArray(allTeamsGlobal) ? allTeamsGlobal : [];
-                      const safeAllTeams = Array.isArray(allTeams) ? allTeams : [];
-                      const allTeamNames = safeAllTeamsGlobal.map((t: any) => t.name);
-                      const uniqueTeamNames = Array.from(new Set(allTeamNames));
-                      const assignedTeamNames = safeAllTeams
-                        .filter((t: any) => t.staffDepartmentId === selectedDeptId)
-                        .map((t: any) => t.name);
-                      // Filter out assigned teams and match search
-                      const filteredTeamNames = uniqueTeamNames.filter(
-                        (name) =>
-                          !assignedTeamNames.includes(name) &&
-                          (!teamSearch || name.toLowerCase().includes(teamSearch.toLowerCase()))
-                      );
-                      if (filteredTeamNames.length === 0) {
-                        teamListContent = (
-                          <Text style={{ color: '#888', padding: 12 }}>No teams found.</Text>
-                        );
-                      } else {
-                        teamListContent = filteredTeamNames.map((name) => (
-                          <TouchableOpacity
-                            key={name}
-                            style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
-                            onPress={() => setSelectedTeamName(name)}
-                          >
-                            <Text style={{ fontSize: 16 }}>{name}</Text>
-                          </TouchableOpacity>
-                        ));
-                      }
-                    } catch (e) {
-                      teamListContent = <Text style={{ color: '#888', padding: 12 }}>Loading teams...</Text>;
-                    }
-                    return <ScrollView>{teamListContent}</ScrollView>;
-                  })()}
+  // State for selected team name (fixes missing setSelectedTeamName)
+  const [selectedTeamName, setSelectedTeamName] = useState<string>("");
+
+  // ...existing code...
+  // ...existing code...
+
+  // Place this block after allTeamsGlobal, allTeams, and setSelectedTeamName are declared
+  // Render team list after hooks are initialized, using useMemo for safety
+  const renderTeamList = () => {
+    let teamListContent = null;
+    try {
+      const safeAllTeamsGlobal: any[] = Array.isArray(allTeamsGlobal) ? allTeamsGlobal : [];
+      const safeAllTeams: any[] = Array.isArray(allTeams) ? allTeams : [];
+      const allTeamNames: string[] = safeAllTeamsGlobal.map((t: any) => t.name);
+      const uniqueTeamNames: string[] = Array.from(new Set(allTeamNames));
+      const assignedTeamNames: string[] = safeAllTeams
+        .filter((t: any) => t.staffDepartmentId === selectedDeptId)
+        .map((t: any) => t.name);
+      // Filter out assigned teams and match search
+      const filteredTeamNames: string[] = uniqueTeamNames.filter(
+        (name: string) =>
+          !assignedTeamNames.includes(name) &&
+          (!teamSearch || name.toLowerCase().includes(teamSearch.toLowerCase()))
+      );
+      if (filteredTeamNames.length === 0) {
+        teamListContent = (
+          <Text style={{ color: '#888', padding: 12 }}>No teams found.</Text>
+        );
+      } else {
+        teamListContent = filteredTeamNames.map((name: string) => (
+          <TouchableOpacity
+            key={name}
+            style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
+            onPress={() => setSelectedTeamName(name)}
+          >
+            <Text style={{ fontSize: 16 }}>{name}</Text>
+          </TouchableOpacity>
+        ));
+      }
+    } catch (e) {
+      teamListContent = <Text style={{ color: '#888', padding: 12 }}>Loading teams...</Text>;
+    }
+    return <ScrollView>{teamListContent}</ScrollView>;
+  };
+  // ...existing code...
 
   // State for new department name input
   const [newDeptName, setNewDeptName] = useState("");
@@ -289,6 +295,47 @@ export default function AdminOrganizationsScreen() {
     setModalVisible(false);
   };
 
+  // Organization delete mutation
+  const removeOrganizationMutation = trpc.organizations.delete.useMutation({
+    onSuccess: () => {
+      utils?.organizations?.list?.invalidate?.();
+      setModalVisible(false);
+      setEditingOrg(null);
+    },
+    onError: (err) => {
+      Alert.alert("Error", err.message || "Failed to remove organization");
+    },
+  });
+
+  // Handler for removing an organization
+  const handleRemoveOrganization = (orgId: number, orgName: string) => {
+    const msg = `Are you sure you want to delete the organization "${orgName}"?\n\nThis will also delete all departments and teams for this organization.`;
+    if (typeof window !== 'undefined' && window.confirm) {
+      if (window.confirm(msg)) {
+        try {
+          removeOrganizationMutation.mutate({ id: orgId });
+        } catch (err) {
+          console.error("Mutation error", err);
+        }
+      }
+    } else {
+      Alert.alert(
+        "Delete Organization",
+        msg,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              removeOrganizationMutation.mutate({ id: orgId });
+            },
+          },
+        ]
+      );
+    }
+  };
+
   // --- UI rendering starts here ---
   return (
     <ScreenContainer>
@@ -392,7 +439,7 @@ export default function AdminOrganizationsScreen() {
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.primary }}>{'<'}</Text>
             </TouchableOpacity>
-            <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 18, color: '#222', textAlign: 'center' }}>{editingOrg == null ? 'Add New Organization' : 'Update organization information'}</Text>
+            <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 18, color: '#222', textAlign: 'center' }}>Update organization information</Text>
             <View style={{ width: 28 }} />
           </View>
           {formError ? <Text style={{ color: '#d32f2f', fontSize: 16, marginBottom: 12 }}>{formError}</Text> : null}
@@ -548,8 +595,7 @@ export default function AdminOrganizationsScreen() {
               </View>
             </View>
           </Modal>
-          {/* Teams Section */}
-          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Teams</Text>
+          {/* Teams nested under each department, with Add Team button at the top */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <TouchableOpacity
               onPress={() => setAddTeamModalVisible(true)}
@@ -558,40 +604,40 @@ export default function AdminOrganizationsScreen() {
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Add Team</Text>
             </TouchableOpacity>
           </View>
-          {/* Teams by department */}
           <View style={{ marginBottom: 16 }}>
-            {(allDepartments ?? []).map((dept: any) => {
-              const deptTeams = (allTeams ?? []).filter((team: any) => team.staffDepartmentId === dept.id);
-              return (
-                <View key={dept.id} style={{ marginBottom: 12 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{dept.name}</Text>
-                  {deptTeams.length === 0 ? (
-                    <Text style={{ color: '#888', fontStyle: 'italic', marginLeft: 8 }}>No teams</Text>
+            {(allDepartments ?? []).map((dept: any) => (
+              <View key={dept.id} style={{ marginBottom: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginRight: 8 }}>
+                  <Text style={{ color: '#333', marginRight: 4 }}>{dept.name}</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      handleRemoveDepartment(dept.id);
+                    }}
+                  >
+                    <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
+                  </TouchableOpacity>
+                </View>
+                {/* Teams for this department */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginLeft: 8, marginTop: 4 }}>
+                  {(allTeams ?? []).filter((team: Team) => team.staffDepartmentId === dept.id).length === 0 ? (
+                    <Text style={{ color: '#888', fontStyle: 'italic' }}>No teams</Text>
                   ) : (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginLeft: 8 }}>
-                      {deptTeams.map((team: any) => (
+                    (allTeams ?? [])
+                      .filter((team: Team) => team.staffDepartmentId === dept.id)
+                      .map((team: Team) => (
                         <View key={team.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, marginRight: 8, marginBottom: 4 }}>
                           <Text style={{ color: '#333', marginRight: 4 }}>{team.name}</Text>
                           <TouchableOpacity
-                            onPress={() => {
-                              console.log('Delete X pressed for team', team.id);
-                              try {
-                                handleRemoveTeam(team.id, team.name);
-                                console.log('handleRemoveTeam successfully called', team.id);
-                              } catch (err) {
-                                console.error('handleRemoveTeam error', err);
-                              }
-                            }}
+                            onPress={() => handleRemoveTeam(team.id, team.name)}
                           >
                             <Text style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: 16 }}>×</Text>
                           </TouchableOpacity>
                         </View>
-                      ))}
-                    </View>
+                      ))
                   )}
                 </View>
-              );
-            })}
+              </View>
+            ))}
           </View>
           {/* Add Team Modal */}
           <Modal
@@ -631,17 +677,17 @@ export default function AdminOrganizationsScreen() {
                   <ScrollView>
                     {(() => {
                       // Unique team names across all orgs, excluding those already in the selected department
-                      const allTeamNames = (allTeamsGlobal ?? []).map((t: any) => t.name);
-                      const uniqueTeamNames = Array.from(new Set(allTeamNames));
-                      const assignedTeamNames = (allTeams ?? [])
+                      const allTeamNames: string[] = (allTeamsGlobal ?? []).map((t: any) => t.name);
+                      const uniqueTeamNames: string[] = Array.from(new Set(allTeamNames));
+                      const assignedTeamNames: string[] = (allTeams ?? [])
                         .filter((t: any) => t.staffDepartmentId === selectedDeptId)
                         .map((t: any) => t.name);
-                      const filteredTeams = uniqueTeamNames
-                        .filter(
-                          (name: string) =>
-                            !assignedTeamNames.includes(name) &&
-                            name.toLowerCase().includes(teamSearch.toLowerCase())
-                        );
+                      // Explicitly type filteredTeams as string[]
+                      const filteredTeams: string[] = uniqueTeamNames.filter((name: string) =>
+                        typeof name === 'string' &&
+                        !assignedTeamNames.includes(name) &&
+                        name.toLowerCase().includes(teamSearch.toLowerCase())
+                      );
                       if (filteredTeams.length === 0 && teamSearch.trim() !== "") {
                         return (
                           <Text style={{ color: '#888', fontStyle: 'italic', paddingHorizontal: 12, paddingVertical: 4 }}>
@@ -649,7 +695,7 @@ export default function AdminOrganizationsScreen() {
                           </Text>
                         );
                       }
-                      return filteredTeams.map((name: string) => (
+                      return (filteredTeams as string[]).map((name: string) => (
                         <TouchableOpacity
                           key={name}
                           style={{ backgroundColor: '#cce5ff', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 6, marginHorizontal: 8 }}
@@ -709,6 +755,20 @@ export default function AdminOrganizationsScreen() {
           >
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Save</Text>
           </TouchableOpacity>
+          {editingOrg && (
+            <TouchableOpacity
+              onPress={() => handleRemoveOrganization(editingOrg.id, editingOrg.name)}
+              style={{
+                backgroundColor: '#d32f2f',
+                borderRadius: 8,
+                paddingVertical: 14,
+                marginTop: 16,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Delete Organization</Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </Modal>
     </ScreenContainer>

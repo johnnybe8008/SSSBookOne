@@ -77,8 +77,17 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
+      onError({ error, path, type, req }) {
+        console.error(`[tRPC][ERROR] ${type} ${path}`, error.stack || error);
+      },
     }),
   );
+
+  // Global error handler to log stack traces for all unhandled errors
+  app.use((err, req, res, next) => {
+    console.error('[GLOBAL ERROR HANDLER]', err.stack || err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  });
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
