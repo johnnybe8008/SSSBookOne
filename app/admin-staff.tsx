@@ -1,3 +1,4 @@
+import { Modal, Pressable } from "react-native";
 import { useState } from "react";
 import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
 import { router } from "expo-router";
@@ -9,18 +10,24 @@ import { OrganizationalBreadcrumbs } from "@/components/organizational-breadcrum
 import { Picker } from "@react-native-picker/picker";
 
 export default function AdminStaffScreen() {
+  // All hooks must be at the top level and in the same order every render
+  const [orgModalVisible, setOrgModalVisible] = useState(false);
+  const [deptModalVisible, setDeptModalVisible] = useState(false);
+  const [teamModalVisible, setTeamModalVisible] = useState(false);
+  const [roleModalVisible, setRoleModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterOrganizations, setFilterOrganizations] = useState<number[]>([]);
+  const [filterDepartments, setFilterDepartments] = useState<number[]>([]);
+  const [filterTeams, setFilterTeams] = useState<number[]>([]);
+  const [filterRoles, setFilterRoles] = useState<string[]>([]);
+  const [filterResetKey, setFilterResetKey] = useState(0);
+
   const colors = useColors();
   const { data: allStaff, isLoading } = trpc.staff.listAll.useQuery();
   const { data: organizations } = trpc.organizations.list.useQuery();
   const { data: staffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
   const { data: teams } = trpc.teams.list.useQuery({ groupId: 0 });
 
-  // Search and filter state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterOrganization, setFilterOrganization] = useState<number | null>(null);
-  const [filterDepartment, setFilterDepartment] = useState<number | null>(null);
-  const [filterTeam, setFilterTeam] = useState<number | null>(null);
-  const [filterRole, setFilterRole] = useState<string | null>(null);
 
   // Helper function to get organizational breadcrumbs for a staff member
   const getStaffBreadcrumbs = (staff: any) => {
@@ -115,28 +122,28 @@ export default function AdminStaffScreen() {
       if (!matchesSearch) return false;
     }
 
-    // Role filter
-    if (filterRole && staff.role !== filterRole) {
+    // Role filter (multi)
+    if (filterRoles.length > 0 && !filterRoles.includes(staff.role)) {
       return false;
     }
 
-    // Team filter
-    if (filterTeam && staff.teamId !== filterTeam) {
+    // Team filter (multi)
+    if (filterTeams.length > 0 && !filterTeams.includes(staff.teamId)) {
       return false;
     }
 
-    // Department filter
-    if (filterDepartment) {
+    // Department filter (multi)
+    if (filterDepartments.length > 0) {
       const team = teams?.find((t: any) => t.id === staff.teamId);
-      if (!team || team.staffDepartmentId !== filterDepartment) {
+      if (!team || !filterDepartments.includes(team.staffDepartmentId)) {
         return false;
       }
     }
 
-    // Organization filter
-    if (filterOrganization) {
+    // Organization filter (multi)
+    if (filterOrganizations.length > 0) {
       const team = teams?.find((t: any) => t.id === staff.teamId);
-      if (!team || team.groupId !== filterOrganization) {
+      if (!team || !filterOrganizations.includes(team.groupId)) {
         return false;
       }
     }
@@ -158,47 +165,17 @@ export default function AdminStaffScreen() {
   return (
     <ScreenContainer className="p-4">
       <ScrollView>
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="flex-row items-center gap-2 mb-4"
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.primary} />
-          <Text className="text-primary text-base font-semibold">Back</Text>
-        </TouchableOpacity>
-
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-3xl font-bold text-foreground">Manage Staff</Text>
-          <Text className="text-sm text-muted mt-1">
-            {allStaff?.length || 0} staff members
-          </Text>
-        </View>
-
-        {/* Action Buttons */}
-        <View className="mb-4 gap-3">
-          <TouchableOpacity
-            onPress={() => router.push("/admin-staff-add" as any)}
-            className="bg-primary rounded-lg p-4"
-          >
-            <Text className="text-background font-semibold text-center">+ Add New Staff</Text>
+        {/* Header Row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.primary }}>{'<'}</Text>
           </TouchableOpacity>
-          
-          <View className="flex-row gap-3">
-            <TouchableOpacity
-              onPress={handleExportCSV}
-              className="flex-1 bg-success rounded-lg p-4"
-            >
-              <Text className="text-background font-semibold text-center">Export CSV</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              onPress={handleImportCSV}
-              className="flex-1 bg-warning rounded-lg p-4"
-            >
-              <Text className="text-background font-semibold text-center">Import CSV</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 24, color: colors.foreground, textAlign: 'center' }}>
+            Manage Staff
+          </Text>
+          <TouchableOpacity onPress={() => router.push("/admin-staff-add" as any)}>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.primary }}>+</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
@@ -212,82 +189,246 @@ export default function AdminStaffScreen() {
           />
         </View>
 
-        {/* Filters */}
-        <View className="mb-4 gap-3">
-          <Text className="text-sm font-semibold text-foreground">Filters</Text>
-          
-          {/* Organization Filter */}
-          <View className="bg-surface border border-border rounded-xl">
-            <Picker
-              selectedValue={filterOrganization}
-              onValueChange={(value) => setFilterOrganization(value)}
-              style={{ color: colors.foreground }}
+        {/* Filters - horizontal arrangement */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          {/* Organization Filter (Multi-select with checkbox modal) */}
+          <View style={{ flex: 1, minWidth: 120 }}>
+            <Pressable
+              onPress={() => setOrgModalVisible(true)}
+              style={{ padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.surface }}
             >
-              <Picker.Item label="All Organizations" value={null} />
-              {organizations?.map((org: any) => (
-                <Picker.Item key={org.id} label={org.name} value={org.id} />
-              ))}
-            </Picker>
-          </View>
-
-          {/* Department Filter */}
-          <View className="bg-surface border border-border rounded-xl">
-            <Picker
-              selectedValue={filterDepartment}
-              onValueChange={(value) => setFilterDepartment(value)}
-              style={{ color: colors.foreground }}
+              <Text style={{ color: colors.foreground }}>
+                {filterOrganizations.length === 0
+                  ? 'All Organizations'
+                  : organizations?.filter((org: any) => filterOrganizations.includes(org.id)).map((org: any) => org.name).join(', ')}
+              </Text>
+            </Pressable>
+            <Modal
+              visible={orgModalVisible}
+              animationType="slide"
+              transparent
+              onRequestClose={() => setOrgModalVisible(false)}
             >
-              <Picker.Item label="All Departments" value={null} />
-              {staffDepartments?.map((dept: any) => (
-                <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
-              ))}
-            </Picker>
+              <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setOrgModalVisible(false)}>
+                <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
+                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Organizations</Text>
+                  <ScrollView style={{ maxHeight: 300 }}>
+                    {organizations?.map((org: any) => (
+                      <Pressable
+                        key={org.id}
+                        onPress={() => {
+                          setFilterOrganizations((prev) =>
+                            prev.includes(org.id)
+                              ? prev.filter((id) => id !== org.id)
+                              : [...prev, org.id]
+                          );
+                        }}
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}
+                      >
+                        <View style={{ width: 20, height: 20, borderWidth: 1, borderColor: colors.primary, borderRadius: 4, marginRight: 12, backgroundColor: filterOrganizations.includes(org.id) ? colors.primary : '#fff', justifyContent: 'center', alignItems: 'center' }}>
+                          {filterOrganizations.includes(org.id) && (
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>✓</Text>
+                          )}
+                        </View>
+                        <Text style={{ color: colors.foreground }}>{org.name}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                  <Pressable
+                    onPress={() => setOrgModalVisible(false)}
+                    style={{ marginTop: 16, alignSelf: 'flex-end' }}
+                  >
+                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Done</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </Modal>
           </View>
-
-          {/* Team Filter */}
-          <View className="bg-surface border border-border rounded-xl">
-            <Picker
-              selectedValue={filterTeam}
-              onValueChange={(value) => setFilterTeam(value)}
-              style={{ color: colors.foreground }}
+          {/* Department Filter (unique by name) */}
+          <View style={{ flex: 1, minWidth: 120 }}>
+            <Pressable
+              onPress={() => setDeptModalVisible(true)}
+              style={{ padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.surface }}
             >
-              <Picker.Item label="All Teams" value={null} />
-              {teams?.map((team: any) => (
-                <Picker.Item key={team.id} label={team.name} value={team.id} />
-              ))}
-            </Picker>
+              <Text style={{ color: colors.foreground }}>
+                {filterDepartments.length === 0
+                  ? 'All Departments'
+                  : Array.from(new Map((staffDepartments || []).map((d: any) => [d.name, d])).values())
+                      .filter((dept: any) => filterDepartments.includes(dept.id))
+                      .map((dept: any) => dept.name)
+                      .join(', ')}
+              </Text>
+            </Pressable>
+            <Modal
+              visible={deptModalVisible}
+              animationType="slide"
+              transparent
+              onRequestClose={() => setDeptModalVisible(false)}
+            >
+              <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setDeptModalVisible(false)}>
+                <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
+                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Departments</Text>
+                  <ScrollView style={{ maxHeight: 300 }}>
+                    {Array.from(new Map((staffDepartments || []).map((d: any) => [d.name, d])).values()).map((dept: any) => (
+                      <Pressable
+                        key={dept.id}
+                        onPress={() => {
+                          setFilterDepartments((prev) =>
+                            prev.includes(dept.id)
+                              ? prev.filter((id) => id !== dept.id)
+                              : [...prev, dept.id]
+                          );
+                        }}
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}
+                      >
+                        <View style={{ width: 20, height: 20, borderWidth: 1, borderColor: colors.primary, borderRadius: 4, marginRight: 12, backgroundColor: filterDepartments.includes(dept.id) ? colors.primary : '#fff', justifyContent: 'center', alignItems: 'center' }}>
+                          {filterDepartments.includes(dept.id) && (
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>✓</Text>
+                          )}
+                        </View>
+                        <Text style={{ color: colors.foreground }}>{dept.name}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                  <Pressable
+                    onPress={() => setDeptModalVisible(false)}
+                    style={{ marginTop: 16, alignSelf: 'flex-end' }}
+                  >
+                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Done</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </Modal>
           </View>
-
+          {/* Team Filter (unique by name) */}
+          <View style={{ flex: 1, minWidth: 120 }}>
+            <Pressable
+              onPress={() => setTeamModalVisible(true)}
+              style={{ padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.surface }}
+            >
+              <Text style={{ color: colors.foreground }}>
+                {filterTeams.length === 0
+                  ? 'All Teams'
+                  : Array.from(new Map((teams || []).map((t: any) => [t.name, t])).values())
+                      .filter((team: any) => filterTeams.includes(team.id))
+                      .map((team: any) => team.name)
+                      .join(', ')}
+              </Text>
+            </Pressable>
+            <Modal
+              visible={teamModalVisible}
+              animationType="slide"
+              transparent
+              onRequestClose={() => setTeamModalVisible(false)}
+            >
+              <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setTeamModalVisible(false)}>
+                <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
+                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Teams</Text>
+                  <ScrollView style={{ maxHeight: 300 }}>
+                    {Array.from(new Map((teams || []).map((t: any) => [t.name, t])).values()).map((team: any) => (
+                      <Pressable
+                        key={team.id}
+                        onPress={() => {
+                          setFilterTeams((prev) =>
+                            prev.includes(team.id)
+                              ? prev.filter((id) => id !== team.id)
+                              : [...prev, team.id]
+                          );
+                        }}
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}
+                      >
+                        <View style={{ width: 20, height: 20, borderWidth: 1, borderColor: colors.primary, borderRadius: 4, marginRight: 12, backgroundColor: filterTeams.includes(team.id) ? colors.primary : '#fff', justifyContent: 'center', alignItems: 'center' }}>
+                          {filterTeams.includes(team.id) && (
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>✓</Text>
+                          )}
+                        </View>
+                        <Text style={{ color: colors.foreground }}>{team.name}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                  <Pressable
+                    onPress={() => setTeamModalVisible(false)}
+                    style={{ marginTop: 16, alignSelf: 'flex-end' }}
+                  >
+                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Done</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </Modal>
+          </View>
           {/* Role Filter */}
-          <View className="bg-surface border border-border rounded-xl">
-            <Picker
-              selectedValue={filterRole}
-              onValueChange={(value) => setFilterRole(value)}
-              style={{ color: colors.foreground }}
+          <View style={{ flex: 1, minWidth: 120 }}>
+            <Pressable
+              onPress={() => setRoleModalVisible(true)}
+              style={{ padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.surface }}
             >
-              <Picker.Item label="All Roles" value={null} />
-              <Picker.Item label="Admin" value="admin" />
-              <Picker.Item label="Counselor" value="counselor" />
-              <Picker.Item label="View Only" value="viewer" />
-            </Picker>
+              <Text style={{ color: colors.foreground }}>
+                {filterRoles.length === 0
+                  ? 'All Roles'
+                  : ['admin', 'counselor', 'viewer']
+                      .filter((role) => filterRoles.includes(role))
+                      .map((role) => role.charAt(0).toUpperCase() + role.slice(1))
+                      .join(', ')}
+              </Text>
+            </Pressable>
+            <Modal
+              visible={roleModalVisible}
+              animationType="slide"
+              transparent
+              onRequestClose={() => setRoleModalVisible(false)}
+            >
+              <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setRoleModalVisible(false)}>
+                <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
+                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Roles</Text>
+                  <ScrollView style={{ maxHeight: 300 }}>
+                    {['admin', 'counselor', 'viewer'].map((role) => (
+                      <Pressable
+                        key={role}
+                        onPress={() => {
+                          setFilterRoles((prev) =>
+                            prev.includes(role)
+                              ? prev.filter((r) => r !== role)
+                              : [...prev, role]
+                          );
+                        }}
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}
+                      >
+                        <View style={{ width: 20, height: 20, borderWidth: 1, borderColor: colors.primary, borderRadius: 4, marginRight: 12, backgroundColor: filterRoles.includes(role) ? colors.primary : '#fff', justifyContent: 'center', alignItems: 'center' }}>
+                          {filterRoles.includes(role) && (
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>✓</Text>
+                          )}
+                        </View>
+                        <Text style={{ color: colors.foreground }}>{role.charAt(0).toUpperCase() + role.slice(1)}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                  <Pressable
+                    onPress={() => setRoleModalVisible(false)}
+                    style={{ marginTop: 16, alignSelf: 'flex-end' }}
+                  >
+                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Done</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </Modal>
           </View>
-
-          {/* Clear Filters Button */}
-          {(searchQuery || filterOrganization || filterDepartment || filterTeam || filterRole) && (
-            <TouchableOpacity
-              onPress={() => {
-                setSearchQuery("");
-                setFilterOrganization(null);
-                setFilterDepartment(null);
-                setFilterTeam(null);
-                setFilterRole(null);
-              }}
-              className="bg-muted rounded-lg p-3"
-            >
-              <Text className="text-background font-semibold text-center">Clear All Filters</Text>
-            </TouchableOpacity>
-          )}
         </View>
+        {/* Clear Filters Button */}
+        {(searchQuery || filterOrganizations.length > 0 || filterDepartments.length > 0 || filterTeams.length > 0 || filterRoles.length > 0) && (
+          <TouchableOpacity
+            onPress={() => {
+              setSearchQuery("");
+              setFilterOrganizations([]);
+              setFilterDepartments([]);
+              setFilterTeams([]);
+              setFilterRoles([]);
+              setFilterResetKey((k) => k + 1);
+            }}
+            className="bg-muted rounded-lg p-3 mb-4"
+          >
+            <Text className="text-background font-semibold text-center">Clear All Filters</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Staff List */}
         <Text className="text-sm text-muted mb-3">

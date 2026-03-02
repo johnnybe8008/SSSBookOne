@@ -35,10 +35,10 @@ export const appRouter = router({
         // Set session token as HTTP-only cookie for web platform
         ctx.res.cookie('session_token', sessionToken, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
+          secure: false, // Always false for local dev; set true for production/https
           sameSite: 'lax',
-          maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
-          path: '/'
+          path: '/',
+          maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year
         });
         return { staff: staffRecord, sessionToken, success: true };
       } catch (err) {
@@ -62,9 +62,9 @@ export const appRouter = router({
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions });
       // Also clear custom session token cookie
-      ctx.res.clearCookie('session_token', { path: '/', maxAge: -1 });
+      ctx.res.clearCookie('session_token', { path: '/' });
       return {
         success: true,
       } as const;
@@ -226,7 +226,17 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => db.createOrganization(input)),
+      .mutation(async ({ input, ctx }) => {
+        // Debug: Log session_token from cookie
+        const sessionToken = ctx.req?.cookies?.session_token;
+        console.log('[organizations.create][DEBUG] session_token from cookie:', sessionToken);
+        // Validate session token
+        const { validateSessionToken } = await import('./session-manager');
+        const staff = sessionToken ? await validateSessionToken(sessionToken) : null;
+        console.log('[organizations.create][DEBUG] validateSessionToken result:', staff);
+        // Proceed with org creation
+        return db.createOrganization(input);
+      }),
     update: adminOnlyProcedure
       .input(
         z.object({
@@ -455,7 +465,22 @@ export const appRouter = router({
           contactPerson: z.string().max(255).optional(),
           divisionId: z.number().optional(),
           departmentId: z.number().optional(),
-          teamId: z.number().optional(),
+      update: adminOnlyProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            name: z.string().min(1).max(255).optional(),
+            description: z.string().optional(),
+            address: z.string().optional(),
+            phone: z.string().optional(),
+            email: z.string().optional(),
+            updatedBy: z.number(),
+          })
+        )
+        .mutation(({ input }) => {
+          const { id, ...data } = input;
+          return db.updateStaffDepartment(id, data);
+        }),
           updatedBy: z.number(),
         })
       )

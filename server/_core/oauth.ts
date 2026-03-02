@@ -141,8 +141,8 @@ export function registerOAuthRoutes(app: Express) {
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     const cookieOptions = getSessionCookieOptions(req);
     // Clear both the main session cookie and any fallback session_token cookie
-    res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-    res.clearCookie('session_token', { ...cookieOptions, maxAge: -1 });
+    res.clearCookie(COOKIE_NAME, { ...cookieOptions });
+    res.clearCookie('session_token', { ...cookieOptions });
     // Also try clearing with no domain for localhost/dev
     res.clearCookie(COOKIE_NAME, { path: '/', sameSite: 'lax' });
     res.clearCookie('session_token', { path: '/', sameSite: 'lax' });

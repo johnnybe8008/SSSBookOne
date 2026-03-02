@@ -22,6 +22,8 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
       console.log('[DEBUG] Authenticated via OAuth (sdk.authenticateRequest)');
     } catch (error) {
       console.log('[DEBUG] OAuth authentication failed, falling back to custom session token:', error);
+      // Print all cookies received for every request
+      console.log('[DEBUG][CONTEXT] All cookies received:', opts.req.cookies);
       // If OAuth fails, try custom session token (for email/password users)
       // Check Authorization header first (for native apps)
       const authHeader = opts.req.headers.authorization;
@@ -32,13 +34,12 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
         console.log('[DEBUG] validateSessionToken (Authorization header):', token, user);
       }
       // Debug log: print cookies and session token
-      console.log('[DEBUG] Incoming cookies:', opts.req.cookies);
       if (!user && opts.req.cookies) {
         const sessionToken = opts.req.cookies['session_token'];
-        console.log('[DEBUG] Session token from cookie:', sessionToken);
+        console.log('[DEBUG][CONTEXT] Session token from cookie:', sessionToken);
         if (sessionToken) {
           user = await validateSessionToken(sessionToken);
-          console.log('[DEBUG] validateSessionToken (cookie):', sessionToken, user);
+          console.log('[DEBUG][CONTEXT] validateSessionToken (cookie):', sessionToken, user);
         }
       }
     }

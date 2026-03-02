@@ -1,3 +1,28 @@
+// Update an organization by ID
+// Update a staff department by ID
+export async function updateStaffDepartment(id, data) {
+  const db = await getDb();
+  // Remove id if present in data
+  const { id: _id, ...updateData } = data;
+  await db.update(staffDepartments)
+    .set(updateData)
+    .where(eq(staffDepartments.id, id));
+  return { success: true };
+}
+export async function updateOrganization(id, data) {
+  const db = await getDb();
+  // Remove id if present in data
+  const { id: _id, ...updateData } = data;
+  await db.update(organizations)
+    .set(updateData)
+    .where(eq(organizations.id, id));
+  return { success: true };
+}
+// Fetch all staff records
+export async function getAllStaff() {
+  const db = await getDb();
+  return db.select().from(staff);
+}
 // Create a new organization
 export async function createOrganization(input) {
   const db = await getDb();

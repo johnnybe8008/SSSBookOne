@@ -47,7 +47,7 @@ export async function validateSessionToken(token: string): Promise<any> {
   }
   // Find session that matches token and hasn't expired
   const now = new Date();
-  console.log('[validateSessionToken] Checking token:', JSON.stringify(token), 'now:', now.toISOString());
+  console.log('[validateSessionToken][DEBUG] Checking token:', JSON.stringify(token), 'now:', now.toISOString());
   const [session] = await db
     .select()
     .from(authSessions)
@@ -58,9 +58,9 @@ export async function validateSessionToken(token: string): Promise<any> {
       )
     )
     .limit(1);
-  console.log('[validateSessionToken] Session found:', session);
+  console.log('[validateSessionToken][DEBUG] Query result:', { token, now: now.toISOString(), session });
   if (!session) {
-    console.error(`[validateSessionToken] No valid session found for token: ${token}`);
+    console.error(`[validateSessionToken][DEBUG] No valid session found for token: ${token}`);
     return null;
   }
   // Get the associated staff (use staffId)
@@ -70,9 +70,9 @@ export async function validateSessionToken(token: string): Promise<any> {
     .where(eq(staff.id, session.staffId))
     .limit(1);
   if (!staffRecord) {
-    console.error(`[validateSessionToken] No staff found for session.staffId: ${session.staffId}`);
+    console.error(`[validateSessionToken][DEBUG] No staff found for session.staffId: ${session.staffId}`);
   }
-  console.log('[validateSessionToken] Staff record found:', staffRecord);
+  console.log('[validateSessionToken][DEBUG] Staff record found:', staffRecord);
   return staffRecord || null;
 }
 

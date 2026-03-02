@@ -19,7 +19,7 @@ export default function AboutScreen() {
         <View className="bg-surface rounded-2xl p-6 border border-border mb-6">
           <Text className="text-2xl font-bold text-primary mb-2">About SSS Book One</Text>
           <Text className="text-base text-muted mb-4">
-            Version: {Constants.expoConfig?.version || "2.0.0"}
+            Version: {Constants.expoConfig?.version || "2.0.6"}
           </Text>
           <Text className="text-base text-foreground mb-2">
             SSS Book One is a mobile counseling tracker app for managing sessions, clients, and cases.

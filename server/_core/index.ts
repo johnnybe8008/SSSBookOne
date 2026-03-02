@@ -49,6 +49,10 @@ async function startServer() {
       }
       next();
     });
+
+  // Log the database URL at startup for debugging
+  console.log('[DEBUG] DATABASE_URL:', process.env.DATABASE_URL);
+
   const server = createServer(app);
 
   // Log all incoming tRPC requests and errors (must be after app is initialized)
