@@ -24,33 +24,30 @@ export default function LoginScreen() {
       const result = await loginMutation.mutateAsync({ email, password });
       console.log('[Login] Mutation result:', result);
       if (result.success && result.staff) {
-        // Store staff info using Auth helpers
-        const staffInfo = {
-          id: result.staff.id,
-          name: result.staff.name,
-          email: result.staff.email,
-          phone: result.staff.phone,
-          role: result.staff.role,
-          lastSignedIn: result.staff.lastSignedIn,
-        };
-        await setStaffInfo(staffInfo);
-        console.log('[Login] Staff info set:', staffInfo);
         // Store the real session token from backend
         if (result.sessionToken) {
           await setSessionToken(result.sessionToken);
           console.log('[Login] Session token set:', result.sessionToken);
-          // Set session token as cookie for web
-          // On web, do not set or read session_token cookie from JS. Backend handles session via HttpOnly cookie.
+        }
+        // Always fetch staff info from backend after login
+        try {
+          const apiBaseUrl = (await import("@/constants/oauth")).getApiBaseUrl();
+          const url = `${apiBaseUrl}/api/trpc/auth.me`;
+          const res = await fetch(url, { credentials: "include" });
+          const data = await res.json();
+          const backendStaff = data?.result?.data?.json?.staff || data?.result?.data?.json || data?.result?.data || data?.result;
+          if (backendStaff && backendStaff.id) {
+            await setStaffInfo(backendStaff);
+            console.log('[Login] Staff info set from backend:', backendStaff);
+          }
+        } catch (err) {
+          console.error('[Login] Failed to fetch staff info from backend:', err);
         }
         // Check if staff must change password
         if (result.staff.mustChangePassword === 1) {
-          console.log('[Login] Navigating to change-password');
           router.replace("/change-password" as any);
-          console.log('[Login] router.replace to /change-password called');
         } else {
-          console.log('[Login] Navigating to home');
           router.replace("/(tabs)");
-          console.log('[Login] router.replace to /(tabs) called');
         }
       }
     } catch (error: any) {

@@ -65,6 +65,17 @@ export async function createTeam(input) {
   const [result] = await db.insert(teams).values(data);
   return result;
 }
+
+// Update a team by ID
+export async function updateTeam(id, data) {
+  const db = await getDb();
+  // Remove id if present in data
+  const { id: _id, ...updateData } = data;
+  await db.update(teams)
+    .set(updateData)
+    .where(eq(teams.id, id));
+  return { success: true };
+}
 import { eq } from "drizzle-orm";
 
 

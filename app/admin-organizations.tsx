@@ -11,6 +11,12 @@ import type { Organization, StaffDepartment, Team } from '../drizzle/schema';
 export default function AdminOrganizationsScreen() {
       // State for organization form data
       const [formData, setFormData] = useState({ name: '', address: '', email: '', phone: '' });
+      // Auth context (provides staff)
+      const { staff } = useAuth();
+      // tRPC utils (for cache invalidation)
+      const utils = trpc.useUtils();
+      // Router for navigation
+      const router = useRouter();
     // State for form error
     const [formError, setFormError] = useState("");
   // Theme colors
@@ -24,6 +30,10 @@ export default function AdminOrganizationsScreen() {
   // Track if we are in create mode (no editingOrg)
   const isCreateMode = !editingOrg;
   // Local staging for departments and teams
+  // pendingDepartments is used for both Add Department and Add Team modals.
+  // Each department object in pendingDepartments has a 'teams' array for local team assignments.
+  // Changes to pendingDepartments or its teams property affect both modals, so always update carefully.
+  // Only modify the teams array for the selected department to avoid breaking department assignments.
   const [pendingDepartments, setPendingDepartments] = useState<any[]>([]);
   const [pendingTeams, setPendingTeams] = useState<any[]>([]);
   // State for selected departments in modal
@@ -84,7 +94,7 @@ export default function AdminOrganizationsScreen() {
     }
   };
   const [addTeamModalVisible, setAddTeamModalVisible] = useState(false);
-  const [selectedDeptId, setSelectedDeptId] = useState<number | null>(null);
+  const [selectedDeptName, setSelectedDeptName] = useState<string | null>(null);
   const [teamSearch, setTeamSearch] = useState("");
   const [newTeamError, setNewTeamError] = useState("");
 
@@ -203,11 +213,24 @@ export default function AdminOrganizationsScreen() {
         setAddDeptError("Missing organization or staff context");
         return;
       }
+      if (!editingOrg?.id) {
+        setAddDeptError("Missing organization context (organizationId is undefined)");
+        return;
+      }
       addDepartmentMutation.mutate({
         name: newDeptName,
         organizationId: Number(editingOrg.id),
         createdBy: staff.id,
         updatedBy: staff.id,
+      }, {
+        onSuccess: () => {
+          console.log('[DEBUG] Department added successfully');
+          utils?.staffDepartments?.list?.invalidate?.();
+          utils?.staffDepartments?.all?.invalidate?.();
+        },
+        onError: (err) => {
+          console.error('[ERROR] Failed to add department:', err);
+        }
       });
     }
   };
@@ -277,11 +300,20 @@ export default function AdminOrganizationsScreen() {
   // Ensure pendingDepartments is initialized after allTeams, allDepartments, and editingOrg are loaded
   useEffect(() => {
     if (editingOrg && allDepartments && allTeams) {
-      setPendingDepartments((allDepartments ?? []).map((d: any) => ({
-        id: d.id,
-        name: d.name,
-        teams: (allTeams ?? []).filter((t: any) => t.staffDepartmentId === d.id)
-      })));
+        const newPending = (allDepartments ?? []).map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          teams: Array.isArray(d.teams)
+            ? d.teams
+            : ((allTeams ?? []).filter((t: any) => t.staffDepartmentId === d.id) || [])
+        })).map((dept: any) => ({
+          ...dept,
+          teams: Array.isArray(dept.teams) ? dept.teams : []
+        }));
+      // Only update if different to avoid infinite loop
+      if (JSON.stringify(pendingDepartments) !== JSON.stringify(newPending)) {
+        setPendingDepartments(newPending);
+      }
     }
   }, [editingOrg, allDepartments, allTeams]);
 
@@ -307,6 +339,13 @@ export default function AdminOrganizationsScreen() {
   });
 
   // Update mutations should be declared as top-level hooks
+    const deleteDepartmentMutation = trpc.staffDepartments.delete.useMutation({
+      onSuccess: () => {
+        utils?.staffDepartments?.list?.invalidate?.();
+        utils?.staffDepartments?.all?.invalidate?.();
+      },
+      onError: (err) => setAddDeptError(err.message || 'Failed to delete department'),
+    });
   const updateOrgMutation = trpc.organizations.update.useMutation({
     onSuccess: (data) => {
       console.log('[UPDATE ORG SUCCESS]', data);
@@ -336,7 +375,12 @@ export default function AdminOrganizationsScreen() {
     onError: (err) => setNewTeamError(err.message || 'Failed to update team'),
   });
   const handleFormSubmit = async () => {
-    console.log('[DEBUG] Save button pressed', formData, pendingDepartments, pendingTeams);
+    // Debug: Show department arrays before saving
+    console.log('[DEBUG] formData:', formData);
+    console.log('[DEBUG] pendingDepartments:', pendingDepartments);
+    console.log('[DEBUG] allDepartments:', allDepartments);
+    console.log('[DEBUG] allDepartmentsGlobal:', allDepartmentsGlobal);
+    console.log('[DEBUG] pendingTeams:', pendingTeams);
     if (!formData.name.trim()) {
       setFormError("Name is required");
       return;
@@ -350,19 +394,23 @@ export default function AdminOrganizationsScreen() {
       setFormError("Session expired. Please log in again.");
       return;
     }
-    // Debug: Log cookies and fetch options before mutation
-    console.log('[DEBUG] document.cookie before mutation:', document.cookie);
-    if (typeof window !== 'undefined' && window.fetch) {
-      const originalFetch = window.fetch;
-      window.fetch = function(input, init) {
-        console.log('[DEBUG] fetch called:', input, init);
-        return originalFetch.apply(this, arguments);
-      };
-    }
+    // ...existing code...
     // Add a short delay before triggering mutation to allow cookies to re-attach
     await new Promise(resolve => setTimeout(resolve, 100));
     try {
       if (editingOrg) {
+                // Find departments to delete (in allDepartments but not in pendingDepartments)
+                const pendingDeptIds = new Set(pendingDepartments.filter(d => d.id).map(d => d.id));
+                for (const dept of allDepartments) {
+                  if (!pendingDeptIds.has(dept.id)) {
+                    // Delete department from DB
+                    await deleteDepartmentMutation.mutateAsync({
+                      id: dept.id,
+                      organizationId: editingOrg.id,
+                      deletedBy: staff.id,
+                    });
+                  }
+                }
         // --- EDIT FLOW IMPLEMENTATION ---
         // 1. Update organization
         await updateOrgMutation.mutateAsync({
@@ -370,24 +418,73 @@ export default function AdminOrganizationsScreen() {
           ...formData,
           updatedBy: staff.id,
         });
-        // 2. Update departments
-        for (const dept of allDepartments) {
-          await updateDepartmentMutation.mutateAsync({
-            id: dept.id,
-            name: dept.name,
-            organizationId: editingOrg.id,
-            updatedBy: staff.id,
-          });
+        // 2. Update or add departments, and update teams for new departments
+        // Build a map of new department names to their new IDs
+        const newDeptIdMap: Record<string, number> = {};
+        for (const dept of pendingDepartments) {
+          if (dept.id) {
+            // Existing department: update
+            await updateDepartmentMutation.mutateAsync({
+              id: dept.id,
+              name: dept.name,
+              organizationId: editingOrg.id,
+              updatedBy: staff.id,
+            });
+          } else {
+            // New department: add and capture returned id
+            if (!editingOrg?.id) {
+              setFormError('Missing organization context (organizationId is undefined)');
+              continue;
+            }
+            const result = await addDepartmentMutation.mutateAsync({
+              name: dept.name,
+              organizationId: Number(editingOrg.id),
+              createdBy: staff.id,
+              updatedBy: staff.id,
+            });
+            if (result?.id) {
+              newDeptIdMap[dept.name] = result.id;
+            }
+          }
         }
-        // 3. Update teams
-        for (const team of allTeams) {
-          await updateTeamMutation.mutateAsync({
-            id: team.id,
-            name: team.name,
-            staffDepartmentId: team.staffDepartmentId,
-            organizationId: editingOrg.id,
-            updatedBy: staff.id,
-          });
+        // 3. Update teams, including those for new departments
+        for (const dept of pendingDepartments) {
+          const deptId = dept.id || newDeptIdMap[dept.name];
+          if (deptId) {
+            // Find all teams in DB for this department
+            const dbTeams = (allTeams ?? []).filter((t: any) => t.staffDepartmentId === deptId);
+            const localTeamNames = (dept.teams ?? []).map((t: any) => t.name);
+            // Delete teams that are in DB but not in local
+            for (const dbTeam of dbTeams) {
+              if (!localTeamNames.includes(dbTeam.name)) {
+                await removeTeamMutation.mutateAsync({ id: dbTeam.id });
+              }
+            }
+            // Add/update teams as before
+            if (dept.teams && dept.teams.length > 0) {
+              for (const team of dept.teams) {
+                if (team.id) {
+                  // Existing team: update
+                  await updateTeamMutation.mutateAsync({
+                    id: team.id,
+                    name: team.name,
+                    staffDepartmentId: deptId,
+                    organizationId: editingOrg.id,
+                    updatedBy: staff.id,
+                  });
+                } else {
+                  // New team: create
+                  await addTeamMutation.mutateAsync({
+                    name: team.name,
+                    staffDepartmentId: deptId,
+                    organizationId: editingOrg.id,
+                    createdBy: staff.id,
+                    updatedBy: staff.id,
+                  });
+                }
+              }
+            }
+          }
         }
         setModalVisible(false);
         setEditingOrg(null);
@@ -401,49 +498,47 @@ export default function AdminOrganizationsScreen() {
       // 1. Create org, then 2. create departments, then 3. create teams
       await new Promise<void>(async (resolve, reject) => {
         try {
-          await createOrgMutation.mutateAsync({ ...formData, createdBy: staff.id, updatedBy: staff.id });
-        } catch (err: any) {
-          console.error('[CREATE ORG ERROR]', err);
-          setFormError(err.message || 'Failed to add organization');
-          reject(err);
-          return;
-        }
-        try {
-          const orgId = createOrgMutation.data?.insertId || createOrgMutation.data?.id;
+          const orgResult = await createOrgMutation.mutateAsync({ ...formData, createdBy: staff.id, updatedBy: staff.id });
+          const orgId = orgResult?.insertId || orgResult?.id;
+          if (!orgId) {
+            setFormError('Missing organization context (organizationId is undefined)');
+            reject(new Error('Missing organizationId'));
+            return;
+          }
           for (const dept of pendingDepartments) {
             if (!staff?.id) throw new Error('Session expired during department creation.');
             console.log('[DEBUG] Creating department:', dept);
             try {
-              await addDepartmentMutation.mutateAsync({
+              const deptResult = await addDepartmentMutation.mutateAsync({
                 name: dept.name,
-                organizationId: orgId,
+                organizationId: Number(orgId),
                 createdBy: staff.id,
                 updatedBy: staff.id,
               });
+              const deptId = deptResult?.insertId || deptResult?.id;
+              for (const team of dept.teams || []) {
+                if (!staff?.id) throw new Error('Session expired during team creation.');
+                console.log('[DEBUG] Creating team:', team);
+                try {
+                  await addTeamMutation.mutateAsync({
+                    name: team.name,
+                    staffDepartmentId: deptId,
+                    organizationId: orgId,
+                    createdBy: staff.id,
+                    updatedBy: staff.id,
+                  });
+                } catch (err: any) {
+                  console.error('[ERROR DURING TEAM SAVE]', err);
+                  setFormError(err.message || 'Failed to save team.');
+                  reject(err);
+                  return;
+                }
+              }
             } catch (err: any) {
               console.error('[ERROR DURING DEPARTMENT SAVE]', err);
               setFormError(err.message || 'Failed to save department.');
               reject(err);
               return;
-            }
-            const deptId = addDepartmentMutation.data?.insertId || addDepartmentMutation.data?.id;
-            for (const team of dept.teams || []) {
-              if (!staff?.id) throw new Error('Session expired during team creation.');
-              console.log('[DEBUG] Creating team:', team);
-              try {
-                await addTeamMutation.mutateAsync({
-                  name: team.name,
-                  staffDepartmentId: deptId,
-                  organizationId: orgId,
-                  createdBy: staff.id,
-                  updatedBy: staff.id,
-                });
-              } catch (err: any) {
-                console.error('[ERROR DURING TEAM SAVE]', err);
-                setFormError(err.message || 'Failed to save team.');
-                reject(err);
-                return;
-              }
             }
           }
           setPendingDepartments([]);
@@ -521,6 +616,8 @@ export default function AdminOrganizationsScreen() {
           onPress={() => {
             setEditingOrg(null);
             setFormData({ name: '', address: '', email: '', phone: '' });
+            setPendingDepartments([]);
+            setPendingTeams([]);
             setModalVisible(true);
           }}
         >
@@ -719,7 +816,7 @@ export default function AdminOrganizationsScreen() {
           {/* Add Team Button below Add Department */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <TouchableOpacity
-              onPress={() => setAddTeamModalVisible(true)}
+                onPress={() => { setSelectedDeptName(null); setAddTeamModalVisible(true); }}
               style={{ backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start' }}
             >
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Add Team</Text>
@@ -733,6 +830,14 @@ export default function AdminOrganizationsScreen() {
             onRequestClose={() => setAddDeptModalVisible(false)}
           >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                                          {/* DEBUG: Only show in Add Team modal */}
+                                          {addTeamModalVisible && (
+                                            <View style={{ marginBottom: 12 }}>
+                                              <Text style={{ fontSize: 12, color: '#d32f2f' }}>[DEBUG] pendingDepartments: {JSON.stringify(pendingDepartments)}</Text>
+                                              <Text style={{ fontSize: 12, color: '#d32f2f' }}>[DEBUG] allTeams: {JSON.stringify(allTeams)}</Text>
+                                              <Text style={{ fontSize: 12, color: '#d32f2f' }}>[DEBUG] allTeamsGlobal: {JSON.stringify(allTeamsGlobal)}</Text>
+                                            </View>
+                                          )}
               <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxHeight: '80%' }}>
                 <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Add Department</Text>
                 {/* Search input for departments */}
@@ -751,12 +856,9 @@ export default function AdminOrganizationsScreen() {
                       const uniqueDepts = (allDepartmentsGlobal ?? []).filter((dept: any, idx: number, arr: any[]) =>
                         arr.findIndex(d => d.name === dept.name) === idx
                       );
-                      // Exclude departments already in Org if not editing
-                      const excludeNames = (pendingDepartments ?? []).map((d: any) => d.name);
+                      // Always show all departments, allow selection/unselection
                       const filteredDepts = uniqueDepts.filter((dept: any) =>
                         dept.name.toLowerCase().includes(newDeptName.toLowerCase())
-                        // If editing, show all; if creating, exclude already added
-                        && (editingOrg ? true : !excludeNames.includes(dept.name))
                       );
                       if (filteredDepts.length === 0 && newDeptName.trim() !== '') {
                         return (
@@ -795,7 +897,10 @@ export default function AdminOrganizationsScreen() {
                     const newDepartments = selectedDeptNames.map((name) => {
                       // If department already exists, keep its teams
                       const existing = pendingDepartments.find((d) => d.name === name);
-                      return existing ? existing : { name, teams: [] };
+                      return {
+                        name,
+                        teams: Array.isArray(existing?.teams) ? existing.teams : []
+                      };
                     });
                     setPendingDepartments(newDepartments);
                     setAddDeptModalVisible(false);
@@ -829,19 +934,40 @@ export default function AdminOrganizationsScreen() {
             onRequestClose={() => setAddTeamModalVisible(false)}
           >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+              {/* DEBUG: Only log in Add Team modal to avoid UI lockup */}
+              {(() => {
+                if (addTeamModalVisible) {
+                  console.log('[DEBUG] pendingDepartments:', pendingDepartments);
+                  console.log('[DEBUG] allTeams:', allTeams);
+                  // Debug for dept.teams of selected department
+                  let dept;
+                  if (isCreateMode && typeof selectedDeptName === 'number') {
+                    dept = pendingDepartments[selectedDeptName];
+                  } else if (selectedDeptName != null) {
+                    dept = (allDepartments ?? []).find((d: any) => d.id === selectedDeptName);
+                  }
+                  if (!dept) {
+                    console.log('[DEBUG] No department found for selectedDeptName:', selectedDeptName);
+                  } else {
+                    console.log('[DEBUG] dept object for selected department:', dept);
+                    console.log('[DEBUG] dept.teams for selected department:', dept.teams);
+                  }
+                }
+                return null;
+              })()}
               <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxHeight: '80%' }}>
                 <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Add Team</Text>
                 {/* Department dropdown */}
                 <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Select Department</Text>
                 <View style={{ marginBottom: 16 }}>
                   <ScrollView style={{ maxHeight: 120 }}>
-                    {(isCreateMode ? pendingDepartments : allDepartments)?.map((dept: any, idx: number) => (
+                    {(isCreateMode ? pendingDepartments : allDepartments)?.map((dept: any) => (
                       <TouchableOpacity
-                        key={dept.id || dept.name || idx}
-                        style={{ backgroundColor: selectedDeptId === (dept.id ?? idx) ? colors.primary : '#eee', borderRadius: 8, padding: 10, marginBottom: 6 }}
-                        onPress={() => setSelectedDeptId(dept.id ?? idx)}
+                        key={dept.id || dept.name}
+                        style={{ backgroundColor: selectedDeptName === dept.name ? colors.primary : '#eee', borderRadius: 8, padding: 10, marginBottom: 6 }}
+                        onPress={() => setSelectedDeptName(dept.name)}
                       >
-                        <Text style={{ color: selectedDeptId === (dept.id ?? idx) ? '#fff' : '#333' }}>{dept.name}</Text>
+                        <Text style={{ color: selectedDeptName === dept.name ? '#fff' : '#333' }}>{dept.name}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -856,71 +982,86 @@ export default function AdminOrganizationsScreen() {
                   placeholderTextColor={colors.muted}
                 />
                 <View style={{ maxHeight: 200, marginBottom: 12, borderRadius: 12, overflow: 'hidden', backgroundColor: '#f5f8fa' }}>
-                  <ScrollView>
-                    {(() => {
-                      // Unique team names across all orgs, excluding those already in the selected department
-                      const allTeamNames: string[] = (allTeamsGlobal ?? []).map((t: any) => t.name);
-                      const uniqueTeamNames: string[] = Array.from(new Set(allTeamNames));
-                      const assignedTeamNames: string[] = (allTeams ?? [])
-                        .filter((t: any) => t.staffDepartmentId === selectedDeptId)
-                        .map((t: any) => t.name);
-                      // Explicitly type filteredTeams as string[]
-                      const filteredTeams: string[] = uniqueTeamNames.filter((name: string) =>
-                        typeof name === 'string' &&
-                        !assignedTeamNames.includes(name) &&
-                        name.toLowerCase().includes(teamSearch.toLowerCase())
+                  {(() => {
+                    // Unique team names globally
+                    const allTeamNames: string[] = (allTeamsGlobal ?? []).map((t: any) => t.name);
+                    const uniqueTeamNames: string[] = Array.from(new Set(allTeamNames));
+                    // Find selected department (local)
+                    let dept = pendingDepartments.find((d: any) => d.name === selectedDeptName);
+                    let deptTeams = dept?.teams ?? [];
+                    const assignedTeamNames: string[] = deptTeams.map((t: any) => t.name);
+                    // Only show team checkboxes if a department is selected
+                    if (!selectedDeptName || !dept) {
+                      return (
+                        <Text style={{ color: '#d32f2f', fontStyle: 'italic', paddingHorizontal: 12, paddingVertical: 4 }}>
+                          Please select a department above to assign teams.
+                        </Text>
                       );
-                      if (filteredTeams.length === 0 && teamSearch.trim() !== "") {
-                        return (
-                          <Text style={{ color: '#888', fontStyle: 'italic', paddingHorizontal: 12, paddingVertical: 4 }}>
-                            No matching teams. Enter a new name to create.
-                          </Text>
-                        );
-                      }
-                      return (filteredTeams as string[]).map((name: string) => (
-                        <TouchableOpacity
-                          key={name}
-                          style={{ backgroundColor: '#cce5ff', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 6, marginHorizontal: 8 }}
-                          onPress={() => {
-                            if (selectedDeptId === null || selectedDeptId === undefined) {
-                              setNewTeamError("Please select a department before creating a team.");
-                              return;
-                            }
-                            if (isCreateMode) {
-                              setPendingDepartments(prev => prev.map((dept, idx) =>
-                                idx === selectedDeptId ? { ...dept, teams: [...(dept.teams || []), { name }] } : dept
-                              ));
-                              setTeamSearch("");
-                              setNewTeamError("");
-                              setAddTeamModalVisible(false);
-                            } else {
-                              addTeamMutation.mutate({
-                                organizationId: editingOrg?.id ? Number(editingOrg.id) : 0,
-                                staffDepartmentId: selectedDeptId!,
-                                name,
-                                createdBy: staff?.id!,
-                                updatedBy: staff?.id!,
-                              } as any);
-                            }
-                          }}
-                        >
-                          <Text style={{ color: '#007bff' }}>{name}</Text>
-                        </TouchableOpacity>
-                      ));
-                    })()}
-                  </ScrollView>
+                    }
+                    // Filter by search
+                    const filteredTeams: string[] = uniqueTeamNames.filter((name: string) =>
+                      typeof name === 'string' &&
+                      name.toLowerCase().includes(teamSearch.toLowerCase())
+                    );
+                    if (filteredTeams.length === 0 && teamSearch.trim() !== "") {
+                      return (
+                        <Text style={{ color: '#888', fontStyle: 'italic', paddingHorizontal: 12, paddingVertical: 4 }}>
+                          No matching teams. Enter a new name to create.
+                        </Text>
+                      );
+                    }
+                    // Preselect checkboxes for assigned teams
+                    return (
+                      <ScrollView key={selectedDeptName}>
+                        {filteredTeams.map((name: string, idx: number) => {
+                          const checked = assignedTeamNames.includes(name);
+                          return (
+                            <TouchableOpacity
+                              key={name + '-' + idx}
+                              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 12 }}
+                              onPress={() => {
+                                if (!selectedDeptName) {
+                                  setNewTeamError("Please select a department before editing teams.");
+                                  return;
+                                }
+                                setPendingDepartments(prev => prev.map((d) => {
+                                  if (d.name !== selectedDeptName) return d;
+                                  let teams = d.teams || [];
+                                  if (checked) {
+                                    teams = teams.filter((t: any) => t.name !== name);
+                                  } else {
+                                    if (!teams.some((t: any) => t.name === name)) {
+                                      teams = [...teams, { name }];
+                                    }
+                                  }
+                                  return { ...d, teams };
+                                }));
+                              }}
+                            >
+                              <View style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: checked ? colors.primary : '#ccc', backgroundColor: checked ? colors.primary : '#fff', marginRight: 12, justifyContent: 'center', alignItems: 'center' }}>
+                                {checked && (
+                                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>✓</Text>
+                                )}
+                              </View>
+                              <Text style={{ fontSize: 16 }}>{name}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    );
+                  })()}
                 </View>
                 {teamSearch.trim() !== '' &&
                   !(allTeams ?? []).some((team: any) => team.name.toLowerCase() === teamSearch.trim().toLowerCase()) && (
                     <TouchableOpacity
                       onPress={() => {
-                        if (selectedDeptId === null || selectedDeptId === undefined) {
+                        if (selectedDeptName === null || selectedDeptName === undefined) {
                           setNewTeamError("Please select a department before creating a team.");
                           return;
                         }
                         if (isCreateMode) {
-                          setPendingDepartments(prev => prev.map((dept, idx) =>
-                            idx === selectedDeptId ? { ...dept, teams: [...(dept.teams || []), { name: teamSearch.trim() }] } : dept
+                          setPendingDepartments(prev => prev.map((dept) =>
+                            dept.id === selectedDeptName ? { ...dept, teams: [...(dept.teams || []), { name: teamSearch.trim() }] } : dept
                           ));
                           setTeamSearch("");
                           setNewTeamError("");
@@ -928,7 +1069,7 @@ export default function AdminOrganizationsScreen() {
                         } else {
                           addTeamMutation.mutate({
                             organizationId: editingOrg?.id ? Number(editingOrg.id) : 0,
-                            staffDepartmentId: selectedDeptId!,
+                            staffDepartmentId: selectedDeptName!,
                             name: teamSearch.trim(),
                             createdBy: staff?.id!,
                             updatedBy: staff?.id!,
@@ -942,8 +1083,13 @@ export default function AdminOrganizationsScreen() {
                 )}
                 {newTeamError ? <Text style={{ color: '#d32f2f', marginTop: 8 }}>{newTeamError}</Text> : null}
                 {/* Cancel button */}
-                <TouchableOpacity onPress={() => { setAddTeamModalVisible(false); setTeamSearch(''); }} style={{ marginTop: 16 }}>
-                  <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>Cancel</Text>
+                <TouchableOpacity onPress={() => {
+                  setAddTeamModalVisible(false);
+                  setTeamSearch("");
+                  // Force re-render by updating state
+                  setPendingDepartments([...pendingDepartments]);
+                }} style={{ marginTop: 16 }}>
+                  <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>Done</Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -21,7 +21,6 @@ export const trpc = createTRPCReact<AppRouter>();
 export function createTRPCClient() {
   const apiBaseUrl = getApiBaseUrl();
   const apiUrl = `${apiBaseUrl}/api/trpc`;
-  console.log("[tRPC] Initializing client with API URL:", apiUrl);
   
   return trpc.createClient({
     links: [
@@ -35,12 +34,10 @@ export function createTRPCClient() {
         },
         // Custom fetch to include credentials for cookie-based auth
         fetch(url, options) {
-          console.log("[tRPC] Fetching:", url);
           return fetch(url, {
             ...options,
             credentials: "include",
           }).then(response => {
-            console.log("[tRPC] Response status:", response.status);
             return response;
           }).catch(error => {
             console.error("[tRPC] Fetch error:", error);

@@ -15,7 +15,6 @@ export function useAuth(options?: UseAuthOptions) {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchStaff = useCallback(async () => {
-    console.log("[useAuth] fetchStaff called");
     try {
       setLoading(true);
       setError(null);
@@ -26,13 +25,8 @@ export function useAuth(options?: UseAuthOptions) {
           const { getApiBaseUrl } = await import("@/constants/oauth");
           const apiBaseUrl = getApiBaseUrl();
           const url = `${apiBaseUrl}/api/trpc/auth.me`;
-          console.log("[useAuth] Fetching staff from:", url);
           const res = await fetch(url, { credentials: "include" });
           const data = await res.json();
-          console.log("[useAuth] Full /auth.me tRPC response:", data);
-          // Try to extract staff from all possible locations
-          backendStaff = data?.result?.data?.json?.staff || data?.result?.data?.json || data?.result?.data || data?.result;
-          console.log("[useAuth] Backend /auth.me result (parsed staff):", backendStaff);
         } catch (err) {
           console.error("[useAuth] Backend /auth.me error:", err);
         }
@@ -44,7 +38,6 @@ export function useAuth(options?: UseAuthOptions) {
       }
       // Fallback to localStorage for native or if backend fails
       const cachedStaff = await Auth.getStaffInfo();
-      console.log("[useAuth] Cached staff:", cachedStaff);
       if (cachedStaff) {
         setStaff(cachedStaff);
       } else {
@@ -57,15 +50,12 @@ export function useAuth(options?: UseAuthOptions) {
       setStaff(null);
     } finally {
       setLoading(false);
-      console.log("[useAuth] fetchStaff completed, loading:", false);
     }
   }, []);
 
   const logout = useCallback(async () => {
-    console.log("[useAuth] logout called");
     try {
       await Api.logout();
-      console.log("[useAuth] Api.logout() resolved");
     } catch (err) {
       console.error("[Auth] Logout API call failed:", err);
     } finally {
@@ -73,19 +63,15 @@ export function useAuth(options?: UseAuthOptions) {
       await Auth.clearStaffInfo();
       setStaff(null);
       setError(null);
-      console.log("[useAuth] Local logout cleanup complete");
     }
   }, []);
 
   const isAuthenticated = useMemo(() => Boolean(staff), [staff]);
 
   useEffect(() => {
-    console.log("[useAuth] useEffect triggered, autoFetch:", autoFetch, "platform:", Platform.OS);
     if (autoFetch) {
       Auth.getStaffInfo().then((cachedStaff) => {
-        console.log("[useAuth] Cached staff check:", cachedStaff);
         if (cachedStaff) {
-          console.log("[useAuth] Setting cached staff immediately");
           setStaff(cachedStaff);
           setLoading(false);
         } else {
@@ -93,18 +79,11 @@ export function useAuth(options?: UseAuthOptions) {
         }
       });
     } else {
-      console.log("[useAuth] autoFetch disabled, setting loading to false");
       setLoading(false);
     }
   }, [autoFetch, fetchStaff]);
 
   useEffect(() => {
-    console.log("[useAuth] State updated:", {
-      hasStaff: !!staff,
-      loading,
-      isAuthenticated,
-      error: error?.message,
-    });
   }, [staff, loading, isAuthenticated, error]);
 
   return {

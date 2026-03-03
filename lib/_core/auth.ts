@@ -10,10 +10,8 @@ export async function clearStaffInfo(): Promise<void> {
   try {
     if (Platform.OS === "web") {
       window.localStorage.removeItem(STAFF_INFO_KEY);
-      console.log("[Auth] Staff info cleared from localStorage");
     } else {
       await SecureStore.deleteItemAsync(STAFF_INFO_KEY);
-      console.log("[Auth] Staff info cleared from SecureStore");
     }
   } catch (error) {
     console.error("[Auth] Failed to clear staff info:", error);
@@ -37,7 +35,6 @@ export async function getSessionToken(): Promise<string | null> {
       // Read session_token from cookies
       const match = document.cookie.match(/(?:^|; )session_token=([^;]*)/);
       const token = match ? decodeURIComponent(match[1]) : null;
-      console.log("[Auth] Web session token from cookie:", token);
       return token;
     }
     // Use SecureStore for native
@@ -90,7 +87,16 @@ export async function removeSessionToken(): Promise<void> {
 
 export async function getStaffInfo(): Promise<Staff | null> {
   try {
-    // ...existing code...
+    let info: string | null = null;
+    if (Platform.OS === "web") {
+      info = window.localStorage.getItem(STAFF_INFO_KEY);
+    } else {
+      info = await SecureStore.getItemAsync(STAFF_INFO_KEY);
+    }
+    if (info) {
+      return JSON.parse(info);
+    }
+    return null;
   } catch (error) {
     console.error("[Auth] Failed to get staff info:", error);
     return null;
