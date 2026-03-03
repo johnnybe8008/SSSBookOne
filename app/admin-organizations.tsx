@@ -761,7 +761,9 @@ export default function AdminOrganizationsScreen() {
             keyboardType="phone-pad"
           />
           {/* Departments */}
-          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Departments</Text>
+          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>
+            Departments ({pendingDepartments.length})
+          </Text>
           {/* Debug: Show pendingDepartments and teams */}
           {/* Debug display of isCreateMode and editingOrg removed */}
           {/* Debug display of pendingDepartments removed */}
@@ -1060,16 +1062,31 @@ export default function AdminOrganizationsScreen() {
                           return;
                         }
                         if (isCreateMode) {
-                          setPendingDepartments(prev => prev.map((dept) =>
-                            dept.id === selectedDeptName ? { ...dept, teams: [...(dept.teams || []), { name: teamSearch.trim() }] } : dept
-                          ));
+                          setPendingDepartments(prev => prev.map((dept) => {
+                            if (dept.name === selectedDeptName) {
+                              // Add new team and preselect it
+                              const newTeamName = teamSearch.trim();
+                              const teams = Array.isArray(dept.teams) ? dept.teams : [];
+                              if (!teams.some((t: any) => t.name === newTeamName)) {
+                                return { ...dept, teams: [...teams, { name: newTeamName }] };
+                              }
+                            }
+                            return dept;
+                          }));
                           setTeamSearch("");
                           setNewTeamError("");
                           setAddTeamModalVisible(false);
                         } else {
+                          // Find department by name to get its id
+                          const deptObj = (allDepartments ?? []).find((d: any) => d.name === selectedDeptName);
+                          const deptId = deptObj?.id;
+                          if (!deptId) {
+                            setNewTeamError("Could not find department id for selected department.");
+                            return;
+                          }
                           addTeamMutation.mutate({
                             organizationId: editingOrg?.id ? Number(editingOrg.id) : 0,
-                            staffDepartmentId: selectedDeptName!,
+                            staffDepartmentId: deptId,
                             name: teamSearch.trim(),
                             createdBy: staff?.id!,
                             updatedBy: staff?.id!,
