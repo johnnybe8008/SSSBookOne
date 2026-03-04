@@ -108,22 +108,21 @@ export default function AdminStaffAddScreen() {
     },
   });
 
+  const [orgSearch, setOrgSearch] = useState("");
+
+  const filteredOrganizations = organizations?.filter((org: any) =>
+    org.name.toLowerCase().includes(orgSearch.toLowerCase())
+  );
+
   return (
     <ScreenContainer className="p-4">
       <ScrollView>
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="flex-row items-center gap-2 mb-4"
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.primary} />
-          <Text className="text-primary text-base font-semibold">Back</Text>
-        </TouchableOpacity>
-
         {/* Header */}
-        <View className="mb-6">
-          <Text className="text-3xl font-bold text-foreground">Add New Staff</Text>
-          <Text className="text-sm text-muted mt-1">Create a new staff member account</Text>
+        <View className="mb-6 flex-row items-center justify-between">
+          <Text className="text-primary text-3xl font-bold">&lt;</Text>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text className="text-2xl font-bold text-foreground text-center">Add a New Staff Member</Text>
+          </View>
         </View>
 
         {/* Form */}
@@ -136,6 +135,7 @@ export default function AdminStaffAddScreen() {
               onChangeText={setName}
               placeholder="Enter full name"
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
               placeholderTextColor="#9BA1A6"
             />
           </View>
@@ -150,6 +150,7 @@ export default function AdminStaffAddScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
               placeholderTextColor="#9BA1A6"
             />
           </View>
@@ -163,6 +164,7 @@ export default function AdminStaffAddScreen() {
               placeholder="Enter phone number"
               keyboardType="phone-pad"
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
               placeholderTextColor="#9BA1A6"
             />
           </View>
@@ -176,6 +178,7 @@ export default function AdminStaffAddScreen() {
               placeholder="Enter initial password"
               secureTextEntry
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
               placeholderTextColor="#9BA1A6"
             />
             <Text className="text-xs text-muted mt-1">Admin can reset this password later if needed</Text>
@@ -184,26 +187,23 @@ export default function AdminStaffAddScreen() {
           {/* VIP Toggle */}
           <TouchableOpacity
             onPress={() => setIsVipRated(!isVipRated)}
-            className="bg-surface border border-border rounded-lg p-4"
+            className="bg-surface border border-border rounded-lg flex-row items-center"
+            style={{ minHeight: 48, height: 48, paddingHorizontal: 12 }}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-foreground">VIP Rated</Text>
-                <Text className="text-sm text-muted mt-1">
-                  Can create cases for VIP clients
-                </Text>
-              </View>
+            <Text className="text-base font-semibold text-foreground" style={{ flex: 1, textAlign: 'left' }}>
+              VIP Rated
+            </Text>
+            <Text className="text-sm text-muted ml-2" style={{ flex: 2, textAlign: 'left' }}>
+              Can create cases for VIP clients
+            </Text>
+            <View
+              className={`w-12 h-7 rounded-full p-1${isVipRated ? " bg-warning" : " bg-border"}`}
+              style={{ minHeight: 32 }}
+            >
               <View
-                className={`w-12 h-7 rounded-full p-1 ${
-                  isVipRated ? "bg-warning" : "bg-border"
-                }`}
-              >
-                <View
-                  className={`w-5 h-5 rounded-full bg-background ${
-                    isVipRated ? "ml-auto" : ""
-                  }`}
-                />
-              </View>
+                className={`w-5 h-5 rounded-full bg-background${isVipRated ? " ml-auto" : ""}`}
+                style={{ minHeight: 24 }}
+              />
             </View>
           </TouchableOpacity>
 
@@ -213,42 +213,39 @@ export default function AdminStaffAddScreen() {
             <View className="gap-2">
               <TouchableOpacity
                 onPress={() => setRole("admin")}
-                className={`border rounded-lg p-4 ${
-                  role === "admin" ? "border-error bg-error/10" : "border-border bg-surface"
-                }`}
+                className={role === "admin" ? "border rounded-lg border-error bg-error/10 flex-row items-center" : "border rounded-lg border-border bg-surface flex-row items-center"}
+                style={{ minHeight: 48, height: 48, paddingHorizontal: 12 }}
               >
-                <Text className={`text-base font-semibold ${
-                  role === "admin" ? "text-error" : "text-foreground"
-                }`}>Admin</Text>
-                <Text className="text-sm text-muted mt-1">
+                <Text className={role === "admin" ? "text-base font-semibold text-error" : "text-base font-semibold text-foreground"} style={{ flex: 1, textAlign: 'left' }}>
+                  Admin
+                </Text>
+                <Text className="text-sm text-muted ml-2" style={{ flex: 2, textAlign: 'left' }}>
                   Full access to all admin functions and settings
                 </Text>
               </TouchableOpacity>
               
               <TouchableOpacity
                 onPress={() => setRole("counselor")}
-                className={`border rounded-lg p-4 ${
-                  role === "counselor" ? "border-primary bg-primary/10" : "border-border bg-surface"
-                }`}
+                className={role === "counselor" ? "border rounded-lg border-primary bg-primary/10 flex-row items-center" : "border rounded-lg border-border bg-surface flex-row items-center"}
+                style={{ minHeight: 48, height: 48, paddingHorizontal: 12 }}
               >
-                <Text className={`text-base font-semibold ${
-                  role === "counselor" ? "text-primary" : "text-foreground"
-                }`}>Counselor</Text>
-                <Text className="text-sm text-muted mt-1">
+                <Text className={role === "counselor" ? "text-base font-semibold text-primary" : "text-base font-semibold text-foreground"} style={{ flex: 1, textAlign: 'left' }}>
+                  Counselor
+                </Text>
+                <Text className="text-sm text-muted ml-2" style={{ flex: 2, textAlign: 'left' }}>
                   Can record sessions and manage own clients
                 </Text>
               </TouchableOpacity>
               
               <TouchableOpacity
                 onPress={() => setRole("viewer")}
-                className={`border rounded-lg p-4 ${
-                  role === "viewer" ? "border-success bg-success/10" : "border-border bg-surface"
-                }`}
+                className={role === "viewer" ? "border rounded-lg border-success bg-success/10 flex-row items-center" : "border rounded-lg border-border bg-surface flex-row items-center"}
+                style={{ minHeight: 48, height: 48, paddingHorizontal: 12 }}
               >
-                <Text className={`text-base font-semibold ${
-                  role === "viewer" ? "text-success" : "text-foreground"
-                }`}>View Only</Text>
-                <Text className="text-sm text-muted mt-1">
+                <Text className={role === "viewer" ? "text-base font-semibold text-success" : "text-base font-semibold text-foreground"} style={{ flex: 1, textAlign: 'left' }}>
+                  View Only
+                </Text>
+                <Text className="text-sm text-muted ml-2" style={{ flex: 2, textAlign: 'left' }}>
                   Read-only access to reports and analytics
                 </Text>
               </TouchableOpacity>
@@ -262,24 +259,33 @@ export default function AdminStaffAddScreen() {
               Assign staff to your internal organizational structure
             </Text>
 
-            {/* Organization Picker */}
+            {/* Organization Picker with search filter and scrollable list */}
             <View className="mb-4">
               <Text className="text-sm font-semibold text-foreground mb-2">Organization</Text>
-              <View className="bg-surface border border-border rounded-lg">
-                <Picker
-                  selectedValue={groupId}
-                  onValueChange={(value) => {
-                    setGroupId(value);
-                    setStaffDepartmentId(null);
-                    setTeamId(null);
-                  }}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="Select Organization" value={null} />
-                  {organizations?.map((org: any) => (
-                    <Picker.Item key={org.id} label={org.name} value={org.id} />
+              <TextInput
+                value={orgSearch}
+                onChangeText={setOrgSearch}
+                placeholder="Search organizations..."
+                className="bg-surface border border-border rounded-lg p-3 text-foreground mb-2"
+                style={{ minHeight: 48 }}
+              />
+              <View className="bg-surface border border-border rounded-lg p-3" style={{ minHeight: 48 }}>
+                <ScrollView style={{ maxHeight: 40 * 8 }}>
+                  {(filteredOrganizations ?? []).slice(0, 50).map((org: any) => (
+                    <TouchableOpacity
+                      key={org.id}
+                      onPress={() => {
+                        setGroupId(org.id);
+                        setStaffDepartmentId(null);
+                        setTeamId(null);
+                      }}
+                      className={`rounded-lg px-3 py-2${groupId === org.id ? ' bg-primary/10 border-primary' : ''}`}
+                      style={{ minHeight: 40 }}
+                    >
+                      <Text className="text-foreground text-base">{org.name}</Text>
+                    </TouchableOpacity>
                   ))}
-                </Picker>
+                </ScrollView>
               </View>
             </View>
 
@@ -288,7 +294,7 @@ export default function AdminStaffAddScreen() {
               <View className="mb-4 flex-row items-center">
                 <View style={{ flex: 1 }}>
                   <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
-                  <View className="bg-surface border border-border rounded-lg">
+                  <View className="bg-surface border border-border rounded-lg p-3" style={{ minHeight: 48 }}>
                     <Picker
                       selectedValue={staffDepartmentId}
                       onValueChange={(value) => {
@@ -321,7 +327,7 @@ export default function AdminStaffAddScreen() {
               <View className="mb-4 flex-row items-center">
                 <View style={{ flex: 1 }}>
                   <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
-                  <View className="bg-surface border border-border rounded-lg">
+                  <View className="bg-surface border border-border rounded-lg p-3" style={{ minHeight: 48 }}>
                     <Picker
                       selectedValue={teamId}
                       onValueChange={setTeamId}
@@ -355,9 +361,10 @@ export default function AdminStaffAddScreen() {
           <TouchableOpacity
             onPress={handleSave}
             disabled={createStaff.isPending}
-            className={`rounded-lg p-4 ${
+            className={`rounded-lg p-3 ${
               createStaff.isPending ? "bg-muted" : "bg-success"
             }`}
+            style={{ minHeight: 48 }}
           >
             {createStaff.isPending ? (
               <ActivityIndicator color="#ffffff" />
@@ -371,7 +378,8 @@ export default function AdminStaffAddScreen() {
           <TouchableOpacity
             onPress={() => router.back()}
             disabled={createStaff.isPending}
-            className="bg-surface border border-border rounded-lg p-4"
+            className="bg-surface border border-border rounded-lg p-3"
+            style={{ minHeight: 48 }}
           >
             <Text className="text-foreground font-semibold text-center text-lg">Cancel</Text>
           </TouchableOpacity>
