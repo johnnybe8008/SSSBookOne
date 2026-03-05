@@ -54,6 +54,24 @@ export async function createStaffDepartment(input) {
   const [result] = await db.insert(staffDepartments).values(data);
   return result;
 }
+// Create a new staff record
+export async function createStaff(input) {
+  const db = await getDb();
+  // Remove id if present, as it should be auto-incremented
+  const { id, ...data } = input;
+  const [result] = await db.insert(staff).values(data);
+  return result;
+}
+// Update a staff record by ID
+export async function updateStaff(id, data) {
+  const db = await getDb();
+  // Remove id if present in data
+  const { id: _id, ...updateData } = data;
+  await db.update(staff)
+    .set(updateData)
+    .where(eq(staff.id, id));
+  return { success: true };
+}
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { organizations, staffDepartments, teams, staff } from "../drizzle/schema";

@@ -55,19 +55,36 @@ export default function AdminStaffAddScreen() {
   });
 
   const handleSave = () => {
+    console.log('handleSave called');
+    console.log('name:', name, '| email:', email, '| password:', password);
     if (!name.trim()) {
+      console.log('Name missing or empty');
       Alert.alert("Error", "Please enter a name");
       return;
     }
     if (!email.trim()) {
+      console.log('Email missing or empty');
       Alert.alert("Error", "Please enter an email");
       return;
     }
     if (!password.trim()) {
+      console.log('Password missing or empty');
       Alert.alert("Error", "Please enter a password");
       return;
     }
-
+    console.log('Calling createStaff.mutate with:', {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone.trim(),
+      role: role,
+      isVipRated: isVipRated ? 1 : 0,
+      isAdmin: role === "admin" ? 1 : 0,
+      teamId: teamId || 1,
+      createdBy: 1,
+      updatedBy: 1,
+      organizationId: groupId,
+      staffDepartmentId: staffDepartmentId
+    });
     createStaff.mutate({
       name: name.trim(),
       email: email.trim().toLowerCase(),
@@ -78,14 +95,18 @@ export default function AdminStaffAddScreen() {
       teamId: teamId || 1, // Staff organization team
       createdBy: 1, // Admin user
       updatedBy: 1,
+      organizationId: groupId,
+      staffDepartmentId: staffDepartmentId
     });
   };
 
+  // Add state for department and team modals and names
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [newDeptName, setNewDeptName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
 
+  // Add createDepartment mutation
   const createDepartment = trpc.staffDepartments.create.useMutation({
     onSuccess: () => {
       utils.staffDepartments.invalidate();
@@ -97,6 +118,7 @@ export default function AdminStaffAddScreen() {
     },
   });
 
+  // Add createTeam mutation
   const createTeam = trpc.teams.create.useMutation({
     onSuccess: () => {
       utils.teams.invalidate();
@@ -114,12 +136,30 @@ export default function AdminStaffAddScreen() {
     org.name.toLowerCase().includes(orgSearch.toLowerCase())
   );
 
+  const [deptSearch, setDeptSearch] = useState("");
+
+  const filteredDepartments = staffDepartments
+    ? staffDepartments.filter((dept: any) =>
+        dept.name.toLowerCase().includes(deptSearch.toLowerCase())
+      )
+    : [];
+
+  const [teamSearch, setTeamSearch] = useState("");
+
+  const filteredTeams = teams
+    ? teams.filter((team: any) =>
+        team.name.toLowerCase().includes(teamSearch.toLowerCase())
+      )
+    : [];
+
   return (
     <ScreenContainer className="p-4">
       <ScrollView>
         {/* Header */}
         <View className="mb-6 flex-row items-center justify-between">
-          <Text className="text-primary text-3xl font-bold">&lt;</Text>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-primary text-3xl font-bold">&lt;</Text>
+          </TouchableOpacity>
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Text className="text-2xl font-bold text-foreground text-center">Add a New Staff Member</Text>
           </View>
@@ -259,16 +299,36 @@ export default function AdminStaffAddScreen() {
               Assign staff to your internal organizational structure
             </Text>
 
-            {/* Organization Picker with search filter and scrollable list */}
+            {/* Organization Picker with clear button to allow re-searching after selection */}
             <View className="mb-4">
               <Text className="text-sm font-semibold text-foreground mb-2">Organization</Text>
-              <TextInput
-                value={orgSearch}
-                onChangeText={setOrgSearch}
-                placeholder="Search organizations..."
-                className="bg-surface border border-border rounded-lg p-3 text-foreground mb-2"
-                style={{ minHeight: 48 }}
-              />
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TextInput
+                  value={orgSearch}
+                  onChangeText={text => {
+                    setOrgSearch(text);
+                    setGroupId(null);
+                    setStaffDepartmentId(null);
+                    setTeamId(null);
+                  }}
+                  placeholder="Search organizations..."
+                  className="bg-surface border border-border rounded-lg p-3 text-foreground mb-2 flex-1"
+                  style={{ minHeight: 48, flex: 1 }}
+                />
+                {groupId && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setGroupId(null);
+                      setOrgSearch("");
+                      setStaffDepartmentId(null);
+                      setTeamId(null);
+                    }}
+                    className="ml-2 bg-muted rounded-full w-8 h-8 items-center justify-center"
+                  >
+                    <Text className="text-foreground text-lg font-bold">×</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <View className="bg-surface border border-border rounded-lg p-3" style={{ minHeight: 48 }}>
                 <ScrollView style={{ maxHeight: 40 * 8 }}>
                   {(filteredOrganizations ?? []).slice(0, 50).map((org: any) => (
@@ -276,6 +336,7 @@ export default function AdminStaffAddScreen() {
                       key={org.id}
                       onPress={() => {
                         setGroupId(org.id);
+                        setOrgSearch(org.name);
                         setStaffDepartmentId(null);
                         setTeamId(null);
                       }}
@@ -289,29 +350,36 @@ export default function AdminStaffAddScreen() {
               </View>
             </View>
 
-            {/* Department Picker */}
+            {/* Department Picker as search filter scroll, max 5 departments, 48px height */}
             {groupId && (
               <View className="mb-4 flex-row items-center">
                 <View style={{ flex: 1 }}>
                   <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
+                  <TextInput
+                    value={staffDepartmentId ? (staffDepartments?.find((dept: any) => dept.id === staffDepartmentId)?.name || deptSearch) : deptSearch}
+                    onChangeText={setDeptSearch}
+                    placeholder="Search departments..."
+                    className="bg-surface border border-border rounded-lg p-3 text-foreground mb-2"
+                    style={{ minHeight: 48 }}
+                  />
                   <View className="bg-surface border border-border rounded-lg p-3" style={{ minHeight: 48 }}>
-                    <Picker
-                      selectedValue={staffDepartmentId}
-                      onValueChange={(value) => {
-                        setStaffDepartmentId(value);
-                        setTeamId(null);
-                      }}
-                      style={{ color: colors.foreground }}
-                    >
-                      <Picker.Item label={staffDepartments?.length === 0 ? "No departments found" : "Select Department"} value={null} />
-                      {staffDepartments?.map((dept: any) => (
-                        <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
+                    <ScrollView style={{ maxHeight: 48 * 5 }}>
+                      {(filteredDepartments ?? []).slice(0, 50).map((dept: any) => (
+                        <TouchableOpacity
+                          key={dept.id}
+                          onPress={() => {
+                            setStaffDepartmentId(dept.id);
+                            setDeptSearch(dept.name);
+                            setTeamId(null);
+                          }}
+                          className={`rounded-lg px-3 py-2${staffDepartmentId === dept.id ? ' bg-primary/10 border-primary' : ''}`}
+                          style={{ minHeight: 48 }}
+                        >
+                          <Text className="text-foreground text-base">{dept.name}</Text>
+                        </TouchableOpacity>
                       ))}
-                    </Picker>
+                    </ScrollView>
                   </View>
-                  {staffDepartments?.length === 0 && (
-                    <Text className="text-xs text-muted mt-2">No departments found for this organization.</Text>
-                  )}
                 </View>
                 <TouchableOpacity
                   onPress={() => setShowDeptModal(true)}
@@ -322,26 +390,35 @@ export default function AdminStaffAddScreen() {
               </View>
             )}
 
-            {/* Team Picker */}
+            {/* Team Picker as search filter scroll, max 5 teams, 48px height */}
             {staffDepartmentId && (
               <View className="mb-4 flex-row items-center">
                 <View style={{ flex: 1 }}>
                   <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
+                  <TextInput
+                    value={teamId ? (filteredTeams.find((team: any) => team.id === teamId)?.name || teamSearch) : teamSearch}
+                    onChangeText={setTeamSearch}
+                    placeholder="Search teams..."
+                    className="bg-surface border border-border rounded-lg p-3 text-foreground mb-2"
+                    style={{ minHeight: 48 }}
+                  />
                   <View className="bg-surface border border-border rounded-lg p-3" style={{ minHeight: 48 }}>
-                    <Picker
-                      selectedValue={teamId}
-                      onValueChange={setTeamId}
-                      style={{ color: colors.foreground }}
-                    >
-                      <Picker.Item label={teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).length === 0 ? "No teams found" : "Select Team"} value={null} />
-                      {teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).map((team: any) => (
-                        <Picker.Item key={team.id} label={team.name} value={team.id} />
+                    <ScrollView style={{ maxHeight: 48 * 5 }}>
+                      {(filteredTeams ?? []).slice(0, 50).map((team: any) => (
+                        <TouchableOpacity
+                          key={team.id}
+                          onPress={() => {
+                            setTeamId(team.id);
+                            setTeamSearch(team.name);
+                          }}
+                          className={`rounded-lg px-3 py-2${teamId === team.id ? ' bg-primary/10 border-primary' : ''}`}
+                          style={{ minHeight: 48 }}
+                        >
+                          <Text className="text-foreground text-base">{team.name}</Text>
+                        </TouchableOpacity>
                       ))}
-                    </Picker>
+                    </ScrollView>
                   </View>
-                  {teams?.filter((t: any) => t.staffDepartmentId === staffDepartmentId).length === 0 && (
-                    <Text className="text-xs text-muted mt-2">No teams found for this department.</Text>
-                  )}
                 </View>
                 <TouchableOpacity
                   onPress={() => setShowTeamModal(true)}
@@ -443,8 +520,9 @@ export default function AdminStaffAddScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
-                  if (!newTeamName.trim() || !staffDepartmentId) return;
+                  if (!newTeamName.trim() || !staffDepartmentId || !groupId) return;
                   createTeam.mutate({
+                    organizationId: groupId,
                     staffDepartmentId: staffDepartmentId,
                     name: newTeamName.trim(),
                     createdBy: 1,

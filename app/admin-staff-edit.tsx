@@ -129,6 +129,28 @@ export default function AdminStaffEditScreen() {
     },
   });
 
+  const createDepartment = trpc.staffDepartments.create.useMutation({
+    onSuccess: () => {
+      utils.staffDepartments.invalidate();
+      setShowDeptAddModal(false);
+      setNewDeptName("");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to create department");
+    },
+  });
+
+  const createTeam = trpc.teams.create.useMutation({
+    onSuccess: () => {
+      utils.teams.invalidate();
+      setShowTeamAddModal(false);
+      setNewTeamName("");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to create team");
+    },
+  });
+
   const handleSave = () => {
     if (!name.trim()) {
       Alert.alert("Error", "Please enter a name");
@@ -199,8 +221,6 @@ export default function AdminStaffEditScreen() {
 
   // ...existing code...
 
-  // ...existing code...
-
   const handleAddDepartment = () => {
     if (!newDeptName.trim() || !groupId) return;
     createDepartment.mutate({
@@ -214,7 +234,7 @@ export default function AdminStaffEditScreen() {
   const handleAddTeam = () => {
     if (!newTeamName.trim() || !staffDepartmentId || !groupId) return;
     createTeam.mutate({
-      groupId: groupId,
+      organizationId: groupId, // <-- ensure this is set
       staffDepartmentId: staffDepartmentId,
       name: newTeamName.trim(),
       createdBy: 1,
@@ -227,35 +247,20 @@ export default function AdminStaffEditScreen() {
   return (
     <ScreenContainer className="p-4">
       <ScrollView>
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="flex-row items-center gap-2 mb-4"
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.primary} />
-          <Text className="text-primary text-base font-semibold">Back</Text>
-        </TouchableOpacity>
-
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-3xl font-bold text-foreground">Edit Staff</Text>
-          <Text className="text-sm text-muted mt-1">Update staff member information</Text>
-          
-          {/* Organizational Breadcrumbs */}
-          {teamId && teams && (() => {
-            const team = teams.find((t: any) => t.id === teamId);
-            if (team) {
-              const breadcrumbs: string[] = [];
-              const org = organizations?.find((o: any) => o.id === team.organizationId);
-              if (org) breadcrumbs.push(org.name);
-              const dept = staffDepartments?.find((d: any) => d.id === team.staffDepartmentId);
-              if (dept) breadcrumbs.push(dept.name);
-              breadcrumbs.push(team.name);
-              return <OrganizationalBreadcrumbs items={breadcrumbs} className="mt-3" />;
-            }
-            return null;
-          })()}
+        {/* Header (chevron, single line title) */}
+        <View className="mb-2 flex-row items-center justify-between">
+          <TouchableOpacity onPress={() => router.back()} className="flex-row items-center gap-2">
+            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text className="text-2xl font-bold text-foreground text-center">Update Staff Member</Text>
+          </View>
+          <View style={{ width: 24 }} />
         </View>
+        {/* Org-Dept-Team breadcrumbs under header */}
+        {staff && organizations && allStaffDepartments && allTeams && (
+          <OrganizationalBreadcrumbs items={getStaffBreadcrumbs(staff, organizations, allStaffDepartments, allTeams)} className="mb-4" />
+        )}
 
         {/* Form */}
         <View className="gap-4">
@@ -690,7 +695,7 @@ export default function AdminStaffEditScreen() {
                 onPress={() => {
                   if (!newTeamName.trim() || !staffDepartmentId || !groupId) return;
                   createTeam.mutate({
-                    groupId: groupId,
+                    organizationId: groupId,
                     staffDepartmentId: staffDepartmentId,
                     name: newTeamName.trim(),
                     createdBy: 1,
@@ -709,4 +714,32 @@ export default function AdminStaffEditScreen() {
 
     </ScreenContainer>
   );
+}
+
+// Add getStaffBreadcrumbs helper from admin-staff.tsx
+function getStaffBreadcrumbs(staff: any, organizations: any, allStaffDepartments: any, allTeams: any) {
+  const breadcrumbs: string[] = [];
+  // Find organization name
+  if (staff.organizationId && organizations) {
+    const org = organizations.find((o: any) => o.id === staff.organizationId);
+    if (org) breadcrumbs.push(org.name);
+  } else if (staff.teamId && allTeams && organizations) {
+    // Fallback: get org from team if staff.organizationId is missing
+    const team = allTeams.find((t: any) => t.id === staff.teamId);
+    if (team) {
+      const org = organizations.find((o: any) => o.id === team.organizationId || o.id === team.groupId);
+      if (org) breadcrumbs.push(org.name);
+    }
+  }
+  // Find department name
+  if (staff.staffDepartmentId && allStaffDepartments) {
+    const dept = allStaffDepartments.find((d: any) => d.id === staff.staffDepartmentId);
+    if (dept) breadcrumbs.push(dept.name);
+  }
+  // Find team name
+  if (staff.teamId && allTeams) {
+    const team = allTeams.find((t: any) => t.id === staff.teamId);
+    if (team) breadcrumbs.push(team.name);
+  }
+  return breadcrumbs;
 }

@@ -25,36 +25,36 @@ export default function AdminStaffScreen() {
   const colors = useColors();
   const { data: allStaff, isLoading } = trpc.staff.listAll.useQuery();
   const { data: organizations } = trpc.organizations.list.useQuery();
-  const { data: staffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
-  const { data: teams } = trpc.teams.list.useQuery({ groupId: 0 });
-
+  const { data: allStaffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
+  const { data: allTeams } = trpc.teams.list.useQuery();
 
   // Helper function to get organizational breadcrumbs for a staff member
-  const getStaffBreadcrumbs = (staff: any) => {
+  function getStaffBreadcrumbs(staff: any, organizations: any, allStaffDepartments: any, allTeams: any) {
     const breadcrumbs: string[] = [];
-    
-    if (staff.teamId && teams) {
-      const team = teams.find((t: any) => t.id === staff.teamId);
+    // Find organization name
+    if (staff.organizationId && organizations) {
+      const org = organizations.find((o: any) => o.id === staff.organizationId);
+      if (org) breadcrumbs.push(org.name);
+    } else if (staff.teamId && allTeams && organizations) {
+      // Fallback: get org from team if staff.organizationId is missing
+      const team = allTeams.find((t: any) => t.id === staff.teamId);
       if (team) {
-        // Find organization
-        const org = organizations?.find((o: any) => o.id === team.groupId);
-        if (org) {
-          breadcrumbs.push(org.name);
-        }
-        
-        // Find department
-        const dept = staffDepartments?.find((d: any) => d.id === team.staffDepartmentId);
-        if (dept) {
-          breadcrumbs.push(dept.name);
-        }
-        
-        // Add team
-        breadcrumbs.push(team.name);
+        const org = organizations.find((o: any) => o.id === team.organizationId || o.id === team.groupId);
+        if (org) breadcrumbs.push(org.name);
       }
     }
-    
+    // Find department name
+    if (staff.staffDepartmentId && allStaffDepartments) {
+      const dept = allStaffDepartments.find((d: any) => d.id === staff.staffDepartmentId);
+      if (dept) breadcrumbs.push(dept.name);
+    }
+    // Find team name
+    if (staff.teamId && allTeams) {
+      const team = allTeams.find((t: any) => t.id === staff.teamId);
+      if (team) breadcrumbs.push(team.name);
+    }
     return breadcrumbs;
-  };
+  }
 
   // CSV Export Handler
   const handleExportCSV = () => {
@@ -68,7 +68,7 @@ export default function AdminStaffScreen() {
     
     // Create CSV rows
     const rows = allStaff.map((staff: any) => {
-      const breadcrumbs = getStaffBreadcrumbs(staff);
+      const breadcrumbs = getStaffBreadcrumbs(staff, organizations, allStaffDepartments, allTeams);
       const org = breadcrumbs[0] || "";
       const dept = breadcrumbs[1] || "";
       const team = breadcrumbs[2] || "";
@@ -134,7 +134,7 @@ export default function AdminStaffScreen() {
 
     // Department filter (multi)
     if (filterDepartments.length > 0) {
-      const team = teams?.find((t: any) => t.id === staff.teamId);
+      const team = allTeams?.find((t: any) => t.id === staff.teamId);
       if (!team || !filterDepartments.includes(team.staffDepartmentId)) {
         return false;
       }
@@ -142,7 +142,7 @@ export default function AdminStaffScreen() {
 
     // Organization filter (multi)
     if (filterOrganizations.length > 0) {
-      const team = teams?.find((t: any) => t.id === staff.teamId);
+      const team = allTeams?.find((t: any) => t.id === staff.teamId);
       if (!team || !filterOrganizations.includes(team.groupId)) {
         return false;
       }
@@ -253,7 +253,7 @@ export default function AdminStaffScreen() {
               <Text style={{ color: colors.foreground }}>
                 {filterDepartments.length === 0
                   ? 'All Departments'
-                  : Array.from(new Map((staffDepartments || []).map((d: any) => [d.name, d])).values())
+                  : Array.from(new Map((allStaffDepartments || []).map((d: any) => [d.name, d])).values())
                       .filter((dept: any) => filterDepartments.includes(dept.id))
                       .map((dept: any) => dept.name)
                       .join(', ')}
@@ -269,7 +269,7 @@ export default function AdminStaffScreen() {
                 <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
                   <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Departments</Text>
                   <ScrollView style={{ maxHeight: 300 }}>
-                    {Array.from(new Map((staffDepartments || []).map((d: any) => [d.name, d])).values()).map((dept: any) => (
+                    {Array.from(new Map((allStaffDepartments || []).map((d: any) => [d.name, d])).values()).map((dept: any) => (
                       <Pressable
                         key={dept.id}
                         onPress={() => {
@@ -309,7 +309,7 @@ export default function AdminStaffScreen() {
               <Text style={{ color: colors.foreground }}>
                 {filterTeams.length === 0
                   ? 'All Teams'
-                  : Array.from(new Map((teams || []).map((t: any) => [t.name, t])).values())
+                  : Array.from(new Map((allTeams ?? []).map((t: any) => [t.name, t])).values())
                       .filter((team: any) => filterTeams.includes(team.id))
                       .map((team: any) => team.name)
                       .join(', ')}
@@ -325,7 +325,7 @@ export default function AdminStaffScreen() {
                 <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
                   <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Teams</Text>
                   <ScrollView style={{ maxHeight: 300 }}>
-                    {Array.from(new Map((teams || []).map((t: any) => [t.name, t])).values()).map((team: any) => (
+                    {Array.from(new Map((allTeams ?? []).map((t: any) => [t.name, t])).values()).map((team: any) => (
                       <Pressable
                         key={team.id}
                         onPress={() => {
@@ -450,7 +450,7 @@ export default function AdminStaffScreen() {
                     <Text className="text-sm text-muted mt-1">{staff.email}</Text>
                     
                     {/* Organizational Breadcrumbs */}
-                    <OrganizationalBreadcrumbs items={getStaffBreadcrumbs(staff)} className="mt-2" />
+                    <OrganizationalBreadcrumbs items={getStaffBreadcrumbs(staff, organizations, allStaffDepartments, allTeams)} className="mt-2" />
                     
                     {/* Badges */}
                     <View className="flex-row gap-2 mt-2">
