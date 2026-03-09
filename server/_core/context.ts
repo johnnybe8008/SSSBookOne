@@ -42,6 +42,11 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
           console.log('[DEBUG][CONTEXT] validateSessionToken (cookie):', sessionToken, user);
         }
       }
+      // If no user and no session token, force login
+      if (!user) {
+        // Custom error for frontend to detect and redirect
+        throw Object.assign(new Error('Session expired. Please log in again.'), { code: 'SESSION_EXPIRED' });
+      }
     }
   }
 

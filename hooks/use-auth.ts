@@ -13,6 +13,19 @@ export function useAuth(options?: UseAuthOptions) {
   const [staff, setStaff] = useState<Auth.Staff | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  // Debug log for staff state
+  useEffect(() => {
+    if (staff === null) {
+      console.warn("[DEBUG useAuth] staff state CLEARED", {
+        staff,
+        loading,
+        error,
+        sessionToken: typeof Auth.getSessionToken === 'function' ? Auth.getSessionToken() : undefined,
+      });
+    } else {
+      console.log("[DEBUG useAuth] staff state", staff);
+    }
+  }, [staff, loading, error]);
 
   const fetchStaff = useCallback(async () => {
     try {
@@ -25,28 +38,56 @@ export function useAuth(options?: UseAuthOptions) {
           const { getApiBaseUrl } = await import("@/constants/oauth");
           const apiBaseUrl = getApiBaseUrl();
           const url = `${apiBaseUrl}/api/trpc/auth.me`;
-          const res = await fetch(url, { credentials: "include" });
+          const sessionToken = typeof Auth.getSessionToken === 'function' ? await Auth.getSessionToken() : undefined;
+          const res = await fetch(url, {
+            credentials: "include",
+            headers: sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {},
+          });
           const data = await res.json();
+          console.log("[DEBUG useAuth] /auth.me raw response", data);
+          // Try to extract staff record from typical TRPC response
+          let staffFromBackend = null;
+          if (data?.result?.data) {
+            staffFromBackend = data.result.data;
+            console.log("[DEBUG useAuth] staffFromBackend (result.data)", staffFromBackend);
+          } else if (data?.staff) {
+            staffFromBackend = data.staff;
+            console.log("[DEBUG useAuth] staffFromBackend (staff)", staffFromBackend);
+          } else {
+            staffFromBackend = data;
+            console.log("[DEBUG useAuth] staffFromBackend (fallback)", staffFromBackend);
+          }
+          backendStaff = staffFromBackend;
         } catch (err) {
           console.error("[useAuth] Backend /auth.me error:", err);
         }
       }
       if (backendStaff && backendStaff.id) {
+        console.log("[DEBUG useAuth] backendStaff found", backendStaff);
         setStaff(backendStaff);
         await Auth.setStaffInfo?.(backendStaff);
         return;
       }
       // Fallback to localStorage for native or if backend fails
       const cachedStaff = await Auth.getStaffInfo();
+      console.log("[DEBUG useAuth] cachedStaff", cachedStaff);
       if (cachedStaff) {
         setStaff(cachedStaff);
       } else {
+        console.warn("[DEBUG useAuth] staff state CLEARED in fetchStaff", {
+          cachedStaff,
+          sessionToken: typeof Auth.getSessionToken === 'function' ? await Auth.getSessionToken() : undefined,
+        });
         setStaff(null);
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to fetch staff");
       console.error("[useAuth] fetchStaff error:", error);
       setError(error);
+      console.warn("[DEBUG useAuth] staff state CLEARED in fetchStaff error", {
+        error,
+        sessionToken: typeof Auth.getSessionToken === 'function' ? await Auth.getSessionToken() : undefined,
+      });
       setStaff(null);
     } finally {
       setLoading(false);

@@ -11,7 +11,16 @@ import type { Company, coDepartment, Team } from '../drizzle/schema';
 
 export default function AdmincompaniesScreen() {
       // State for Company form data
-      const [formData, setFormData] = useState({ name: '', address: '', email: '', phone: '' });
+      const [formData, setFormData] = useState({
+        name: '',
+        address: '',
+        email: '',
+        phone: '',
+        website: '',
+        contactPerson: '',
+        divisionId: '',
+        departmentId: ''
+      });
       // Auth context (provides Client)
       const { staff } = useAuth();
       // tRPC utils (for cache invalidation)
@@ -298,27 +307,32 @@ export default function AdmincompaniesScreen() {
       address: org.address || '',
       email: org.email || '',
       phone: org.phone || '',
+      website: org.website || '',
+      contactPerson: org.contactPerson || '',
+      divisionId: org.divisionId || '',
+      departmentId: org.departmentId || ''
     });
     setModalVisible(true);
   };
 
   // Ensure pendingDepartments is initialized after allTeams, allDepartments, and editingOrg are loaded
+  const lastOrgIdRef = React.useRef<number|null>(null);
   useEffect(() => {
     if (
       editingOrg &&
       allDepartments &&
-      allTeams
+      allTeamsGlobal &&
+      (pendingDepartments.length === 0)
     ) {
-      const newPending = (allDepartments ?? []).map((d: any) => ({
-        id: d.id,
-        name: d.name,
-        teams: Array.isArray(d.teams)
-          ? d.teams
-          : ((allTeams ?? []).filter((t: any) => t.coDepartmentId === d.id) || [])
-      })).map((dept: any) => ({
-        ...dept,
-        teams: Array.isArray(dept.teams) ? dept.teams : []
-      }));
+      const newPending = (allDepartments ?? []).map((d: any) => {
+        // Find all teams for this department
+        const deptTeams = (allTeamsGlobal ?? []).filter((t: any) => t.coDepartmentId === d.id);
+        return {
+          id: d.id,
+          name: d.name,
+          teams: deptTeams
+        };
+      });
       setPendingDepartments(newPending);
     }
   }, [editingOrg, allDepartments, allTeams]);
@@ -410,11 +424,27 @@ export default function AdmincompaniesScreen() {
     await new Promise(resolve => setTimeout(resolve, 100));
     try {
       if (editingOrg) {
-        // Find departments to delete (in allDepartments but not in pendingDepartments)
+        // 1. Update Company (send all fields matching backend schema)
+        const payload = {
+          id: editingOrg.id,
+          name: formData.name,
+          address: formData.address,
+          email: formData.email,
+          phone: formData.phone,
+          website: formData.website,
+          contactPerson: formData.contactPerson,
+          divisionId: formData.divisionId ? Number(formData.divisionId) : undefined,
+          departmentId: formData.departmentId ? Number(formData.departmentId) : undefined,
+          updatedBy: staff.id
+        };
+        console.log('[DEBUG] companies.update payload:', payload);
+        await updateOrgMutation.mutateAsync(payload);
+
+        // 2. Departments: add new, update existing, delete missing
         const pendingDeptIds = new Set(pendingDepartments.filter(d => d.id).map(d => d.id));
+        // Delete departments missing in local
         for (const dept of allDepartments) {
           if (!pendingDeptIds.has(dept.id)) {
-            // Delete department from DB
             await deleteDepartmentMutation.mutateAsync({
               id: dept.id,
               companyId: editingOrg.id,
@@ -422,19 +452,10 @@ export default function AdmincompaniesScreen() {
             });
           }
         }
-        // --- EDIT FLOW IMPLEMENTATION ---
-        // 1. Update Company
-        await updateOrgMutation.mutateAsync({
-          id: editingOrg.id,
-          ...formData,
-          updatedBy: staff.id,
-        });
-        // 2. Update or add departments, and update teams for new departments
-        // Build a map of new department names to their new IDs
+        // Add or update departments
         const newDeptIdMap: Record<string, number> = {};
         for (const dept of pendingDepartments) {
           if (dept.id) {
-            // Existing department: update
             await updateDepartmentMutation.mutateAsync({
               id: dept.id,
               name: dept.name,
@@ -442,11 +463,6 @@ export default function AdmincompaniesScreen() {
               updatedBy: staff.id,
             });
           } else {
-            // New department: add and capture returned id
-            if (!editingOrg?.id) {
-              setFormError('Missing Company context (companyId is undefined)');
-              continue;
-            }
             const result = await addDepartmentMutation.mutateAsync({
               name: dept.name,
               companyId: Number(editingOrg.id),
@@ -458,45 +474,42 @@ export default function AdmincompaniesScreen() {
             }
           }
         }
-        // 3. Update teams, including those for new departments
+
+        // 3. Teams: add new, update existing, delete missing for each department
         for (const dept of pendingDepartments) {
           const deptId = dept.id || newDeptIdMap[dept.name];
           if (deptId) {
-            // Find all teams in DB for this department
             const dbTeams = (allTeams ?? []).filter((t: any) => t.coDepartmentId === deptId);
             const localTeamNames = (dept.teams ?? []).map((t: any) => t.name);
-            // Delete teams that are in DB but not in local
+            // Delete teams missing in local
             for (const dbTeam of dbTeams) {
               if (!localTeamNames.includes(dbTeam.name)) {
                 await removeTeamMutation.mutateAsync({ id: dbTeam.id });
               }
             }
-            // Add/update teams as before
-            if (dept.teams && dept.companyTeams.length > 0) {
-              for (const team of dept.teams) {
-                if (team.id) {
-                  // Existing team: update
-                  await updateTeamMutation.mutateAsync({
-                    id: team.id,
-                    name: team.name,
-                    coDepartmentId: deptId,
-                    companyId: editingOrg.id,
-                    updatedBy: staff.id,
-                  });
-                } else {
-                  // New team: create
-                  await addTeamMutation.mutateAsync({
-                    name: team.name,
-                    coDepartmentId: deptId,
-                    companyId: editingOrg.id,
-                    createdBy: staff.id,
-                    updatedBy: staff.id,
-                  });
-                }
+            // Add or update teams
+            for (const team of dept.teams ?? []) {
+              if (team.id) {
+                await updateTeamMutation.mutateAsync({
+                  id: team.id,
+                  name: team.name,
+                  coDepartmentId: deptId,
+                  companyId: editingOrg.id,
+                  updatedBy: staff.id,
+                });
+              } else {
+                await addTeamMutation.mutateAsync({
+                  name: team.name,
+                  coDepartmentId: deptId,
+                  companyId: editingOrg.id,
+                  createdBy: staff.id,
+                  updatedBy: staff.id,
+                });
               }
             }
           }
         }
+
         setModalVisible(false);
         setEditingOrg(null);
         setFormData({ name: '', address: '', email: '', phone: '' });
@@ -645,6 +658,35 @@ export default function AdmincompaniesScreen() {
           placeholderTextColor="#aaa"
         />
       </View>
+      {/* Company Edit Fields */}
+      {modalVisible && (
+        <View style={{ padding: 16 }}>
+          <TextInput
+            style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 8 }}
+            placeholder="Website"
+            value={formData.website}
+            onChangeText={text => setFormData(prev => ({ ...prev, website: text }))}
+          />
+          <TextInput
+            style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 8 }}
+            placeholder="Contact Person"
+            value={formData.contactPerson}
+            onChangeText={text => setFormData(prev => ({ ...prev, contactPerson: text }))}
+          />
+          <TextInput
+            style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 8 }}
+            placeholder="Division ID"
+            value={formData.divisionId}
+            onChangeText={text => setFormData(prev => ({ ...prev, divisionId: text }))}
+          />
+          <TextInput
+            style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 8 }}
+            placeholder="Department ID"
+            value={formData.departmentId}
+            onChangeText={text => setFormData(prev => ({ ...prev, departmentId: text }))}
+          />
+        </View>
+      )}
       {orgsLoading ? (
         <View style={{ padding: 24, alignItems: 'center' }}>
           <Text style={{ color: '#888', fontSize: 18 }}>Loading companies...</Text>
@@ -910,14 +952,11 @@ export default function AdmincompaniesScreen() {
                 {/* Done button to confirm selection */}
                 <TouchableOpacity
                   onPress={() => {
-                    // Replace local departments with selected
+                    // Replace local departments with selected, preserving all properties for existing
                     const newDepartments = selectedDeptNames.map((name) => {
-                      // If department already exists, keep its teams
                       const existing = pendingDepartments.find((d) => d.name === name);
-                      return {
-                        name,
-                        teams: Array.isArray(existing?.teams) ? existing.teams : []
-                      };
+                      if (existing) return { ...existing };
+                      return { name, teams: [] };
                     });
                     setPendingDepartments(newDepartments);
                     setAddDeptModalVisible(false);
@@ -978,7 +1017,7 @@ export default function AdmincompaniesScreen() {
                 <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Select Department</Text>
                 <View style={{ marginBottom: 16 }}>
                   <ScrollView style={{ maxHeight: 120 }}>
-                    {(isCreateMode ? pendingDepartments : allDepartments)?.map((dept: any) => (
+                    {pendingDepartments.map((dept: any) => (
                       <TouchableOpacity
                         key={dept.id || dept.name}
                         style={{ backgroundColor: selectedDeptName === dept.name ? colors.primary : '#eee', borderRadius: 8, padding: 10, marginBottom: 6 }}

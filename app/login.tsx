@@ -10,12 +10,14 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const loginMutation = trpc.auth.login.useMutation();
 
   const handleLogin = async () => {
+    setLoginError("");
     if (!email || !password) {
-      Alert.alert("Error", "Please enter both email and password");
+      setLoginError("Please enter both email and password");
       return;
     }
 
@@ -33,7 +35,12 @@ export default function LoginScreen() {
         try {
           const apiBaseUrl = (await import("@/constants/oauth")).getApiBaseUrl();
           const url = `${apiBaseUrl}/api/trpc/auth.me`;
-          const res = await fetch(url, { credentials: "include" });
+          // Always refresh session token before fetching staff info
+          const sessionToken = await (await import("@/lib/_core/auth")).getSessionToken();
+          const res = await fetch(url, {
+            credentials: "include",
+            headers: sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {},
+          });
           const data = await res.json();
           const backendStaff = data?.result?.data?.json?.staff || data?.result?.data?.json || data?.result?.data || data?.result;
           if (backendStaff && backendStaff.id) {
@@ -49,9 +56,11 @@ export default function LoginScreen() {
         } else {
           router.replace("/(tabs)");
         }
+      } else {
+        setLoginError("Invalid email or password");
       }
     } catch (error: any) {
-      Alert.alert("Login Failed", error.message || "Invalid email or password");
+      setLoginError(error.message || "Invalid email or password");
       console.error('[Login] Error:', error);
     } finally {
       setLoading(false);
@@ -66,6 +75,9 @@ export default function LoginScreen() {
           Sign in to access your counseling sessions
         </Text>
 
+        {loginError ? (
+          <Text style={{ color: 'red', marginBottom: 12, textAlign: 'center' }}>{loginError}</Text>
+        ) : null}
         <View className="gap-4">
           <View>
             <Text className="text-sm font-medium text-foreground mb-2">Email</Text>

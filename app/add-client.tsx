@@ -756,11 +756,6 @@ export default function AddClientScreen() {
                           </View>
                         )}
                       </View>
-                      {item.contactPerson && (
-                        <Text style={{ color: colors.muted }} className="text-sm mt-1">
-                          {item.contactPerson}
-                        </Text>
-                      )}
                     </TouchableOpacity>
                   )}
                   ListEmptyComponent={
@@ -983,9 +978,6 @@ export default function AddClientScreen() {
                   className="py-3 px-2 border-b"
                 >
                   <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
-                  {item.description && (
-                    <Text style={{ color: colors.muted }} className="text-sm mt-1">{item.description}</Text>
-                  )}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
@@ -1042,9 +1034,6 @@ export default function AddClientScreen() {
                   className="py-3 px-2 border-b"
                 >
                   <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
-                  {item.description && (
-                    <Text style={{ color: colors.muted }} className="text-sm mt-1">{item.description}</Text>
-                  )}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
@@ -1099,9 +1088,6 @@ export default function AddClientScreen() {
                   className="py-3 px-2 border-b"
                 >
                   <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
-                  {item.description && (
-                    <Text style={{ color: colors.muted }} className="text-sm mt-1">{item.description}</Text>
-                  )}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={

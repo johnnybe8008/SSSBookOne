@@ -1,3 +1,28 @@
+export const divisions = mysqlTable("divisions", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  address: text("address"),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 320 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdBy: int("createdBy").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: int("updatedBy").notNull(),
+});
+
+export const departments = mysqlTable("departments", {
+  id: int("id").autoincrement().primaryKey(),
+  divisionId: int("divisionId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  address: text("address"),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 320 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdBy: int("createdBy").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: int("updatedBy").notNull(),
+});
 import { date, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
@@ -64,12 +89,13 @@ export const teams = mysqlTable("teams", {
 // Company Teams - for client organization hierarchy
 export const companyTeams = mysqlTable("companyTeams", {
   id: int("id").autoincrement().primaryKey(),
-  departmentId: int("departmentId").notNull(), // Link to department in company hierarchy
+  companyId: int("companyId").notNull(), // Link to company
   name: varchar("name", { length: 255 }).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").notNull(),
+  coDepartmentId: int("coDepartmentId").notNull(), // Link to department in company hierarchy
 });
 
 // Staff table
@@ -112,22 +138,11 @@ export const companies = mysqlTable("companies", {
   updatedBy: int("updatedBy").notNull(),
 });
 
-export const divisions = mysqlTable("divisions", {
+// Client Company Departments - middle layer between companies and teams
+export const coDepartments = mysqlTable("coDepartments", {
   id: int("id").autoincrement().primaryKey(),
-  companyId: int("companyId").notNull(),
+  companyId: int("companyId").notNull(), // Link to company
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"), // Optional description
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  createdBy: int("createdBy").notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  updatedBy: int("updatedBy").notNull(),
-});
-
-export const departments = mysqlTable("departments", {
-  id: int("id").autoincrement().primaryKey(),
-  divisionId: int("divisionId").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"), // Optional description
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -161,8 +176,7 @@ export const clients = mysqlTable("clients", {
   id: int("id").autoincrement().primaryKey(),
   // Organizational hierarchy (redundant for easier querying)
   companyId: int("companyId").notNull(),
-  divisionId: int("divisionId").notNull(),
-  departmentId: int("departmentId").notNull(),
+  coDepartmentId: int("coDepartmentId").notNull(),
   companyTeamId: int("companyTeamId"),
   // Polymorphic referral source
   referralSourceId: int("referralSourceId"),
@@ -278,7 +292,6 @@ export const sessions = mysqlTable("sessions", {
 export const companyTemplates = mysqlTable("companyTemplates", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
   // Store the template structure as JSON
   templateData: json("templateData").notNull(), // { divisions: [{name, desc, departments: [{name, desc, teams: [{name, desc}]}]}] }
   createdBy: int("createdBy").notNull(),
@@ -323,11 +336,8 @@ export type InsertStaff = typeof staff.$inferInsert;
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = typeof companies.$inferInsert;
 
-export type Division = typeof divisions.$inferSelect;
-export type InsertDivision = typeof divisions.$inferInsert;
-
-export type Department = typeof departments.$inferSelect;
-export type InsertDepartment = typeof departments.$inferInsert;
+export type CoDepartment = typeof coDepartments.$inferSelect;
+export type InsertCoDepartment = typeof coDepartments.$inferInsert;
 
 export type FSM = typeof fsms.$inferSelect;
 export type InsertFSM = typeof fsms.$inferInsert;

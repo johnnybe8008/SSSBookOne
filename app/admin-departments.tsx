@@ -202,9 +202,6 @@ export default function AdminDepartmentsScreen() {
                       <Text className="text-sm text-primary mt-1">{company.name} → {division.name}</Text>
                     )}
                     <Text className="text-xs text-muted mt-1">ID: {department.id} | Code: {department.code}</Text>
-                    {department.description && (
-                      <Text className="text-sm text-muted mt-1">{department.description}</Text>
-                    )}
                   </View>
                   {!isGlobalMode && (
                     <TouchableOpacity

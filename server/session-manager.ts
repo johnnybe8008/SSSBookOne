@@ -17,11 +17,13 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
  * Create a new session token for a staff
  */
 export async function createSession(staffId: number) {
+    console.log('[createSession][DEBUG] Called for staffId:', staffId);
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   // Enforce one session per staff: delete all existing sessions for this staffId
   console.log('[createSession] Deleting existing sessions for staffId:', staffId);
   await db.delete(authSessions).where(eq(authSessions.staffId, staffId));
+    console.log('[createSession][DEBUG] Deleted existing sessions for staffId:', staffId);
   // Generate a secure random token
   const token = crypto.randomBytes(32).toString("base64url");
   // Set expiration to 1 year from now
@@ -33,6 +35,7 @@ export async function createSession(staffId: number) {
     token,
     expiresAt,
   });
+  console.log('[createSession][DEBUG] Inserted new session for staffId:', staffId, 'token:', token, 'expiresAt:', expiresAt);
   return token;
 }
 
@@ -80,10 +83,12 @@ export async function validateSessionToken(token: string): Promise<any> {
  * Delete a session (logout)
  */
 export async function deleteSession(token: string): Promise<void> {
+    console.log('[deleteSession][DEBUG] Called for token:', token);
   const db = await getDb();
   if (!db) return;
 
   await db.delete(authSessions).where(eq(authSessions.token, token));
+  console.log('[deleteSession][DEBUG] Deleted session for token:', token);
 }
 
 /**

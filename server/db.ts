@@ -1,3 +1,37 @@
+// Update a company team by ID
+export async function updateCompanyTeam(id, data) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(companyTeams)
+    .set(updateData)
+    .where(eq(companyTeams.id, id));
+  return { success: true };
+}
+// Update a company by ID
+export async function updateCompany(id, data) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(companies)
+    .set(updateData)
+    .where(eq(companies.id, id));
+  return { success: true };
+}
+// Fetch user by OpenId
+export async function getUserByOpenId(openId) {
+  const db = await getDb();
+  const [user] = await db.select().from(staff).where(eq(staff.openId, openId)).limit(1);
+  return user || null;
+}
+// Create a new company team (client organization team)
+export async function createCompanyTeam(input) {
+  const db = await getDb();
+  // Remove id if present, as it should be auto-incremented
+  const { id, ...data } = input;
+  console.log('[DEBUG createCompanyTeam] mutation payload:', data);
+  const [result] = await db.insert(companyTeams).values(data);
+  return result;
+}
+// Create a new client department (coDepartment)
 // Update an organization by ID
 // Update a staff department by ID
 export async function updateStaffDepartment(id, data) {
@@ -74,7 +108,15 @@ export async function updateStaff(id, data) {
 }
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { organizations, staffDepartments, teams, staff } from "../drizzle/schema";
+import { organizations, staffDepartments, teams, staff, companies, divisions, departments, companyTeams } from "../drizzle/schema";
+// Create a new client company
+export async function createCompany(input) {
+  const db = await getDb();
+  // Remove id if present, as it should be auto-incremented
+  const { id, ...data } = input;
+  const [result] = await db.insert(companies).values(data);
+  return result;
+}
 // Create a new team
 export async function createTeam(input) {
   const db = await getDb();
@@ -135,7 +177,101 @@ export async function getTeamsByOrganizationId(organizationId: number) {
   }
   return db.select().from(teams).where(eq(teams.organizationId, organizationId)).orderBy(teams.name);
 }
-import { eq } from "drizzle-orm";
+
+// Add missing getAllDivisions, getAllDepartments, getAllCompanyTeams functions
+export async function getAllDivisions() {
+  const db = await getDb();
+  return db.select().from(divisions).orderBy(divisions.name);
+}
+
+export async function getAllDepartments() {
+  const db = await getDb();
+  return db.select().from(departments).orderBy(departments.name);
+}
+
+export async function getAllCompanyTeams() {
+  const db = await getDb();
+  return db.select().from(companyTeams).orderBy(companyTeams.name);
+}
+
+// Add getAllCompanies function
+export async function getAllCompanies() {
+  const db = await getDb();
+  return db.select().from(companies).orderBy(companies.name);
+}
+
+// --- CLIENT ORGS DB FUNCTIONS ---
+// Fetch divisions by companyId
+export async function getDivisionsByCompanyId(companyId: number) {
+  const db = await getDb();
+  if (companyId === 0) {
+    return db.select().from(divisions).orderBy(divisions.name);
+  }
+  return db.select().from(divisions).where(eq(divisions.companyId, companyId)).orderBy(divisions.name);
+}
+
+// Fetch departments by divisionId
+export async function getDepartmentsByDivisionId(divisionId: number) {
+  const db = await getDb();
+  if (divisionId === 0) {
+    return db.select().from(departments).orderBy(departments.name);
+  }
+  return db.select().from(departments).where(eq(departments.divisionId, divisionId)).orderBy(departments.name);
+}
+
+// Fetch company teams by departmentId
+export async function getCompanyTeamsByDepartmentId(departmentId: number) {
+  const db = await getDb();
+  if (departmentId === 0) {
+    return db.select().from(companyTeams).orderBy(companyTeams.name);
+  }
+  return db.select().from(companyTeams).where(eq(companyTeams.departmentId, departmentId)).orderBy(companyTeams.name);
+}
+
+// --- coDepartments DB FUNCTIONS ---
+import { coDepartments } from "../drizzle/schema";
+
+export async function getCoDepartmentsByCompanyId(companyId: number) {
+  const db = await getDb();
+  if (companyId === 0) {
+    return db.select().from(coDepartments).orderBy(coDepartments.name);
+  }
+  return db.select().from(coDepartments).where(eq(coDepartments.companyId, companyId)).orderBy(coDepartments.name);
+}
+
+export async function getAllCoDepartments() {
+  const db = await getDb();
+  return db.select().from(coDepartments).orderBy(coDepartments.name);
+}
+
+export async function getCoDepartmentById(id: number) {
+  const db = await getDb();
+  const [dept] = await db.select().from(coDepartments).where(eq(coDepartments.id, id)).limit(1);
+  return dept || null;
+}
+
+export async function createCoDepartment(input) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  console.log('[DEBUG createCoDepartment] mutation payload:', data);
+  const [result] = await db.insert(coDepartments).values(data);
+  return result;
+}
+
+export async function updateCoDepartment(id, data) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(coDepartments)
+    .set(updateData)
+    .where(eq(coDepartments.id, id));
+  return { success: true };
+}
+
+export async function deleteCoDepartment(id, organizationId) {
+  const db = await getDb();
+  await db.delete(coDepartments).where(eq(coDepartments.id, id));
+  return { success: true };
+}
 
 let _db = null;
 

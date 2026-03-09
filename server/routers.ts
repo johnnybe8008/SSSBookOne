@@ -263,17 +263,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .query(({ input }) => db.getStaffDepartmentById(input.id)),
     // Temporary public endpoint for debugging
-    publicAll: publicProcedure.query(async () => {
-      const all = await db.getStaffDepartmentsByOrganizationId(0);
-      console.log('[tRPC][staffDepartments.publicAll] returning', all.length, 'departments:', all);
-      return all;
-    }),
     // Return all departments across all orgs
-    all: protectedProcedure.query(async () => {
-      const all = await db.getStaffDepartmentsByOrganizationId(0);
-      console.log('[tRPC][staffDepartments.all] returning', all.length, 'departments:', all);
-      return all;
-    }),
     create: adminOnlyProcedure
       .input(
         z.object({
@@ -307,6 +297,7 @@ export const appRouter = router({
         console.log('[tRPC][staffDepartments.delete] called with', input);
         return db.deleteStaffDepartment(input.id, input.organizationId);
       }),
+      // Duplicate keys removed: publicAll, all
     // Temporary public endpoint for debugging
     publicAll: publicProcedure.query(async () => {
       const all = await db.getStaffDepartmentsByOrganizationId(0);
@@ -465,22 +456,6 @@ export const appRouter = router({
           contactPerson: z.string().max(255).optional(),
           divisionId: z.number().optional(),
           departmentId: z.number().optional(),
-      update: adminOnlyProcedure
-        .input(
-          z.object({
-            id: z.number(),
-            name: z.string().min(1).max(255).optional(),
-            description: z.string().optional(),
-            address: z.string().optional(),
-            phone: z.string().optional(),
-            email: z.string().optional(),
-            updatedBy: z.number(),
-          })
-        )
-        .mutation(({ input }) => {
-          const { id, ...data } = input;
-          return db.updateStaffDepartment(id, data);
-        }),
           updatedBy: z.number(),
         })
       )
@@ -563,6 +538,40 @@ export const appRouter = router({
     delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteDepartment(input.id)),
   }),
 
+  coDepartments: router({
+    list: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(({ input }) => db.getCoDepartmentsByCompanyId(input.companyId)),
+    all: protectedProcedure.query(() => db.getAllCoDepartments()),
+    get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getCoDepartmentById(input.id)),
+    create: adminOnlyProcedure
+      .input(
+        z.object({
+          companyId: z.number(),
+          name: z.string().min(1).max(255),
+          createdBy: z.number(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => db.createCoDepartment(input)),
+    update: adminOnlyProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).max(255).optional(),
+          description: z.string().optional(),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().optional(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => {
+        const { id, ...data } = input;
+        return db.updateCoDepartment(id, data);
+      }),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number(), companyId: z.number().optional() })).mutation(({ input }) => db.deleteCoDepartment(input.id, input.companyId)),
+  }),
   companyTeams: router({
     listAll: protectedProcedure.query(() => db.getAllCompanyTeams()),
     all: protectedProcedure.query(() => db.getAllCompanyTeams()),
@@ -571,7 +580,8 @@ export const appRouter = router({
     create: adminOnlyProcedure
       .input(
         z.object({
-          departmentId: z.number(),
+          coDepartmentId: z.number(), // PATCHED: use coDepartmentId for consistency
+          companyId: z.number(), // Ensure companyId is passed for team creation
           name: z.string().min(1).max(255),
           address: z.string().optional(),
           phone: z.string().max(50).optional(),

@@ -1,12 +1,10 @@
 import { getDb } from "./db";
 import { 
   companies, 
-  divisions, 
-  departments, 
+  coDepartments, 
   companyTeams,
   type InsertCompany,
-  type InsertDivision,
-  type InsertDepartment,
+  type InsertCoDepartment,
   type InsertCompanyTeam
 } from "../drizzle/schema";
 import { sql } from "drizzle-orm";
@@ -16,8 +14,8 @@ export interface CSVImportRow {
   companyAddress?: string;
   companyPhone?: string;
   companyEmail?: string;
-  divisionName?: string;
-  divisionDescription?: string;
+  departmentName?: string;
+  departmentDescription?: string;
   departmentName?: string;
   departmentDescription?: string;
   teamName?: string;
@@ -29,7 +27,6 @@ export interface ImportResult {
   message: string;
   stats?: {
     companiesCreated: number;
-    divisionsCreated: number;
     departmentsCreated: number;
     teamsCreated: number;
   };
@@ -70,8 +67,7 @@ export async function importOrganizationalCSV(
   try {
     // Track created entities to avoid duplicates
     const companyMap = new Map<string, number>(); // name -> id
-    const divisionMap = new Map<string, number>(); // companyName:divisionName -> id
-    const departmentMap = new Map<string, number>(); // divisionKey:departmentName -> id
+    const departmentMap = new Map<string, number>(); // companyName:departmentName -> id
 
     // Pre-load existing companies to avoid duplicates
     const existingCompanies: any = await db.select().from(companies);
@@ -79,24 +75,12 @@ export async function importOrganizationalCSV(
       companyMap.set(company.name, company.id);
     }
 
-    // Pre-load existing divisions
-    const existingDivisions: any = await db.select().from(divisions);
-    for (const division of existingDivisions) {
-      const company = existingCompanies.find((c: any) => c.id === division.companyId);
-      if (company) {
-        divisionMap.set(`${company.name}:${division.name}`, division.id);
-      }
-    }
-
     // Pre-load existing departments
-    const existingDepartments: any = await db.select().from(departments);
+    const existingDepartments: any = await db.select().from(coDepartments);
     for (const department of existingDepartments) {
-      const division = existingDivisions.find((d: any) => d.id === department.divisionId);
-      if (division) {
-        const company = existingCompanies.find((c: any) => c.id === division.companyId);
-        if (company) {
-          departmentMap.set(`${company.name}:${division.name}:${department.name}`, department.id);
-        }
+      const company = existingCompanies.find((c: any) => c.id === department.companyId);
+      if (company) {
+        departmentMap.set(`${company.name}:${department.name}`, department.id);
       }
     }
 
@@ -133,98 +117,59 @@ export async function importOrganizationalCSV(
         continue;
       }
 
-      // Create division if specified
-      if (row.divisionName && row.divisionName.trim() !== "") {
-        const divisionKey = `${row.companyName}:${row.divisionName}`;
-        let divisionId: number | undefined = divisionMap.get(divisionKey);
-        
-        if (!divisionId) {
+      // Create department if specified
+      if (row.departmentName && row.departmentName.trim() !== "") {
+        const departmentKey = `${row.companyName}:${row.departmentName}`;
+        let departmentId: number | undefined = departmentMap.get(departmentKey);
+        if (!departmentId) {
           // Generate unique code
           const codeResult: any = await db.execute(
-            sql`SELECT MAX(CAST(SUBSTRING(code, 5) AS UNSIGNED)) as maxNum FROM divisions WHERE code LIKE 'DIV-%'`
+            sql`SELECT MAX(CAST(SUBSTRING(code, 6) AS UNSIGNED)) as maxNum FROM coDepartments WHERE code LIKE 'DEPT-%'`
           );
           const maxNum = codeResult[0]?.[0]?.maxNum || 0;
-          const code = `DIV-${String(maxNum + 1).padStart(3, '0')}`;
-
-          const result: any = await db.insert(divisions).values({
+          const code = `DEPT-${String(maxNum + 1).padStart(3, '0')}`;
+          const result: any = await db.insert(coDepartments).values({
             companyId,
             code,
-            name: row.divisionName.trim(),
-            description: row.divisionDescription?.trim() || '',
+            name: row.departmentName.trim(),
+            description: row.departmentDescription?.trim() || '',
             createdBy: userId,
             updatedBy: userId
           });
-          divisionId = result[0].insertId;
-          stats.divisionsCreated++;
-          if (divisionId) {
-            divisionMap.set(divisionKey, divisionId);
+          departmentId = result[0].insertId;
+          stats.departmentsCreated++;
+          if (departmentId) {
+            departmentMap.set(departmentKey, departmentId);
           }
         }
-
-        if (!divisionId) {
-          errors.push(`Row ${rowNum}: Failed to create or find division`);
+        if (!departmentId) {
+          errors.push(`Row ${rowNum}: Failed to create or find department`);
           continue;
         }
-
-        // Create department if specified
-        if (row.departmentName && row.departmentName.trim() !== "") {
-          const departmentKey = `${divisionKey}:${row.departmentName}`;
-          let departmentId: number | undefined = departmentMap.get(departmentKey);
-          
-          if (!departmentId) {
-            // Generate unique code
-            const codeResult: any = await db.execute(
-              sql`SELECT MAX(CAST(SUBSTRING(code, 6) AS UNSIGNED)) as maxNum FROM departments WHERE code LIKE 'DEPT-%'`
-            );
-            const maxNum = codeResult[0]?.[0]?.maxNum || 0;
-            const code = `DEPT-${String(maxNum + 1).padStart(3, '0')}`;
-
-            const result: any = await db.insert(departments).values({
-              divisionId,
-              code,
-              name: row.departmentName.trim(),
-              description: row.departmentDescription?.trim() || '',
-              createdBy: userId,
-              updatedBy: userId
-            });
-            departmentId = result[0].insertId;
-            stats.departmentsCreated++;
-            if (departmentId) {
-              departmentMap.set(departmentKey, departmentId);
-            }
-          }
-
-          if (!departmentId) {
-            errors.push(`Row ${rowNum}: Failed to create or find department`);
-            continue;
-          }
-
-          // Create company team if specified
-          if (row.teamName && row.teamName.trim() !== "") {
-            // Generate unique code
-            const codeResult: any = await db.execute(
-              sql`SELECT MAX(CAST(SUBSTRING(code, 7) AS UNSIGNED)) as maxNum FROM companyTeams WHERE code LIKE 'CTEAM-%'`
-            );
-            const maxNum = codeResult[0]?.[0]?.maxNum || 0;
-            const code = `CTEAM-${String(maxNum + 1).padStart(3, '0')}`;
-
-            await db.insert(companyTeams).values({
-              departmentId,
-              code,
-              name: row.teamName.trim(),
-              description: row.teamDescription?.trim() || '',
-              createdBy: userId,
-              updatedBy: userId
-            });
-            stats.teamsCreated++;
-          }
+        // Create company team if specified
+        if (row.teamName && row.teamName.trim() !== "") {
+          // Generate unique code
+          const codeResult: any = await db.execute(
+            sql`SELECT MAX(CAST(SUBSTRING(code, 7) AS UNSIGNED)) as maxNum FROM companyTeams WHERE code LIKE 'CTEAM-%'`
+          );
+          const maxNum = codeResult[0]?.[0]?.maxNum || 0;
+          const code = `CTEAM-${String(maxNum + 1).padStart(3, '0')}`;
+          await db.insert(companyTeams).values({
+            departmentId,
+            code,
+            name: row.teamName.trim(),
+            description: row.teamDescription?.trim() || '',
+            createdBy: userId,
+            updatedBy: userId
+          });
+          stats.teamsCreated++;
         }
       }
     }
 
     return {
       success: true,
-      message: `Import completed successfully. Created ${stats.companiesCreated} companies, ${stats.divisionsCreated} divisions, ${stats.departmentsCreated} departments, and ${stats.teamsCreated} teams.`,
+      message: `Import completed successfully. Created ${stats.companiesCreated} companies, ${stats.departmentsCreated} departments, and ${stats.teamsCreated} teams.`,
       stats,
       errors: errors.length > 0 ? errors : undefined
     };

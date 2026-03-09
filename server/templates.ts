@@ -1,25 +1,18 @@
 import { getDb } from "./db";
 import { 
   companies,
-  divisions, 
-  departments, 
+  coDepartments, 
   companyTeams,
   companyTemplates,
   type InsertCompanyTemplate
 } from "../drizzle/schema";
-import { eq, sql } from "drizzle-orm";
 
 export interface TemplateStructure {
-  divisions: Array<{
+  departments: Array<{
     name: string;
-    description: string;
-    departments: Array<{
+    teams: Array<{
       name: string;
       description: string;
-      teams: Array<{
-        name: string;
-        description: string;
-      }>;
     }>;
   }>;
 }
@@ -39,37 +32,20 @@ export async function saveCompanyAsTemplate(
   }
 
   try {
-    // Fetch all divisions for this company
-    const companyDivisions: any[] = await db.select().from(divisions).where(eq(divisions.companyId, companyId));
-    
+    // Fetch all departments for this company
+    const companyDepartments: any[] = await db.select().from(coDepartments).where(eq(coDepartments.companyId, companyId));
     const templateStructure: TemplateStructure = {
-      divisions: []
+      departments: []
     };
-
-    // For each division, fetch departments and teams
-    for (const division of companyDivisions) {
-      const divisionDepartments: any[] = await db.select().from(departments).where(eq(departments.divisionId, division.id));
-      
-      const divisionData: any = {
-        name: division.name,
-        description: division.description || '',
-        departments: []
-      };
-
-      for (const department of divisionDepartments) {
-        const departmentTeams: any[] = await db.select().from(companyTeams).where(eq(companyTeams.departmentId, department.id));
-        
-        divisionData.departments.push({
-          name: department.name,
-          description: department.description || '',
-          teams: departmentTeams.map(team => ({
-            name: team.name,
-            description: team.description || ''
-          }))
-        });
-      }
-
-      templateStructure.divisions.push(divisionData);
+    for (const department of companyDepartments) {
+      const departmentTeams: any[] = await db.select().from(companyTeams).where(eq(companyTeams.departmentId, department.id));
+      templateStructure.departments.push({
+        name: department.name,
+        teams: departmentTeams.map(team => ({
+          name: team.name,
+          description: team.description || ''
+        }))
+      });
     }
 
     // Save template
@@ -118,74 +94,47 @@ export async function applyTemplateToCompany(
     const structure: TemplateStructure = template.templateData;
 
     const stats = {
-      divisionsCreated: 0,
       departmentsCreated: 0,
       teamsCreated: 0
     };
-
     // Apply structure to company
-    for (const divisionData of structure.divisions) {
-      // Generate division code
-      const codeResult: any = await db.execute(
-        sql`SELECT MAX(CAST(SUBSTRING(code, 5) AS UNSIGNED)) as maxNum FROM divisions WHERE code LIKE 'DIV-%'`
+    for (const departmentData of structure.departments) {
+      const deptCodeResult: any = await db.execute(
+        sql`SELECT MAX(CAST(SUBSTRING(code, 6) AS UNSIGNED)) as maxNum FROM coDepartments WHERE code LIKE 'DEPT-%'`
       );
-      const maxNum = codeResult[0]?.[0]?.maxNum || 0;
-      const divisionCode = `DIV-${String(maxNum + 1 + stats.divisionsCreated).padStart(3, '0')}`;
-
-      const divisionResult: any = await db.insert(divisions).values({
+      const deptMaxNum = deptCodeResult[0]?.[0]?.maxNum || 0;
+      const departmentCode = `DEPT-${String(deptMaxNum + 1 + stats.departmentsCreated).padStart(3, '0')}`;
+      const departmentResult: any = await db.insert(coDepartments).values({
         companyId,
-        code: divisionCode,
-        name: divisionData.name,
-        description: divisionData.description,
+        code: departmentCode,
+        name: departmentData.name,
         createdBy: staffId,
         updatedBy: staffId
       });
-      const divisionId = divisionResult[0].insertId;
-      stats.divisionsCreated++;
-
-      // Create departments
-      for (const departmentData of divisionData.departments) {
-        const deptCodeResult: any = await db.execute(
-          sql`SELECT MAX(CAST(SUBSTRING(code, 6) AS UNSIGNED)) as maxNum FROM departments WHERE code LIKE 'DEPT-%'`
+      const departmentId = departmentResult[0].insertId;
+      stats.departmentsCreated++;
+      // Create teams
+      for (const teamData of departmentData.teams) {
+        const teamCodeResult: any = await db.execute(
+          sql`SELECT MAX(CAST(SUBSTRING(code, 7) AS UNSIGNED)) as maxNum FROM companyTeams WHERE code LIKE 'CTEAM-%'`
         );
-        const deptMaxNum = deptCodeResult[0]?.[0]?.maxNum || 0;
-        const departmentCode = `DEPT-${String(deptMaxNum + 1 + stats.departmentsCreated).padStart(3, '0')}`;
-
-        const departmentResult: any = await db.insert(departments).values({
-          divisionId,
-          code: departmentCode,
-          name: departmentData.name,
-          description: departmentData.description,
+        const teamMaxNum = teamCodeResult[0]?.[0]?.maxNum || 0;
+        const teamCode = `CTEAM-${String(teamMaxNum + 1 + stats.teamsCreated).padStart(3, '0')}`;
+        await db.insert(companyTeams).values({
+          departmentId,
+          code: teamCode,
+          name: teamData.name,
+          description: teamData.description,
           createdBy: staffId,
           updatedBy: staffId
         });
-        const departmentId = departmentResult[0].insertId;
-        stats.departmentsCreated++;
-
-        // Create teams
-        for (const teamData of departmentData.teams) {
-          const teamCodeResult: any = await db.execute(
-            sql`SELECT MAX(CAST(SUBSTRING(code, 7) AS UNSIGNED)) as maxNum FROM companyTeams WHERE code LIKE 'CTEAM-%'`
-          );
-          const teamMaxNum = teamCodeResult[0]?.[0]?.maxNum || 0;
-          const teamCode = `CTEAM-${String(teamMaxNum + 1 + stats.teamsCreated).padStart(3, '0')}`;
-
-          await db.insert(companyTeams).values({
-            departmentId,
-            code: teamCode,
-            name: teamData.name,
-            description: teamData.description,
-            createdBy: staffId,
-            updatedBy: staffId
-          });
-          stats.teamsCreated++;
-        }
+        stats.teamsCreated++;
       }
     }
 
     return {
       success: true,
-      message: `Template applied successfully. Created ${stats.divisionsCreated} divisions, ${stats.departmentsCreated} departments, and ${stats.teamsCreated} teams.`,
+      message: `Template applied successfully. Created ${stats.departmentsCreated} departments and ${stats.teamsCreated} teams.`,
       stats
     };
   } catch (error: any) {

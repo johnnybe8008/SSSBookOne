@@ -198,6 +198,8 @@ export default function MoreScreen() {
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>
 
+            {/* Removed Manage Client Companies tab item */}
+
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
               onPress={() => router.push("/admin-staff-bulk-reassign" as any)}
