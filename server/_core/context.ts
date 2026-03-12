@@ -2,6 +2,7 @@ import type { CreateExpressContextOptions } from "@trpc/server/adapters/express"
 import type { Staff } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 import { validateSessionToken } from "../session-manager";
+import { COOKIE_NAME } from "../../shared/const.js";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -35,18 +36,17 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
       }
       // Debug log: print cookies and session token
       if (!user && opts.req.cookies) {
-        const sessionToken = opts.req.cookies['session_token'];
+        const sessionToken =
+          opts.req.cookies["session_token"] ||
+          opts.req.cookies[COOKIE_NAME] ||
+          opts.req.cookies["app_session_id"];
         console.log('[DEBUG][CONTEXT] Session token from cookie:', sessionToken);
         if (sessionToken) {
           user = await validateSessionToken(sessionToken);
           console.log('[DEBUG][CONTEXT] validateSessionToken (cookie):', sessionToken, user);
         }
       }
-      // If no user and no session token, force login
-      if (!user) {
-        // Custom error for frontend to detect and redirect
-        throw Object.assign(new Error('Session expired. Please log in again.'), { code: 'SESSION_EXPIRED' });
-      }
+      // If no user is found, return unauthenticated context and let protectedProcedure handle it.
     }
   }
 

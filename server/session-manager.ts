@@ -2,7 +2,7 @@
 import crypto from "crypto";
 import { getDb } from "./db";
 import { authSessions, staff } from "../drizzle/schema";
-import { eq, and, gt, lt } from "drizzle-orm";
+import { eq, and, gt, lt, sql } from "drizzle-orm";
 
 /**
  * Session Management for Email/Password Authentication
@@ -48,19 +48,41 @@ export async function validateSessionToken(token: string): Promise<any> {
     console.error('[validateSessionToken] getDb() returned null');
     return null;
   }
-  // Find session that matches token and hasn't expired
   const now = new Date();
   console.log('[validateSessionToken][DEBUG] Checking token:', JSON.stringify(token), 'now:', now.toISOString());
-  const [session] = await db
-    .select()
-    .from(authSessions)
-    .where(
-      and(
-        eq(authSessions.token, token),
-        gt(authSessions.expiresAt, now)
+
+  let session: any = null;
+  try {
+    // Preferred schema: authSessions.staffId
+    const [row] = await db
+      .select()
+      .from(authSessions)
+      .where(
+        and(
+          eq(authSessions.token, token),
+          gt(authSessions.expiresAt, now)
+        )
       )
-    )
-    .limit(1);
+      .limit(1);
+    session = row || null;
+  } catch (primaryError) {
+    console.warn('[validateSessionToken][WARN] Primary authSessions query failed, trying legacy userId fallback:', primaryError);
+    try {
+      // Legacy schema fallback: authSessions.userId
+      const legacyRows: any = await db.execute(sql`
+        SELECT id, userId AS staffId, token, expiresAt, createdAt
+        FROM authSessions
+        WHERE token = ${token} AND expiresAt > ${now}
+        LIMIT 1
+      `);
+      const rows = (legacyRows as any)?.rows || legacyRows;
+      session = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+    } catch (legacyError) {
+      console.error('[validateSessionToken][ERROR] Legacy authSessions query also failed:', legacyError);
+      return null;
+    }
+  }
+
   console.log('[validateSessionToken][DEBUG] Query result:', { token, now: now.toISOString(), session });
   if (!session) {
     console.error(`[validateSessionToken][DEBUG] No valid session found for token: ${token}`);

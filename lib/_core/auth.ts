@@ -32,10 +32,17 @@ export type Staff = {
 export async function getSessionToken(): Promise<string | null> {
   try {
     if (Platform.OS === "web") {
-      // Read session_token from cookies
-      const match = document.cookie.match(/(?:^|; )session_token=([^;]*)/);
-      const token = match ? decodeURIComponent(match[1]) : null;
-      return token;
+      // Prefer explicit storage first, then cookie fallbacks.
+      const stored = window.localStorage.getItem(SESSION_TOKEN_KEY);
+      if (stored) return stored;
+
+      const matchSessionToken = document.cookie.match(/(?:^|; )session_token=([^;]*)/);
+      if (matchSessionToken) return decodeURIComponent(matchSessionToken[1]);
+
+      const matchAppSession = document.cookie.match(/(?:^|; )app_session_id=([^;]*)/);
+      if (matchAppSession) return decodeURIComponent(matchAppSession[1]);
+
+      return null;
     }
     // Use SecureStore for native
     const token = await SecureStore.getItemAsync(SESSION_TOKEN_KEY);
@@ -52,9 +59,9 @@ export async function getSessionToken(): Promise<string | null> {
 
 export async function setSessionToken(token: string): Promise<void> {
   try {
-    // Web platform uses cookie-based auth, no manual token management needed
     if (Platform.OS === "web") {
-      console.log("[Auth] Web platform uses cookie-based auth, skipping token storage");
+      // Keep a local copy so Authorization header can still be sent when cookie access is restricted.
+      window.localStorage.setItem(SESSION_TOKEN_KEY, token);
       return;
     }
 
@@ -70,9 +77,8 @@ export async function setSessionToken(token: string): Promise<void> {
 
 export async function removeSessionToken(): Promise<void> {
   try {
-    // Web platform uses cookie-based auth, logout is handled by server clearing cookie
     if (Platform.OS === "web") {
-      console.log("[Auth] Web platform uses cookie-based auth, skipping token removal");
+      window.localStorage.removeItem(SESSION_TOKEN_KEY);
       return;
     }
 

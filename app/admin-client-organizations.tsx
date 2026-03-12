@@ -13,13 +13,14 @@ export default function AdmincompaniesScreen() {
       // State for Company form data
       const [formData, setFormData] = useState({
         name: '',
-        address: '',
+        addressLine1: '',
+        city: '',
+        stateProvince: '',
+        postalCode: '',
         email: '',
         phone: '',
         website: '',
-        contactPerson: '',
-        divisionId: '',
-        departmentId: ''
+        contactPerson: ''
       });
       // Auth context (provides Client)
       const { staff } = useAuth();
@@ -150,6 +151,13 @@ export default function AdmincompaniesScreen() {
   const filteredOrgs = (companies ?? []).filter((org: Company) =>
     org.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const formatCompactAddress = (item: any) => {
+    const line1 = item.addressLine1 || item.address || "";
+    const cityStatePostal = [item.city, item.stateProvince, item.postalCode].filter(Boolean).join(" ");
+    if (line1 && cityStatePostal) return `${line1}, ${cityStatePostal}`;
+    return line1 || cityStatePostal || "No address";
+  };
 
   const { data: allDepartments = [] } = trpc.coDepartments.list.useQuery(
     editingOrg?.id ? { companyId: Number(editingOrg.id) } : { companyId: -1 },
@@ -304,13 +312,14 @@ export default function AdmincompaniesScreen() {
     setEditingOrg(org);
     setFormData({
       name: org.name || '',
-      address: org.address || '',
+      addressLine1: (org as any).addressLine1 || org.address || '',
+      city: (org as any).city || '',
+      stateProvince: (org as any).stateProvince || '',
+      postalCode: (org as any).postalCode || '',
       email: org.email || '',
       phone: org.phone || '',
       website: org.website || '',
-      contactPerson: org.contactPerson || '',
-      divisionId: org.divisionId || '',
-      departmentId: org.departmentId || ''
+      contactPerson: org.contactPerson || ''
     });
     setModalVisible(true);
   };
@@ -347,7 +356,7 @@ export default function AdmincompaniesScreen() {
       }, 100);
       // console.log('[DEBUG] setModalVisible(false) called after org create');
       setEditingOrg(null);
-      setFormData({ name: '', address: '', email: '', phone: '' });
+      setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '', website: '', contactPerson: '' });
       setFormError('');
       setSearchQuery("");
       utils?.companies?.list?.invalidate?.();
@@ -371,7 +380,7 @@ export default function AdmincompaniesScreen() {
       // console.log('[UPDATE ORG SUCCESS]', data);
       setModalVisible(false);
       setEditingOrg(null);
-      setFormData({ name: '', address: '', email: '', phone: '' });
+      setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '', website: '', contactPerson: '' });
       setFormError('');
       setSearchQuery("");
       utils?.companies?.list?.invalidate?.();
@@ -428,13 +437,14 @@ export default function AdmincompaniesScreen() {
         const payload = {
           id: editingOrg.id,
           name: formData.name,
-          address: formData.address,
+          addressLine1: formData.addressLine1,
+          city: formData.city,
+          stateProvince: formData.stateProvince,
+          postalCode: formData.postalCode,
           email: formData.email,
           phone: formData.phone,
           website: formData.website,
           contactPerson: formData.contactPerson,
-          divisionId: formData.divisionId ? Number(formData.divisionId) : undefined,
-          departmentId: formData.departmentId ? Number(formData.departmentId) : undefined,
           updatedBy: staff.id
         };
         console.log('[DEBUG] companies.update payload:', payload);
@@ -512,7 +522,7 @@ export default function AdmincompaniesScreen() {
 
         setModalVisible(false);
         setEditingOrg(null);
-        setFormData({ name: '', address: '', email: '', phone: '' });
+        setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '', website: '', contactPerson: '', divisionId: '', departmentId: '' });
         setFormError('');
         setSearchQuery("");
         utils?.companies?.list?.invalidate?.();
@@ -522,7 +532,12 @@ export default function AdmincompaniesScreen() {
       // 1. Create org, then 2. create departments, then 3. create teams
       await new Promise<void>(async (resolve, reject) => {
         try {
-          const orgResult = await createOrgMutation.mutateAsync({ ...formData, createdBy: staff.id, updatedBy: staff.id });
+          const createPayload = {
+            ...formData,
+            createdBy: staff.id,
+            updatedBy: staff.id,
+          };
+          const orgResult = await createOrgMutation.mutateAsync(createPayload);
           const orgId = orgResult?.insertId || orgResult?.id;
           if (!orgId) {
             setFormError('Missing Company context (companyId is undefined)');
@@ -569,7 +584,7 @@ export default function AdmincompaniesScreen() {
           setPendingTeams([]);
           setModalVisible(false);
           setEditingOrg(null);
-          setFormData({ name: '', address: '', email: '', phone: '' });
+          setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '', website: '', contactPerson: '' });
           setFormError('');
           setSearchQuery("");
           utils?.companies?.list?.invalidate?.();
@@ -639,7 +654,7 @@ export default function AdmincompaniesScreen() {
         <TouchableOpacity
           onPress={() => {
             setEditingOrg(null);
-            setFormData({ name: '', address: '', email: '', phone: '' });
+            setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '', website: '', contactPerson: '' });
             setPendingDepartments([]);
             setPendingTeams([]);
             setModalVisible(true);
@@ -672,18 +687,6 @@ export default function AdmincompaniesScreen() {
             placeholder="Contact Person"
             value={formData.contactPerson}
             onChangeText={text => setFormData(prev => ({ ...prev, contactPerson: text }))}
-          />
-          <TextInput
-            style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 8 }}
-            placeholder="Division ID"
-            value={formData.divisionId}
-            onChangeText={text => setFormData(prev => ({ ...prev, divisionId: text }))}
-          />
-          <TextInput
-            style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 8 }}
-            placeholder="Department ID"
-            value={formData.departmentId}
-            onChangeText={text => setFormData(prev => ({ ...prev, departmentId: text }))}
           />
         </View>
       )}
@@ -719,7 +722,7 @@ export default function AdmincompaniesScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 2 }}>{item.name}</Text>
                   <Text style={{ color: '#666', fontSize: 14, marginBottom: 2 }}>
-                    {item.address ? item.address.split("\n")[0] : "No address"}
+                    {formatCompactAddress(item)}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                     <Text
@@ -783,15 +786,44 @@ export default function AdmincompaniesScreen() {
             placeholderTextColor={colors.muted}
           />
           {/* Address */}
-          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Address</Text>
+          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Address Line 1</Text>
           <TextInput
             style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 }}
-            placeholder="Address"
-            value={formData.address}
-            onChangeText={(text: string) => setFormData({ ...formData, address: text })}
+            placeholder="Address line 1"
+            value={formData.addressLine1}
+            onChangeText={(text: string) => setFormData({ ...formData, addressLine1: text })}
             placeholderTextColor={colors.muted}
-            multiline
           />
+          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>City</Text>
+          <TextInput
+            style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 }}
+            placeholder="City"
+            value={formData.city}
+            onChangeText={(text: string) => setFormData({ ...formData, city: text })}
+            placeholderTextColor={colors.muted}
+          />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>State/Province</Text>
+              <TextInput
+                style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 }}
+                placeholder="State/Province"
+                value={formData.stateProvince}
+                onChangeText={(text: string) => setFormData({ ...formData, stateProvince: text })}
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Zip/Postal Code</Text>
+              <TextInput
+                style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 }}
+                placeholder="Zip/Postal"
+                value={formData.postalCode}
+                onChangeText={(text: string) => setFormData({ ...formData, postalCode: text })}
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+          </View>
           {/* Email */}
           <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Email</Text>
           <TextInput

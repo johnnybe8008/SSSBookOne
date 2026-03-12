@@ -10,7 +10,7 @@ import type { Organization, StaffDepartment, Team } from '../drizzle/schema';
 
 export default function AdminOrganizationsScreen() {
       // State for organization form data
-      const [formData, setFormData] = useState({ name: '', address: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '' });
       // Auth context (provides staff)
       const { staff } = useAuth();
       // tRPC utils (for cache invalidation)
@@ -140,6 +140,13 @@ export default function AdminOrganizationsScreen() {
   const filteredOrgs = (organizations ?? []).filter((org: Organization) =>
     org.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const formatCompactAddress = (item: any) => {
+    const line1 = item.addressLine1 || item.address || "";
+    const cityStatePostal = [item.city, item.stateProvince, item.postalCode].filter(Boolean).join(" ");
+    if (line1 && cityStatePostal) return `${line1}, ${cityStatePostal}`;
+    return line1 || cityStatePostal || "No address";
+  };
 
   const { data: allDepartments = [] } = trpc.staffDepartments.list.useQuery(
     editingOrg?.id ? { organizationId: Number(editingOrg.id) } : { organizationId: -1 },
@@ -290,7 +297,10 @@ export default function AdminOrganizationsScreen() {
     setEditingOrg(org);
     setFormData({
       name: org.name || '',
-      address: org.address || '',
+      addressLine1: (org as any).addressLine1 || org.address || '',
+      city: (org as any).city || '',
+      stateProvince: (org as any).stateProvince || '',
+      postalCode: (org as any).postalCode || '',
       email: org.email || '',
       phone: org.phone || '',
     });
@@ -327,7 +337,7 @@ export default function AdminOrganizationsScreen() {
       }, 100);
       console.log('[DEBUG] setModalVisible(false) called after org create');
       setEditingOrg(null);
-      setFormData({ name: '', address: '', email: '', phone: '' });
+      setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '' });
       setFormError('');
       setSearchQuery("");
       utils?.organizations?.list?.invalidate?.();
@@ -351,7 +361,7 @@ export default function AdminOrganizationsScreen() {
       console.log('[UPDATE ORG SUCCESS]', data);
       setModalVisible(false);
       setEditingOrg(null);
-      setFormData({ name: '', address: '', email: '', phone: '' });
+      setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '' });
       setFormError('');
       setSearchQuery("");
       utils?.organizations?.list?.invalidate?.();
@@ -488,7 +498,7 @@ export default function AdminOrganizationsScreen() {
         }
         setModalVisible(false);
         setEditingOrg(null);
-        setFormData({ name: '', address: '', email: '', phone: '' });
+        setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '' });
         setFormError('');
         setSearchQuery("");
         utils?.organizations?.list?.invalidate?.();
@@ -545,7 +555,7 @@ export default function AdminOrganizationsScreen() {
           setPendingTeams([]);
           setModalVisible(false);
           setEditingOrg(null);
-          setFormData({ name: '', address: '', email: '', phone: '' });
+          setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '' });
           setFormError('');
           setSearchQuery("");
           utils?.organizations?.list?.invalidate?.();
@@ -615,7 +625,7 @@ export default function AdminOrganizationsScreen() {
         <TouchableOpacity
           onPress={() => {
             setEditingOrg(null);
-            setFormData({ name: '', address: '', email: '', phone: '' });
+            setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '' });
             setPendingDepartments([]);
             setPendingTeams([]);
             setModalVisible(true);
@@ -666,7 +676,7 @@ export default function AdminOrganizationsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 2 }}>{item.name}</Text>
                   <Text style={{ color: '#666', fontSize: 14, marginBottom: 2 }}>
-                    {item.address ? item.address.split("\n")[0] : "No address"}
+                    {formatCompactAddress(item)}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                     <Text
@@ -730,15 +740,44 @@ export default function AdminOrganizationsScreen() {
             placeholderTextColor={colors.muted}
           />
           {/* Address */}
-          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Address</Text>
+          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Address Line 1</Text>
           <TextInput
             style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 }}
-            placeholder="Address"
-            value={formData.address}
-            onChangeText={(text: string) => setFormData({ ...formData, address: text })}
+            placeholder="Address line 1"
+            value={formData.addressLine1}
+            onChangeText={(text: string) => setFormData({ ...formData, addressLine1: text })}
             placeholderTextColor={colors.muted}
-            multiline
           />
+          <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>City</Text>
+          <TextInput
+            style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 }}
+            placeholder="City"
+            value={formData.city}
+            onChangeText={(text: string) => setFormData({ ...formData, city: text })}
+            placeholderTextColor={colors.muted}
+          />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>State/Province</Text>
+              <TextInput
+                style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 }}
+                placeholder="State/Province"
+                value={formData.stateProvince}
+                onChangeText={(text: string) => setFormData({ ...formData, stateProvince: text })}
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Zip/Postal Code</Text>
+              <TextInput
+                style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 }}
+                placeholder="Zip/Postal"
+                value={formData.postalCode}
+                onChangeText={(text: string) => setFormData({ ...formData, postalCode: text })}
+                placeholderTextColor={colors.muted}
+              />
+            </View>
+          </View>
           {/* Email */}
           <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Email</Text>
           <TextInput

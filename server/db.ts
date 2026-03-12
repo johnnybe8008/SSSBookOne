@@ -54,8 +54,21 @@ export async function updateOrganization(id, data) {
 }
 // Fetch all staff records
 export async function getAllStaff() {
+  try {
+    const db = await getDb();
+    return await db.select().from(staff);
+  } catch (error) {
+    console.error("[db.getAllStaff] Failed to fetch staff:", error);
+    return [];
+  }
+}
+
+export async function getStaffByTeamId(teamId: number) {
   const db = await getDb();
-  return db.select().from(staff);
+  if (teamId === 0) {
+    return db.select().from(staff).orderBy(staff.name);
+  }
+  return db.select().from(staff).where(eq(staff.teamId, teamId)).orderBy(staff.name);
 }
 // Create a new organization
 export async function createOrganization(input) {
@@ -108,7 +121,7 @@ export async function updateStaff(id, data) {
 }
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { organizations, staffDepartments, teams, staff, companies, divisions, departments, companyTeams } from "../drizzle/schema";
+import { organizations, staffDepartments, teams, staff, companies, divisions, departments, companyTeams, clients, fsms } from "../drizzle/schema";
 // Create a new client company
 export async function createCompany(input) {
   const db = await getDb();
@@ -136,7 +149,7 @@ export async function updateTeam(id, data) {
     .where(eq(teams.id, id));
   return { success: true };
 }
-import { eq } from "drizzle-orm";
+import { eq, like, or } from "drizzle-orm";
 
 
 // Fetch all organizations, sorted by name
@@ -225,7 +238,13 @@ export async function getCompanyTeamsByDepartmentId(departmentId: number) {
   if (departmentId === 0) {
     return db.select().from(companyTeams).orderBy(companyTeams.name);
   }
-  return db.select().from(companyTeams).where(eq(companyTeams.departmentId, departmentId)).orderBy(companyTeams.name);
+  return db.select().from(companyTeams).where(eq(companyTeams.coDepartmentId, departmentId)).orderBy(companyTeams.name);
+}
+
+export async function getCompanyTeamById(id: number) {
+  const db = await getDb();
+  const [team] = await db.select().from(companyTeams).where(eq(companyTeams.id, id)).limit(1);
+  return team || null;
 }
 
 // --- coDepartments DB FUNCTIONS ---
@@ -274,15 +293,30 @@ export async function deleteCoDepartment(id, organizationId) {
 }
 
 let _db = null;
+let _connection: any = null;
 
 export async function getDb() {
-  if (!_db) {
+  if (!_db || !_connection) {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL is not set");
     }
-    const connection = await mysql.createConnection(process.env.DATABASE_URL);
-    _db = drizzle(connection);
+    _connection = await mysql.createConnection(process.env.DATABASE_URL);
+    _db = drizzle(_connection);
+    return _db;
   }
+
+  try {
+    // Ensure the underlying connection is still alive before returning cached drizzle client.
+    await _connection.query("SELECT 1");
+  } catch (error) {
+    console.warn("[db.getDb] Stale MySQL connection detected, reconnecting...", error);
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is not set");
+    }
+    _connection = await mysql.createConnection(process.env.DATABASE_URL);
+    _db = drizzle(_connection);
+  }
+
   return _db;
 }
 
@@ -300,4 +334,90 @@ export async function getStaffById(id: number) {
     console.error(`[getStaffById] No staff found for id: ${id}`);
   }
   return staffRecord || null;
+}
+
+// --- CLIENTS DB FUNCTIONS ---
+export async function getAllClients() {
+  const db = await getDb();
+  return db.select().from(clients).orderBy(clients.name);
+}
+
+export async function getClientsByDepartmentId(departmentId: number) {
+  const db = await getDb();
+  if (departmentId === 0) {
+    return db.select().from(clients).orderBy(clients.name);
+  }
+  return db
+    .select()
+    .from(clients)
+    .where(eq(clients.coDepartmentId, departmentId))
+    .orderBy(clients.name);
+}
+
+export async function getClientById(id: number) {
+  const db = await getDb();
+  const [client] = await db.select().from(clients).where(eq(clients.id, id)).limit(1);
+  return client || null;
+}
+
+export async function searchClients(searchTerm: string) {
+  const db = await getDb();
+  const term = `%${searchTerm}%`;
+  return db
+    .select()
+    .from(clients)
+    .where(or(like(clients.name, term), like(clients.email, term)))
+    .orderBy(clients.name);
+}
+
+export async function createClient(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(clients).values(data);
+  return result;
+}
+
+export async function updateClient(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(clients).set(updateData).where(eq(clients.id, id));
+  return { success: true };
+}
+
+export async function deleteClient(id: number) {
+  const db = await getDb();
+  await db.delete(clients).where(eq(clients.id, id));
+  return { success: true };
+}
+
+// --- FSM DB FUNCTIONS ---
+export async function getAllFSMs() {
+  const db = await getDb();
+  return db.select().from(fsms).orderBy(fsms.name);
+}
+
+export async function getFSMById(id: number) {
+  const db = await getDb();
+  const [fsm] = await db.select().from(fsms).where(eq(fsms.id, id)).limit(1);
+  return fsm || null;
+}
+
+export async function createFSM(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(fsms).values(data);
+  return result;
+}
+
+export async function updateFSM(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(fsms).set(updateData).where(eq(fsms.id, id));
+  return { success: true };
+}
+
+export async function deleteFSM(id: number) {
+  const db = await getDb();
+  await db.delete(fsms).where(eq(fsms.id, id));
+  return { success: true };
 }

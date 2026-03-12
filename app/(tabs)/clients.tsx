@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Modal, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -23,57 +23,62 @@ export default function ClientsScreen() {
   
   // Cascading filter state
   const [filterCompanyId, setFilterCompanyId] = useState<number | null>(null);
-  const [filterDivisionId, setFilterDivisionId] = useState<number | null>(null);
   const [filterDepartmentId, setFilterDepartmentId] = useState<number | null>(null);
   const [filterTeamId, setFilterTeamId] = useState<number | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const parsePickerNumber = (value: unknown): number | null => {
+    if (value === null || value === undefined || value === "") return null;
+    if (typeof value === "number") return value;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
   
 
 
   // Get all clients
   const { data: allClients, isLoading: clientsLoading } = trpc.clients.listAll.useQuery();
+  const { data: allStaff } = trpc.staff.listAll.useQuery();
+  const { data: allFsms } = trpc.fsms.list.useQuery();
 
   // Filter queries for cascading dropdowns
   const { data: companies } = trpc.companies.list.useQuery();
-  const { data: divisions } = trpc.divisions.list.useQuery(
+  const { data: departments } = trpc.coDepartments.list.useQuery(
     { companyId: filterCompanyId || 0 },
     { enabled: !!filterCompanyId }
   );
-  const { data: departments } = trpc.departments.list.useQuery(
-    { divisionId: filterDivisionId || 0 },
-    { enabled: !!filterDivisionId }
-  );
   const { data: companyTeams } = trpc.companyTeams.list.useQuery(
-    { departmentId: filterDepartmentId || 0 },
+    { coDepartmentId: filterDepartmentId || 0 },
     { enabled: !!filterDepartmentId }
   );
   
   // Reset cascading filters when parent changes
-  const handleCompanyChange = (companyId: number | null) => {
-    setFilterCompanyId(companyId);
-    setFilterDivisionId(null);
+  const handleCompanyChange = (companyId: unknown) => {
+    const parsedCompanyId = parsePickerNumber(companyId);
+    setFilterCompanyId(parsedCompanyId);
     setFilterDepartmentId(null);
     setFilterTeamId(null);
   };
   
-  const handleDivisionChange = (divisionId: number | null) => {
-    setFilterDivisionId(divisionId);
-    setFilterDepartmentId(null);
-    setFilterTeamId(null);
-  };
-  
-  const handleDepartmentChange = (departmentId: number | null) => {
-    setFilterDepartmentId(departmentId);
+  const handleDepartmentChange = (departmentId: unknown) => {
+    const parsedDepartmentId = parsePickerNumber(departmentId);
+    setFilterDepartmentId(parsedDepartmentId);
     setFilterTeamId(null);
   };
   
   const clearFilters = () => {
     setFilterCompanyId(null);
-    setFilterDivisionId(null);
     setFilterDepartmentId(null);
     setFilterTeamId(null);
   };
   
+  const referralNameByTypeAndId = useMemo(() => {
+    const staffMap = new Map<number, string>((allStaff || []).map((s: any) => [s.id, s.name]));
+    const fsmMap = new Map<number, string>((allFsms || []).map((f: any) => [f.id, f.name]));
+    const clientMap = new Map<number, string>((allClients || []).map((c: any) => [c.id, c.name]));
+    return { staffMap, fsmMap, clientMap };
+  }, [allStaff, allFsms, allClients]);
+
   // Client-side filtering
   const displayedClients = allClients?.filter((client: any) => {
     // Search filter
@@ -87,7 +92,11 @@ export default function ClientsScreen() {
     
     // Organizational filter (if department is selected)
     if (filterDepartmentId) {
-      if (client.departmentId !== filterDepartmentId) return false;
+      if (client.coDepartmentId !== filterDepartmentId) return false;
+    }
+
+    if (filterTeamId) {
+      if (client.companyTeamId !== filterTeamId) return false;
     }
     
     return true;
@@ -144,7 +153,7 @@ export default function ClientsScreen() {
             </View>
             <IconSymbol name="chevron.right" size={18} color={colors.muted} />
           </TouchableOpacity>
-          {(filterCompanyId || filterDivisionId || filterDepartmentId) && (
+          {(filterCompanyId || filterDepartmentId || filterTeamId) && (
             <TouchableOpacity
               className="px-4 py-3 bg-error rounded-xl"
               onPress={clearFilters}
@@ -174,8 +183,8 @@ export default function ClientsScreen() {
         transparent={true}
         onRequestClose={() => setShowFilterModal(false)}
       >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-3xl p-6" style={{ maxHeight: '80%' }}>
+        <View className="flex-1 items-center justify-center bg-black/50 px-6">
+          <View className="bg-background rounded-2xl p-6 w-full" style={{ maxHeight: '80%', maxWidth: 560 }}>
             <View className="flex-row items-center justify-between mb-6">
               <Text className="text-xl font-bold text-foreground">Filter Clients</Text>
               <TouchableOpacity onPress={() => setShowFilterModal(false)}>
@@ -185,13 +194,13 @@ export default function ClientsScreen() {
             
             <ScrollView>
               {/* Company Filter */}
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-foreground mb-2">Company</Text>
-                <View className="bg-surface border border-border rounded-xl overflow-hidden">
+              <View className="mb-5">
+                <Text className="text-sm font-medium text-foreground mb-3">Company</Text>
+                <View className="bg-surface border border-border rounded-xl overflow-hidden px-2" style={{ minHeight: 52, justifyContent: 'center' }}>
                   <Picker
                     selectedValue={filterCompanyId}
                     onValueChange={(value) => handleCompanyChange(value)}
-                    style={{ color: colors.foreground }}
+                    style={{ color: colors.foreground, height: 52 }}
                   >
                     <Picker.Item label="Select company..." value={null} />
                     {companies?.map((company) => (
@@ -201,34 +210,15 @@ export default function ClientsScreen() {
                 </View>
               </View>
               
-              {/* Division Filter */}
-              {filterCompanyId && (
-                <View className="mb-4">
-                  <Text className="text-sm font-medium text-foreground mb-2">Division</Text>
-                  <View className="bg-surface border border-border rounded-xl overflow-hidden">
-                    <Picker
-                      selectedValue={filterDivisionId}
-                      onValueChange={(value) => handleDivisionChange(value)}
-                      style={{ color: colors.foreground }}
-                    >
-                      <Picker.Item label="Select division..." value={null} />
-                      {divisions?.map((division) => (
-                        <Picker.Item key={division.id} label={division.name} value={division.id} />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-              )}
-              
               {/* Department Filter */}
-              {filterDivisionId && (
-                <View className="mb-4">
-                  <Text className="text-sm font-medium text-foreground mb-2">Department</Text>
-                  <View className="bg-surface border border-border rounded-xl overflow-hidden">
+              {filterCompanyId && (
+                <View className="mb-5">
+                  <Text className="text-sm font-medium text-foreground mb-3">Department</Text>
+                  <View className="bg-surface border border-border rounded-xl overflow-hidden px-2" style={{ minHeight: 52, justifyContent: 'center' }}>
                     <Picker
                       selectedValue={filterDepartmentId}
                       onValueChange={(value) => handleDepartmentChange(value)}
-                      style={{ color: colors.foreground }}
+                      style={{ color: colors.foreground, height: 52 }}
                     >
                       <Picker.Item label="Select department..." value={null} />
                       {departments?.map((dept) => (
@@ -241,13 +231,13 @@ export default function ClientsScreen() {
               
               {/* Company Team Filter */}
               {filterDepartmentId && companyTeams && companyTeams.length > 0 && (
-                <View className="mb-4">
-                  <Text className="text-sm font-medium text-foreground mb-2">Company Team (Optional)</Text>
-                  <View className="bg-surface border border-border rounded-xl overflow-hidden">
+                <View className="mb-5">
+                  <Text className="text-sm font-medium text-foreground mb-3">Team (Optional)</Text>
+                  <View className="bg-surface border border-border rounded-xl overflow-hidden px-2" style={{ minHeight: 52, justifyContent: 'center' }}>
                     <Picker
                       selectedValue={filterTeamId}
-                      onValueChange={(value) => setFilterTeamId(value)}
-                      style={{ color: colors.foreground }}
+                      onValueChange={(value) => setFilterTeamId(parsePickerNumber(value))}
+                      style={{ color: colors.foreground, height: 52 }}
                     >
                       <Picker.Item label="All teams..." value={null} />
                       {companyTeams.map((team) => (
@@ -297,10 +287,18 @@ export default function ClientsScreen() {
                     </View>
                     <IconSymbol name="chevron.right" size={20} color={colors.muted} />
                   </View>
-                  {client.mobilePhone && (
+                  {(client.mobilePhone || client.workPhone || client.homePhone) && (
                     <View className="flex-row items-center gap-2">
                       <IconSymbol name="phone.fill" size={14} color={colors.muted} />
-                      <Text className="text-sm text-muted">{client.mobilePhone}</Text>
+                      <Text className="text-sm text-muted">
+                        {[
+                          client.mobilePhone ? `(M) ${client.mobilePhone}` : null,
+                          client.workPhone ? `(W) ${client.workPhone}` : null,
+                          client.homePhone ? `(H) ${client.homePhone}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join("  •  ")}
+                      </Text>
                     </View>
                   )}
                   {client.email && (
@@ -323,6 +321,15 @@ export default function ClientsScreen() {
                           'text-warning'
                         }`}>
                           Referred by {client.referralSourceType.toUpperCase()}
+                          {client.referralSourceId
+                            ? `: ${
+                                client.referralSourceType === 'staff'
+                                  ? referralNameByTypeAndId.staffMap.get(client.referralSourceId) || `#${client.referralSourceId}`
+                                  : client.referralSourceType === 'fsm'
+                                  ? referralNameByTypeAndId.fsmMap.get(client.referralSourceId) || `#${client.referralSourceId}`
+                                  : referralNameByTypeAndId.clientMap.get(client.referralSourceId) || `#${client.referralSourceId}`
+                              }`
+                            : ""}
                         </Text>
                       </View>
                     </View>

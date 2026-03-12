@@ -220,6 +220,10 @@ export const appRouter = router({
         z.object({
           name: z.string().min(1).max(255),
           address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
           phone: z.string().optional(),
           email: z.string().optional(),
           createdBy: z.number(),
@@ -243,6 +247,10 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
           address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
           phone: z.string().optional(),
           email: z.string().optional(),
           updatedBy: z.number(),
@@ -432,13 +440,14 @@ export const appRouter = router({
         z.object({
           name: z.string().min(1).max(255),
           address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
           phone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           website: z.string().max(255).optional(),
           contactPerson: z.string().max(255).optional(),
-          divisionId: z.number().optional(),
-          departmentId: z.number().optional(),
-          teamId: z.number().optional(),
           createdBy: z.number(),
           updatedBy: z.number(),
         })
@@ -450,12 +459,14 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
           address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
           phone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           website: z.string().max(255).optional(),
           contactPerson: z.string().max(255).optional(),
-          divisionId: z.number().optional(),
-          departmentId: z.number().optional(),
           updatedBy: z.number(),
         })
       )
@@ -575,7 +586,7 @@ export const appRouter = router({
   companyTeams: router({
     listAll: protectedProcedure.query(() => db.getAllCompanyTeams()),
     all: protectedProcedure.query(() => db.getAllCompanyTeams()),
-    list: protectedProcedure.input(z.object({ departmentId: z.number() })).query(({ input }) => db.getCompanyTeamsByDepartmentId(input.departmentId)),
+    list: protectedProcedure.input(z.object({ coDepartmentId: z.number() })).query(({ input }) => db.getCompanyTeamsByDepartmentId(input.coDepartmentId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getCompanyTeamById(input.id)),
     create: adminOnlyProcedure
       .input(
@@ -652,19 +663,42 @@ export const appRouter = router({
   // Clients
   clients: router({
     listAll: protectedProcedure.query(() => db.getAllClients()),
-    list: protectedProcedure.input(z.object({ departmentId: z.number() })).query(({ input }) => db.getClientsByDepartmentId(input.departmentId)),
+    list: protectedProcedure.input(z.object({ coDepartmentId: z.number() })).query(({ input }) => db.getClientsByDepartmentId(input.coDepartmentId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getClientById(input.id)),
     search: protectedProcedure.input(z.object({ searchTerm: z.string() })).query(({ input }) => db.searchClients(input.searchTerm)),
     create: adminOnlyProcedure
       .input(
         z.object({
-          organizationId: z.number(),
+          companyId: z.number(),
+          coDepartmentId: z.number(),
+          companyTeamId: z.number().optional(),
+          referralSourceId: z.number().optional(),
+          referralSourceType: z.enum(["fsm", "staff", "client"]).optional(),
           name: z.string().min(1).max(255),
+          address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
+          homePhone: z.string().max(50).optional(),
+          mobilePhone: z.string().max(50).optional(),
+          workPhone: z.string().max(50).optional(),
+          email: z.string().email().optional(),
+          occupation: z.string().max(255).optional(),
+          title: z.string().max(255).optional(),
+          dateOfBirth: z.string().optional(),
+          timeInServiceYears: z.number().optional(),
+          timeInServiceMonths: z.number().optional(),
+          timeInService: z.number().optional(),
+          status: z.enum(["Active", "Inactive", "Referred", "On Hold"]).optional(),
+          isVip: z.number().optional(),
+          notificationPreference: z.enum(["sms", "whatsapp"]).optional(),
+          notificationOptOut: z.number().optional(),
           createdBy: z.number(),
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => db.createStaffDepartment(input)),
+      .mutation(({ input }) => db.createClient(input)),
     update: adminOnlyProcedure
       .input(
         z.object({
@@ -682,11 +716,16 @@ export const appRouter = router({
         z.object({
           id: z.number(),
           companyId: z.number().optional(),
-          divisionId: z.number().optional(),
-          departmentId: z.number().optional(),
+          coDepartmentId: z.number().optional(),
           companyTeamId: z.number().optional(),
+          referralSourceId: z.number().optional(),
+          referralSourceType: z.enum(["fsm", "staff", "client"]).optional(),
           name: z.string().min(1).max(255).optional(),
           address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
           homePhone: z.string().max(50).optional(),
           mobilePhone: z.string().max(50).optional(),
           workPhone: z.string().max(50).optional(),
@@ -694,6 +733,8 @@ export const appRouter = router({
           occupation: z.string().max(255).optional(),
           title: z.string().max(255).optional(),
           dateOfBirth: z.string().optional(),
+          timeInServiceYears: z.number().optional(),
+          timeInServiceMonths: z.number().optional(),
           timeInService: z.number().optional(),
           status: z.enum(["Active", "Inactive", "Referred", "On Hold"]).optional(),
           isVip: z.number().optional(),
@@ -706,7 +747,7 @@ export const appRouter = router({
         const { id, dateOfBirth, ...data } = input;
         const updates: any = { ...data };
         if (dateOfBirth) {
-          updates.dateOfBirth = new Date(dateOfBirth);
+          updates.dateOfBirth = dateOfBirth.slice(0, 10);
         }
         return db.updateClient(id, updates);
       }),
@@ -716,17 +757,15 @@ export const appRouter = router({
         z.object({
           clientIds: z.array(z.number()),
           companyId: z.number(),
-          divisionId: z.number(),
-          departmentId: z.number(),
+          coDepartmentId: z.number(),
           companyTeamId: z.number(),
         })
       )
       .mutation(async ({ input, ctx }) => {
-        const { clientIds, companyId, divisionId, departmentId, companyTeamId } = input;
+        const { clientIds, companyId, coDepartmentId, companyTeamId } = input;
         const updates: any = {
           companyId,
-          divisionId,
-          departmentId,
+          coDepartmentId,
           companyTeamId,
           updatedBy: ctx.user!.id,
         };

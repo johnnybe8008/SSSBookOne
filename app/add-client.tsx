@@ -14,7 +14,7 @@ import { Picker } from "@react-native-picker/picker";
  * 
  * Form to create a new client with:
  * - Name, email, phone, date of birth
- * - Company, division, department, company team selection (dropdowns)
+ * - Company, department, company team selection (dropdowns)
  * - Referral source selection with radio buttons
  * - VIP status toggle
  */
@@ -27,17 +27,25 @@ export default function AddClientScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [city, setCity] = useState("");
+  const [stateProvince, setStateProvince] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [title, setTitle] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [timeInServiceYears, setTimeInServiceYears] = useState("");
+  const [timeInServiceMonths, setTimeInServiceMonths] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [companyId, setCompanyId] = useState<number | null>(null);
-  const [divisionId, setDivisionId] = useState<number | null>(null);
   const [departmentId, setDepartmentId] = useState<number | null>(null);
   const [companyTeamId, setCompanyTeamId] = useState<number | null>(null);
   
   // Referral source state
   const [referralSourceType, setReferralSourceType] = useState<"client" | "staff" | "fsm" | null>(null);
   const [referralSourceId, setReferralSourceId] = useState<number | null>(null);
+  const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp">("sms");
+  const [notificationOptOut, setNotificationOptOut] = useState(0);
   
   const [isVip, setIsVip] = useState(false);
   
@@ -51,11 +59,6 @@ export default function AddClientScreen() {
   const [newCompanyEmail, setNewCompanyEmail] = useState("");
   const [newCompanyContact, setNewCompanyContact] = useState("");
   const [recentCompanyIds, setRecentCompanyIds] = useState<number[]>([]);
-  const [showDivisionModal, setShowDivisionModal] = useState(false);
-  const [divisionSearchQuery, setDivisionSearchQuery] = useState("");
-  const [showCreateDivision, setShowCreateDivision] = useState(false);
-  const [newDivisionCode, setNewDivisionCode] = useState("");
-  const [newDivisionName, setNewDivisionName] = useState("");
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
   const [showCreateDepartment, setShowCreateDepartment] = useState(false);
@@ -72,6 +75,54 @@ export default function AddClientScreen() {
   const [staffReferralSearchQuery, setStaffReferralSearchQuery] = useState("");
   const [showFsmModal, setShowFsmModal] = useState(false);
   const [fsmSearchQuery, setFsmSearchQuery] = useState("");
+
+  const formatDateOnly = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseDateOnlyString = (value: string): Date | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [y, m, d] = trimmed.split("-").map((part) => parseInt(part, 10));
+      const parsed = new Date(y, m - 1, d);
+      if (parsed.getFullYear() === y && parsed.getMonth() === m - 1 && parsed.getDate() === d) {
+        return parsed;
+      }
+      return null;
+    }
+
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+      const [m, d, y] = trimmed.split("/").map((part) => parseInt(part, 10));
+      const parsed = new Date(y, m - 1, d);
+      if (parsed.getFullYear() === y && parsed.getMonth() === m - 1 && parsed.getDate() === d) {
+        return parsed;
+      }
+      return null;
+    }
+
+    return null;
+  };
+
+  // Local-first draft entities (persisted only when Save is clicked)
+  const [localCompanies, setLocalCompanies] = useState<Array<{
+    id: number;
+    name: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    contactPerson?: string;
+  }>>([]);
+  const [localDepartments, setLocalDepartments] = useState<Array<{
+    id: number;
+    companyId: number;
+    name: string;
+    description?: string;
+  }>>([]);
   
   const { data: user } = trpc.auth.me.useQuery();
 
@@ -105,13 +156,17 @@ export default function AddClientScreen() {
   };
 
   // Filtered companies for search, with recent ones at top
+  const mergedCompanies = useMemo(() => {
+    return [...(companies || []), ...localCompanies];
+  }, [companies, localCompanies]);
+
   const filteredCompanies = useMemo(() => {
-    if (!companies) return [];
-    
-    let filtered = companies;
+    if (!mergedCompanies.length) return [];
+
+    let filtered = mergedCompanies;
     if (companySearchQuery.trim()) {
       const query = companySearchQuery.toLowerCase();
-      filtered = companies.filter(c => 
+      filtered = mergedCompanies.filter(c => 
         c.name.toLowerCase().includes(query) ||
         c.address?.toLowerCase().includes(query) ||
         c.contactPerson?.toLowerCase().includes(query)
@@ -128,42 +183,32 @@ export default function AddClientScreen() {
       if (bRecent !== -1) return 1; // Only b is recent
       return a.name.localeCompare(b.name); // Neither recent: alphabetical
     });
-  }, [companies, companySearchQuery, recentCompanyIds]);
+  }, [mergedCompanies, companySearchQuery, recentCompanyIds]);
   
-  const { data: divisions } = trpc.divisions.list.useQuery(
+  const { data: departments } = trpc.coDepartments.list.useQuery(
     { companyId: companyId || 0 },
-    { enabled: !!companyId }
+    { enabled: !!companyId && companyId > 0 }
   );
-  
-  // Filtered divisions for search
-  const filteredDivisions = useMemo(() => {
-    if (!divisions) return [];
-    if (!divisionSearchQuery.trim()) return divisions;
-    const query = divisionSearchQuery.toLowerCase();
-    return divisions.filter(d => 
-      d.name.toLowerCase().includes(query) ||
-      d.description?.toLowerCase().includes(query)
-    );
-  }, [divisions, divisionSearchQuery]);
-  
-  const { data: departments } = trpc.departments.list.useQuery(
-    { divisionId: divisionId || 0 },
-    { enabled: !!divisionId }
-  );
+
+  const localDepartmentsForCompany = useMemo(() => {
+    if (!companyId) return [];
+    return localDepartments.filter((d) => d.companyId === companyId);
+  }, [companyId, localDepartments]);
   
   // Filtered departments for search
   const filteredDepartments = useMemo(() => {
-    if (!departments) return [];
-    if (!departmentSearchQuery.trim()) return departments;
+    const mergedDepartments = [...(departments || []), ...localDepartmentsForCompany];
+    if (!mergedDepartments.length) return [];
+    if (!departmentSearchQuery.trim()) return mergedDepartments;
     const query = departmentSearchQuery.toLowerCase();
-    return departments.filter(d => 
+    return mergedDepartments.filter((d: any) => 
       d.name.toLowerCase().includes(query) ||
       d.description?.toLowerCase().includes(query)
     );
-  }, [departments, departmentSearchQuery]);
+  }, [departments, localDepartmentsForCompany, departmentSearchQuery]);
   
   const { data: companyTeams } = trpc.companyTeams.list.useQuery(
-    { departmentId: departmentId || 0 },
+    { coDepartmentId: departmentId || 0 },
     { enabled: !!departmentId }
   );
   
@@ -213,15 +258,9 @@ export default function AddClientScreen() {
 
   // Reset downstream selections when parent changes
   useEffect(() => {
-    setDivisionId(null);
     setDepartmentId(null);
     setCompanyTeamId(null);
   }, [companyId]);
-
-  useEffect(() => {
-    setDepartmentId(null);
-    setCompanyTeamId(null);
-  }, [divisionId]);
 
   useEffect(() => {
     setCompanyTeamId(null);
@@ -244,61 +283,11 @@ export default function AddClientScreen() {
     },
   });
 
-  // Create company mutation
-  const createCompany = trpc.companies.create.useMutation({
-    onSuccess: (newCompanyId) => {
-      utils.companies.invalidate();
-      setCompanyId(newCompanyId);
-      setShowCreateCompany(false);
-      setShowCompanyModal(false);
-      // Clear form
-      setNewCompanyName("");
-      setNewCompanyAddress("");
-      setNewCompanyPhone("");
-      setNewCompanyEmail("");
-      setNewCompanyContact("");
-      // Optionally scroll to top or focus company field
-      // No navigation, just close modal and set company
-      Alert.alert("Success", "Company created successfully");
-    },
-    onError: (error) => {
-      Alert.alert("Error", error.message || "Failed to create company");
-    },
-  });
+  // Persisted only during final submit
+  const createCompany = trpc.companies.create.useMutation();
 
-  // Create division mutation
-  const createDivision = trpc.divisions.create.useMutation({
-    onSuccess: (newDivisionId) => {
-      utils.divisions.invalidate();
-      setDivisionId(newDivisionId);
-      setShowCreateDivision(false);
-      setShowDivisionModal(false);
-      // Clear form
-      setNewDivisionCode("");
-      setNewDivisionName("");
-      Alert.alert("Success", "Division created successfully");
-    },
-    onError: (error) => {
-      Alert.alert("Error", error.message || "Failed to create division");
-    },
-  });
-
-  // Create department mutation
-  const createDepartment = trpc.departments.create.useMutation({
-    onSuccess: (newDepartmentId) => {
-      utils.departments.invalidate();
-      setDepartmentId(newDepartmentId);
-      setShowCreateDepartment(false);
-      setShowDepartmentModal(false);
-      // Clear form
-      setNewDepartmentCode("");
-      setNewDepartmentName("");
-      Alert.alert("Success", "Department created successfully");
-    },
-    onError: (error) => {
-      Alert.alert("Error", error.message || "Failed to create department");
-    },
-  });
+  // Persisted only during final submit
+  const createDepartment = trpc.coDepartments.create.useMutation();
 
   // Create team mutation
   const createTeam = trpc.companyTeams.create.useMutation({
@@ -317,7 +306,7 @@ export default function AddClientScreen() {
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name.trim()) {
       Alert.alert("Validation Error", "Please enter client name");
       return;
@@ -330,10 +319,6 @@ export default function AddClientScreen() {
       Alert.alert("Validation Error", "Please select a company");
       return;
     }
-    if (!divisionId) {
-      Alert.alert("Validation Error", "Please select a division");
-      return;
-    }
     if (!departmentId) {
       Alert.alert("Validation Error", "Please select a department");
       return;
@@ -343,25 +328,71 @@ export default function AddClientScreen() {
       return;
     }
 
-    createClient.mutate({
-      companyId: companyId!,
-      divisionId: divisionId!,
-      departmentId: departmentId!,
+    try {
+      let finalCompanyId = companyId!;
+      if (finalCompanyId < 0) {
+        const draftCompany = localCompanies.find((c) => c.id === finalCompanyId);
+        if (!draftCompany) {
+          Alert.alert("Error", "Selected company draft not found");
+          return;
+        }
+        finalCompanyId = await createCompany.mutateAsync({
+          name: draftCompany.name,
+          address: draftCompany.address || undefined,
+          phone: draftCompany.phone || undefined,
+          email: draftCompany.email || undefined,
+          contactPerson: draftCompany.contactPerson || undefined,
+          createdBy: user.id,
+          updatedBy: user.id,
+        });
+      }
+
+      let finalDepartmentId = departmentId!;
+      if (finalDepartmentId < 0) {
+        const draftDepartment = localDepartments.find((d) => d.id === finalDepartmentId);
+        if (!draftDepartment) {
+          Alert.alert("Error", "Selected department draft not found");
+          return;
+        }
+        finalDepartmentId = await createDepartment.mutateAsync({
+          companyId: finalCompanyId,
+          name: draftDepartment.name,
+          createdBy: user.id,
+          updatedBy: user.id,
+        });
+      }
+
+      await createClient.mutateAsync({
+      companyId: finalCompanyId,
+      coDepartmentId: finalDepartmentId,
       companyTeamId: companyTeamId || undefined,
       referralSourceId: referralSourceId || undefined,
       referralSourceType: referralSourceType || undefined,
       name: name.trim(),
-      address: address.trim() || undefined,
+      addressLine1: addressLine1.trim() || undefined,
+      city: city.trim() || undefined,
+      stateProvince: stateProvince.trim() || undefined,
+      postalCode: postalCode.trim() || undefined,
       mobilePhone: phone.trim() || undefined,
       email: email.trim() || undefined,
-      dateOfBirth: dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : undefined,
+      title: title.trim() || undefined,
+      occupation: occupation.trim() || undefined,
+      dateOfBirth: dateOfBirth ? formatDateOnly(dateOfBirth) : undefined,
+      timeInServiceYears: timeInServiceYears ? parseInt(timeInServiceYears, 10) : undefined,
+      timeInServiceMonths: timeInServiceMonths ? parseInt(timeInServiceMonths, 10) : undefined,
+      timeInService:
+        (timeInServiceYears ? parseInt(timeInServiceYears, 10) * 12 : 0) +
+        (timeInServiceMonths ? parseInt(timeInServiceMonths, 10) : 0) || undefined,
       status: "Active",
       isVip: isVip ? 1 : 0,
-      notificationPreference: "sms",
-      notificationOptOut: 0,
+      notificationPreference,
+      notificationOptOut,
       createdBy: user.id,
       updatedBy: user.id,
-    });
+      });
+    } catch (error: any) {
+      Alert.alert("Error", error?.message || "Failed to save client");
+    }
   };
 
   if (companiesLoading) {
@@ -375,23 +406,23 @@ export default function AddClientScreen() {
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+        <View className="relative min-h-[48px] items-center justify-center">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="absolute left-0 z-20 h-10 w-10 rounded-full border border-border bg-surface items-center justify-center"
+          >
+            <IconSymbol name="chevron.left" size={26} color={colors.primary} />
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Add New Client</Text>
+          <Text className="text-2xl font-bold text-foreground text-center">Add New Client</Text>
         </View>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text className="text-base font-medium text-primary">Cancel</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
           {/* Basic Information Section */}
-          <View className="bg-surface rounded-2xl p-4 border border-border">
-            <Text className="text-lg font-semibold text-foreground mb-4">Basic Information</Text>
+          <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
+            <Text className="text-base font-semibold text-foreground">Basic Information</Text>
             
             {/* Name Input */}
             <View className="mb-4">
@@ -435,16 +466,48 @@ export default function AddClientScreen() {
 
             {/* Address Input */}
             <View className="mb-4">
-              <Text className="text-sm font-medium text-foreground mb-2">Address</Text>
+              <Text className="text-sm font-medium text-foreground mb-2">Address Line 1</Text>
               <TextInput
                 className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                placeholder="Enter address"
+                placeholder="Enter address line 1"
                 placeholderTextColor={colors.muted}
-                value={address}
-                onChangeText={setAddress}
-                multiline
-                numberOfLines={2}
+                value={addressLine1}
+                onChangeText={setAddressLine1}
               />
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-foreground mb-2">City</Text>
+              <TextInput
+                className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                placeholder="Enter city"
+                placeholderTextColor={colors.muted}
+                value={city}
+                onChangeText={setCity}
+              />
+            </View>
+
+            <View className="flex-row gap-3 mb-4">
+              <View className="flex-1">
+                <Text className="text-sm font-medium text-foreground mb-2">State/Province</Text>
+                <TextInput
+                  className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                  placeholder="Enter state/province"
+                  placeholderTextColor={colors.muted}
+                  value={stateProvince}
+                  onChangeText={setStateProvince}
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-medium text-foreground mb-2">Zip/Postal Code</Text>
+                <TextInput
+                  className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                  placeholder="Enter zip/postal"
+                  placeholderTextColor={colors.muted}
+                  value={postalCode}
+                  onChangeText={setPostalCode}
+                />
+              </View>
             </View>
 
             {/* Date of Birth Input */}
@@ -452,13 +515,12 @@ export default function AddClientScreen() {
               <Text className="text-sm font-medium text-foreground mb-2">Date of Birth</Text>
               {Platform.OS === "web" ? (
                 <DateTimePicker
-                  value={dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : ""}
+                  value={dateOfBirth ? formatDateOnly(dateOfBirth) : ""}
                   mode="date"
                   onChange={val => {
-                    // Accept string from input, convert to Date
                     if (val && typeof val === "string") {
-                      const parsed = new Date(val);
-                      if (!isNaN(parsed.getTime())) setDateOfBirth(parsed);
+                      const parsed = parseDateOnlyString(val);
+                      if (parsed) setDateOfBirth(parsed);
                     }
                   }}
                   disabled={false}
@@ -495,9 +557,66 @@ export default function AddClientScreen() {
             </View>
           </View>
 
+          {/* Professional Information */}
+          <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
+            <Text className="text-base font-semibold text-foreground">Professional Information</Text>
+
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-foreground mb-2">Title</Text>
+              <TextInput
+                className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                placeholder="Enter title"
+                placeholderTextColor={colors.muted}
+                value={title}
+                onChangeText={setTitle}
+                autoCapitalize="words"
+              />
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-foreground mb-2">Occupation</Text>
+              <TextInput
+                className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                placeholder="Enter occupation"
+                placeholderTextColor={colors.muted}
+                value={occupation}
+                onChangeText={setOccupation}
+                autoCapitalize="words"
+              />
+            </View>
+
+            <View>
+              <Text className="text-sm font-medium text-foreground mb-2">Time in Service</Text>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Text className="text-xs text-muted mb-1">Years</Text>
+                  <TextInput
+                    className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="0"
+                    placeholderTextColor={colors.muted}
+                    value={timeInServiceYears}
+                    onChangeText={setTimeInServiceYears}
+                    keyboardType="number-pad"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs text-muted mb-1">Months</Text>
+                  <TextInput
+                    className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="0-11"
+                    placeholderTextColor={colors.muted}
+                    value={timeInServiceMonths}
+                    onChangeText={setTimeInServiceMonths}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+
           {/* Organizational Assignment Section */}
-          <View className="bg-surface rounded-2xl p-4 border border-border">
-            <Text className="text-lg font-semibold text-foreground mb-4">Organizational Assignment</Text>
+          <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
+            <Text className="text-base font-semibold text-foreground">Organizational Assignment</Text>
             
             {/* Company Selection */}
             <View className="mb-4">
@@ -508,29 +627,13 @@ export default function AddClientScreen() {
                 className="border rounded-xl px-4 py-3"
               >
                 <Text style={{ color: companyId ? colors.foreground : colors.muted }}>
-                  {companyId ? companies?.find(c => c.id === companyId)?.name : "Select a company..."}
+                  {companyId ? mergedCompanies.find(c => c.id === companyId)?.name : "Select a company..."}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Division Selection */}
-            {companyId && divisions && divisions.length > 0 && (
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-foreground mb-2">Division</Text>
-                <TouchableOpacity
-                  onPress={() => setShowDivisionModal(true)}
-                  style={{ backgroundColor: colors.background, borderColor: colors.border }}
-                  className="border rounded-xl px-4 py-3"
-                >
-                  <Text style={{ color: divisionId ? colors.foreground : colors.muted }}>
-                    {divisionId ? divisions?.find(d => d.id === divisionId)?.name : "Select a division..."}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
             {/* Department Selection */}
-            {divisionId && departments && departments.length > 0 && (
+            {companyId && (
               <View className="mb-4">
                 <Text className="text-sm font-medium text-foreground mb-2">Department *</Text>
                 <TouchableOpacity
@@ -563,8 +666,8 @@ export default function AddClientScreen() {
           </View>
 
           {/* Referral Source Section */}
-          <View className="bg-surface rounded-2xl p-4 border border-border">
-            <Text className="text-lg font-semibold text-foreground mb-4">Referral Source</Text>
+          <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
+            <Text className="text-base font-semibold text-foreground">Referral Source</Text>
             
             {/* Referral Type Radio Buttons */}
             <View className="mb-4">
@@ -645,27 +748,46 @@ export default function AddClientScreen() {
             )}
           </View>
 
-          {/* VIP Status */}
-          <View className="bg-surface rounded-2xl p-4 border border-border">
+          {/* Preferences */}
+          <View className="bg-surface rounded-2xl p-4 border border-border gap-3">
+            <Text className="text-base font-semibold text-foreground">Preferences</Text>
+
+            <View>
+              <Text className="text-sm font-medium text-foreground mb-2">Notification Preference</Text>
+              <View className="bg-background border border-border rounded-xl overflow-hidden">
+                <Picker
+                  selectedValue={notificationPreference}
+                  onValueChange={(value) => setNotificationPreference(value)}
+                  style={{ color: colors.foreground }}
+                >
+                  <Picker.Item label="SMS" value="sms" />
+                  <Picker.Item label="WhatsApp" value="whatsapp" />
+                </Picker>
+              </View>
+            </View>
+
             <TouchableOpacity
-              className="flex-row items-center justify-between"
+              className="flex-row items-center gap-3"
+              onPress={() => setNotificationOptOut(notificationOptOut === 1 ? 0 : 1)}
+            >
+              <View className={`w-6 h-6 rounded border-2 items-center justify-center ${notificationOptOut === 1 ? "bg-primary border-primary" : "border-border"}`}>
+                {notificationOptOut === 1 && (
+                  <IconSymbol name="checkmark" size={16} color={colors.background} />
+                )}
+              </View>
+              <Text className="text-base text-foreground">Opt out of notifications</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-row items-center gap-3"
               onPress={() => setIsVip(!isVip)}
             >
-              <View>
-                <Text className="text-base font-semibold text-foreground">VIP Client</Text>
-                <Text className="text-sm text-muted mt-1">Mark this client as VIP for priority handling</Text>
+              <View className={`w-6 h-6 rounded border-2 items-center justify-center ${isVip ? "bg-warning border-warning" : "border-border"}`}>
+                {isVip && (
+                  <IconSymbol name="star.fill" size={16} color={colors.background} />
+                )}
               </View>
-              <View
-                className={`w-12 h-7 rounded-full p-1 ${
-                  isVip ? "bg-primary" : "bg-border"
-                }`}
-              >
-                <View
-                  className={`w-5 h-5 rounded-full bg-background ${
-                    isVip ? "ml-auto" : ""
-                  }`}
-                />
-              </View>
+              <Text className="text-base text-foreground">VIP Client</Text>
             </TouchableOpacity>
           </View>
 
@@ -839,152 +961,36 @@ export default function AddClientScreen() {
                         Alert.alert("Validation Error", "Please enter company name");
                         return;
                       }
-                      createCompany.mutate({
-                        name: newCompanyName,
-                        address: newCompanyAddress || undefined,
-                        phone: newCompanyPhone || undefined,
-                        email: newCompanyEmail || undefined,
-                        contactPerson: newCompanyContact || undefined,
-                        createdBy: user?.id || 0,
-                        updatedBy: user?.id || 0,
-                      });
+                      const tempId = -Date.now();
+                      setLocalCompanies((prev) => [
+                        ...prev,
+                        {
+                          id: tempId,
+                          name: newCompanyName.trim(),
+                          address: newCompanyAddress.trim() || undefined,
+                          phone: newCompanyPhone.trim() || undefined,
+                          email: newCompanyEmail.trim() || undefined,
+                          contactPerson: newCompanyContact.trim() || undefined,
+                        },
+                      ]);
+                      setCompanyId(tempId);
+                      setShowCreateCompany(false);
+                      setShowCompanyModal(false);
+                      setNewCompanyName("");
+                      setNewCompanyAddress("");
+                      setNewCompanyPhone("");
+                      setNewCompanyEmail("");
+                      setNewCompanyContact("");
+                      Alert.alert("Saved Locally", "Company will be created when you save the client.");
                     }}
                     style={{ backgroundColor: colors.primary }}
                     className="flex-1 rounded-lg py-3 items-center"
-                    disabled={createCompany.isPending}
+                    disabled={false}
                   >
-                    {createCompany.isPending ? (
-                      <ActivityIndicator color="#ffffff" />
-                    ) : (
-                      <Text className="text-white font-semibold">Create</Text>
-                    )}
+                    <Text className="text-white font-semibold">Save Locally</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Division Selection Modal */}
-      <Modal
-        visible={showDivisionModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowDivisionModal(false)}
-      >
-        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-foreground">Select Division</Text>
-              <TouchableOpacity onPress={() => {
-                setShowDivisionModal(false);
-                setDivisionSearchQuery("");
-              }}>
-                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
-              </TouchableOpacity>
-            </View>
-            {!showCreateDivision && (
-              <TouchableOpacity
-                onPress={() => setShowCreateDivision(true)}
-                style={{ backgroundColor: colors.primary }}
-                className="py-3 px-4 rounded-xl mb-4 flex-row items-center justify-center gap-2"
-              >
-                <Text className="text-background font-semibold">+ Create New Division</Text>
-              </TouchableOpacity>
-            )}
-            
-            {showCreateDivision ? (
-              <View className="gap-3 mb-4">
-                <Text className="text-lg font-semibold text-foreground">Create New Division</Text>
-                <TextInput
-                  value={newDivisionName}
-                  onChangeText={setNewDivisionName}
-                  placeholder="Division Name *"
-                  placeholderTextColor={colors.muted}
-                  style={{ backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }}
-                  className="px-4 py-3 rounded-xl border"
-                />
-                <TextInput
-                  value={newDivisionCode}
-                  onChangeText={setNewDivisionCode}
-                  placeholder="Description *"
-                  placeholderTextColor={colors.muted}
-                  style={{ backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }}
-                  className="px-4 py-3 rounded-xl border"
-                />
-                <View className="flex-row gap-2">
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (!newDivisionName.trim()) {
-                        Alert.alert("Validation Error", "Please enter division name");
-                        return;
-                      }
-                      if (!companyId) {
-                        Alert.alert("Validation Error", "Please select a company first");
-                        return;
-                      }
-                      createDivision.mutate({
-                        companyId,
-                        name: newDivisionName,
-                        description: newDivisionCode,
-                        createdBy: user?.id || 0,
-                        updatedBy: user?.id || 0,
-                      });
-                    }}
-                    style={{ backgroundColor: colors.primary }}
-                    className="flex-1 py-3 rounded-xl"
-                  >
-                    <Text className="text-background font-semibold text-center">Create</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowCreateDivision(false);
-                      setNewDivisionCode("");
-                      setNewDivisionName("");
-                    }}
-                    style={{ backgroundColor: colors.surface, borderColor: colors.border }}
-                    className="flex-1 py-3 rounded-xl border"
-                  >
-                    <Text style={{ color: colors.foreground }} className="font-semibold text-center">Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <>
-                <TextInput
-                  value={divisionSearchQuery}
-                  onChangeText={setDivisionSearchQuery}
-                  placeholder="Search divisions..."
-                  placeholderTextColor={colors.muted}
-                  style={{ backgroundColor: colors.surface, color: colors.foreground }}
-                  className="px-4 py-3 rounded-lg mb-4"
-                />
-                <FlatList
-              data={filteredDivisions}
-              keyExtractor={(item) => `division-modal-${item.id}`}
-              style={{ maxHeight: 400 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    setDivisionId(item.id);
-                    setShowDivisionModal(false);
-                    setDivisionSearchQuery("");
-                  }}
-                  style={{ 
-                    backgroundColor: divisionId === item.id ? colors.primary + '20' : 'transparent',
-                    borderBottomColor: colors.border 
-                  }}
-                  className="py-3 px-2 border-b"
-                >
-                  <Text style={{ color: colors.foreground }} className="font-medium">{item.name}</Text>
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <Text style={{ color: colors.muted }} className="text-center py-8">No divisions found</Text>
-              }
-            />
-              </>
             )}
           </View>
         </View>
@@ -1016,6 +1022,81 @@ export default function AddClientScreen() {
               style={{ backgroundColor: colors.surface, color: colors.foreground }}
               className="px-4 py-3 rounded-lg mb-4"
             />
+            {!showCreateDepartment && (
+              <TouchableOpacity
+                onPress={() => setShowCreateDepartment(true)}
+                style={{ backgroundColor: colors.primary }}
+                className="py-3 px-4 rounded-xl mb-4 flex-row items-center justify-center gap-2"
+              >
+                <Text className="text-background font-semibold">+ Create New Department</Text>
+              </TouchableOpacity>
+            )}
+            {showCreateDepartment ? (
+              <View className="gap-3 mb-4">
+                <Text className="text-lg font-semibold text-foreground">Create New Department</Text>
+                <TextInput
+                  value={newDepartmentName}
+                  onChangeText={setNewDepartmentName}
+                  placeholder="Department Name *"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }}
+                  className="px-4 py-3 rounded-xl border"
+                />
+                <TextInput
+                  value={newDepartmentCode}
+                  onChangeText={setNewDepartmentCode}
+                  placeholder="Description"
+                  placeholderTextColor={colors.muted}
+                  style={{ backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }}
+                  className="px-4 py-3 rounded-xl border"
+                />
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!newDepartmentName.trim()) {
+                        Alert.alert("Validation Error", "Please enter department name");
+                        return;
+                      }
+                      if (!companyId) {
+                        Alert.alert("Validation Error", "Please select a company first");
+                        return;
+                      }
+                      const tempId = -(Date.now() + 2);
+                      setLocalDepartments((prev) => [
+                        ...prev,
+                        {
+                          id: tempId,
+                          companyId,
+                          name: newDepartmentName.trim(),
+                          description: newDepartmentCode.trim() || undefined,
+                        },
+                      ]);
+                      setDepartmentId(tempId);
+                      setShowCreateDepartment(false);
+                      setShowDepartmentModal(false);
+                      setNewDepartmentName("");
+                      setNewDepartmentCode("");
+                      Alert.alert("Saved Locally", "Department will be created when you save the client.");
+                    }}
+                    style={{ backgroundColor: colors.primary }}
+                    className="flex-1 py-3 rounded-xl"
+                  >
+                    <Text className="text-background font-semibold text-center">Save Locally</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowCreateDepartment(false);
+                      setNewDepartmentName("");
+                      setNewDepartmentCode("");
+                    }}
+                    style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+                    className="flex-1 py-3 rounded-xl border"
+                  >
+                    <Text style={{ color: colors.foreground }} className="font-semibold text-center">Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
             <FlatList
               data={filteredDepartments}
               keyExtractor={(item) => `department-modal-${item.id}`}
@@ -1040,6 +1121,7 @@ export default function AddClientScreen() {
                 <Text style={{ color: colors.muted }} className="text-center py-8">No departments found</Text>
               }
             />
+            )}
           </View>
         </View>
       </Modal>

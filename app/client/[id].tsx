@@ -22,6 +22,34 @@ export default function ClientDetailScreen() {
 
   // Fetch client data
   const { data: client, isLoading } = trpc.clients.get.useQuery({ id: clientId });
+  const { data: allClients } = trpc.clients.listAll.useQuery();
+  const { data: allStaff } = trpc.staff.listAll.useQuery();
+  const { data: allFsms } = trpc.fsms.list.useQuery();
+
+  const parseDobDate = (value: unknown): Date | null => {
+    if (!value) return null;
+
+    if (value instanceof Date) {
+      if (Number.isNaN(value.getTime())) return null;
+      // DB DATE can arrive as UTC midnight Date; normalize to local date-only.
+      return new Date(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate());
+    }
+
+    if (typeof value !== "string") return null;
+
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      const [year, month, day] = trimmed.slice(0, 10).split("-").map((part) => parseInt(part, 10));
+      const parsed = new Date(year, month - 1, day);
+      if (parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day) {
+        return parsed;
+      }
+    }
+
+    return null;
+  };
 
   if (isLoading) {
     return (
@@ -56,32 +84,64 @@ export default function ClientDetailScreen() {
     return statusColors[status] || colors.muted;
   };
 
+  const getReferralName = () => {
+    if (!client?.referralSourceType || !client?.referralSourceId) return null;
+    if (client.referralSourceType === "staff") {
+      return allStaff?.find((s: any) => s.id === client.referralSourceId)?.name || `#${client.referralSourceId}`;
+    }
+    if (client.referralSourceType === "fsm") {
+      return allFsms?.find((f: any) => f.id === client.referralSourceId)?.name || `#${client.referralSourceId}`;
+    }
+    return allClients?.find((c: any) => c.id === client.referralSourceId)?.name || `#${client.referralSourceId}`;
+  };
+
+  const years = typeof client.timeInServiceYears === "number"
+    ? client.timeInServiceYears
+    : typeof client.timeInService === "number"
+    ? Math.floor(client.timeInService / 12)
+    : 0;
+  const months = typeof client.timeInServiceMonths === "number"
+    ? client.timeInServiceMonths
+    : typeof client.timeInService === "number"
+    ? client.timeInService % 12
+    : 0;
+  const timeInServiceText = `${years}y ${months}m`;
+  const dobDate = parseDobDate(client.dateOfBirth);
+  const age = dobDate
+    ? Math.floor((Date.now() - dobDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+  const addressLine1 = (client as any).addressLine1 || client.address || "";
+  const cityStatePostal = [(client as any).city, (client as any).stateProvince, (client as any).postalCode]
+    .filter(Boolean)
+    .join(" ");
+  const fullAddress = [addressLine1, cityStatePostal].filter(Boolean).join(", ");
+
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
       <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center flex-1">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <IconSymbol name="chevron.left" size={24} color={colors.primary} />
-            </TouchableOpacity>
-            <View className="flex-1">
-              <Text className="text-2xl font-bold text-foreground">{client.name}</Text>
-              {client.title && (
-                <Text className="text-sm text-muted mt-1">{client.title}</Text>
-              )}
-            </View>
-          </View>
-          <View
-            className="px-3 py-1 rounded-full"
-            style={{ backgroundColor: `${getStatusColor(client.status)}20` }}
+        <View className="relative min-h-[48px] items-center justify-center">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="absolute left-0 z-20 h-10 w-10 rounded-full border border-border bg-surface items-center justify-center"
           >
-            <Text
-              className="text-xs font-medium"
-              style={{ color: getStatusColor(client.status) }}
+            <IconSymbol name="chevron.left" size={26} color={colors.primary} />
+          </TouchableOpacity>
+          <View className="px-10">
+            <Text className="text-2xl font-bold text-foreground text-center">{client.name}</Text>
+          </View>
+          <View className="absolute right-0 inset-y-0 justify-center">
+            <View
+              className="px-3 py-1 rounded-full"
+              style={{ backgroundColor: `${getStatusColor(client.status)}20` }}
             >
-              {client.status}
-            </Text>
+              <Text
+                className="text-base font-medium"
+                style={{ color: getStatusColor(client.status) }}
+              >
+                {client.status}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -101,40 +161,15 @@ export default function ClientDetailScreen() {
                 }
               })}
             >
-              <Text className="text-background font-semibold">Record Session</Text>
+              <Text className="text-base text-background font-semibold">Record Session</Text>
             </TouchableOpacity>
             <TouchableOpacity
               className="flex-1 bg-surface border border-border py-3 rounded-xl items-center"
               onPress={() => router.push(`/edit-client/${client.id}` as any)}
             >
-              <Text className="text-foreground font-semibold">Edit Profile</Text>
+              <Text className="text-base text-foreground font-semibold">Edit Profile</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Referral Source */}
-          {client.referralSourceType && (
-            <View className="bg-warning/10 border border-warning/30 rounded-2xl p-4">
-              <View className="flex-row items-center gap-2">
-                <IconSymbol name="person.badge.plus" size={20} color={colors.warning} />
-                <Text className="text-sm font-semibold text-warning">Referred By</Text>
-              </View>
-              <View className="mt-2 flex-row items-center gap-2">
-                <View
-                  className="px-3 py-1 rounded-full"
-                  style={{ backgroundColor: `${colors.primary}20` }}
-                >
-                  <Text className="text-xs font-medium text-primary">
-                    {client.referralSourceType === 'fsm' ? 'FSM' : 
-                     client.referralSourceType === 'staff' ? 'Staff' : 
-                     client.referralSourceType === 'client' ? 'Client' : 'Unknown'}
-                  </Text>
-                </View>
-                {client.referralSourceId && (
-                  <Text className="text-sm text-foreground">ID: {client.referralSourceId}</Text>
-                )}
-              </View>
-            </View>
-          )}
 
           {/* Contact Information */}
           <View className="bg-surface border border-border rounded-2xl p-4">
@@ -146,34 +181,24 @@ export default function ClientDetailScreen() {
                   <Text className="text-base text-foreground flex-1">{client.email}</Text>
                 </View>
               )}
-              {client.mobilePhone && (
+              {(client.mobilePhone || client.workPhone || client.homePhone) && (
                 <View className="flex-row items-center gap-3">
                   <IconSymbol name="phone.fill" size={20} color={colors.primary} />
-                  <Text className="text-base text-foreground flex-1">{client.mobilePhone}</Text>
+                  <Text className="text-base text-foreground flex-1">
+                    {[
+                      client.mobilePhone ? `(M) ${client.mobilePhone}` : null,
+                      client.workPhone ? `(W) ${client.workPhone}` : null,
+                      client.homePhone ? `(H) ${client.homePhone}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join("  •  ")}
+                  </Text>
                 </View>
               )}
-              {client.homePhone && (
-                <View className="flex-row items-center gap-3">
-                  <IconSymbol name="phone.fill" size={20} color={colors.muted} />
-                  <View className="flex-1">
-                    <Text className="text-sm text-muted">Home</Text>
-                    <Text className="text-base text-foreground">{client.homePhone}</Text>
-                  </View>
-                </View>
-              )}
-              {client.workPhone && (
-                <View className="flex-row items-center gap-3">
-                  <IconSymbol name="phone.fill" size={20} color={colors.muted} />
-                  <View className="flex-1">
-                    <Text className="text-sm text-muted">Work</Text>
-                    <Text className="text-base text-foreground">{client.workPhone}</Text>
-                  </View>
-                </View>
-              )}
-              {client.address && (
+              {fullAddress && (
                 <View className="flex-row items-start gap-3 pt-2 border-t border-border">
                   <IconSymbol name="mappin.circle.fill" size={20} color={colors.primary} />
-                  <Text className="text-base text-foreground flex-1">{client.address}</Text>
+                  <Text className="text-base text-foreground flex-1">{fullAddress}</Text>
                 </View>
               )}
             </View>
@@ -183,41 +208,47 @@ export default function ClientDetailScreen() {
           <View className="bg-surface border border-border rounded-2xl p-4">
             <Text className="text-base font-semibold text-foreground mb-3">Professional Information</Text>
             <View className="gap-3">
-              {client.occupation && (
-                <View>
-                  <Text className="text-sm text-muted">Occupation</Text>
-                  <Text className="text-base text-foreground mt-1">{client.occupation}</Text>
-                </View>
-              )}
-              {client.dateOfBirth && (
-                <View>
-                  <Text className="text-sm text-muted">Date of Birth</Text>
-                  <Text className="text-base text-foreground mt-1">
-                    {new Date(client.dateOfBirth).toLocaleDateString()} (Age: {Math.floor((Date.now() - new Date(client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))})
-                  </Text>
-                </View>
-              )}
-              {client.timeInService && (
-                <View>
-                  <Text className="text-sm text-muted">Time in Service</Text>
-                  <Text className="text-base text-foreground mt-1">{client.timeInService} months</Text>
-                </View>
-              )}
+              <Text className="text-base text-foreground">
+                Title: {client.title || "N/A"} • Occupation: {client.occupation || "N/A"} • Time in Service: {timeInServiceText}
+              </Text>
+              <Text className="text-base text-foreground">
+                DOB: {dobDate ? dobDate.toLocaleDateString() : "N/A"} • Age: {age ?? "N/A"}
+              </Text>
             </View>
           </View>
+
+          {/* Referral Source */}
+          {client.referralSourceType && (
+            <View className="bg-surface border border-border rounded-2xl p-4">
+              <Text className="text-base font-semibold text-foreground">Referred By</Text>
+              <View className="mt-3 flex-row items-center gap-2">
+                <View
+                  className="px-3 py-1 rounded-full"
+                  style={{ backgroundColor: `${colors.primary}20` }}
+                >
+                  <Text className="text-base font-medium text-primary">
+                    {client.referralSourceType === 'fsm' ? 'FSM' : 
+                     client.referralSourceType === 'staff' ? 'Staff' : 
+                     client.referralSourceType === 'client' ? 'Client' : 'Unknown'}
+                  </Text>
+                </View>
+                <Text className="text-base text-foreground">{getReferralName()}</Text>
+              </View>
+            </View>
+          )}
 
           {/* Preferences */}
           <View className="bg-surface border border-border rounded-2xl p-4">
             <Text className="text-base font-semibold text-foreground mb-3">Preferences</Text>
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm text-muted">Notification Preference</Text>
+                <Text className="text-base text-muted">Notification Preference</Text>
                 <Text className="text-base text-foreground font-medium">
                   {client.notificationPreference === "sms" ? "SMS" : "WhatsApp"}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm text-muted">Notifications</Text>
+                <Text className="text-base text-muted">Notifications</Text>
                 <Text className="text-base text-foreground font-medium">
                   {client.notificationOptOut === 1 ? "Opted Out" : "Enabled"}
                 </Text>
@@ -225,7 +256,7 @@ export default function ClientDetailScreen() {
               {client.isVip === 1 && (
                 <View className="flex-row items-center gap-2 pt-2 border-t border-border">
                   <View className="px-3 py-1 bg-warning/20 rounded-full">
-                    <Text className="text-xs font-medium text-warning">VIP CLIENT</Text>
+                    <Text className="text-base font-medium text-warning">VIP CLIENT</Text>
                   </View>
                 </View>
               )}
@@ -238,7 +269,7 @@ export default function ClientDetailScreen() {
             <View className="items-center py-6">
               <IconSymbol name="calendar" size={48} color={colors.muted} />
               <Text className="text-base text-muted text-center mt-4">No sessions recorded yet</Text>
-              <Text className="text-sm text-muted text-center mt-2">Record your first session with this client</Text>
+              <Text className="text-base text-muted text-center mt-2">Record your first session with this client</Text>
             </View>
           </View>
 
@@ -247,14 +278,14 @@ export default function ClientDetailScreen() {
             <Text className="text-base font-semibold text-foreground mb-3">Record Information</Text>
             <View className="gap-2">
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm text-muted">Created</Text>
-                <Text className="text-sm text-foreground">
+                <Text className="text-base text-muted">Created</Text>
+                <Text className="text-base text-foreground">
                   {new Date(client.createdAt).toLocaleDateString()}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm text-muted">Last Updated</Text>
-                <Text className="text-sm text-foreground">
+                <Text className="text-base text-muted">Last Updated</Text>
+                <Text className="text-base text-foreground">
                   {new Date(client.updatedAt).toLocaleDateString()}
                 </Text>
               </View>
