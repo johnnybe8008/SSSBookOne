@@ -515,7 +515,41 @@ export async function deleteFolder(id: number) {
 // --- SESSIONS DB FUNCTIONS ---
 export async function getAllSessions() {
   const db = await getDb();
-  return db.select().from(sessions).orderBy(desc(sessions.createdAt));
+  return db
+    .select({
+      id: sessions.id,
+      folderId: sessions.folderId,
+      clientId: sessions.clientId,
+      staffId: sessions.staffId,
+      sessionTypeId: sessions.sessionTypeId,
+      sessionStatusId: sessions.sessionStatusId,
+      sessionResultId: sessions.sessionResultId,
+      interviewStartTime: sessions.interviewStartTime,
+      interviewEndTime: sessions.interviewEndTime,
+      interviewDuration: sessions.interviewDuration,
+      sessionStartTime: sessions.sessionStartTime,
+      sessionEndTime: sessions.sessionEndTime,
+      sessionDuration: sessions.sessionDuration,
+      billableHours: sessions.billableHours,
+      notes: sessions.notes,
+      scheduledDate: sessions.scheduledDate,
+      completedAt: sessions.completedAt,
+      createdAt: sessions.createdAt,
+      createdBy: sessions.createdBy,
+      updatedAt: sessions.updatedAt,
+      updatedBy: sessions.updatedBy,
+      clientName: clients.name,
+      folderNumber: caseFolders.folderNumber,
+      folderDescription: caseFolders.folderDescription,
+      sessionTypeName: sessionTypes.name,
+      sessionStatusName: sessionStatuses.name,
+    })
+    .from(sessions)
+    .leftJoin(clients, eq(sessions.clientId, clients.id))
+    .leftJoin(caseFolders, eq(sessions.folderId, caseFolders.id))
+    .leftJoin(sessionTypes, eq(sessions.sessionTypeId, sessionTypes.id))
+    .leftJoin(sessionStatuses, eq(sessions.sessionStatusId, sessionStatuses.id))
+    .orderBy(desc(sessions.createdAt));
 }
 
 export async function getSessionsByFolderId(folderId: number) {
@@ -525,10 +559,91 @@ export async function getSessionsByFolderId(folderId: number) {
 
 export async function getSessionsByStaffId(staffId: number, limit?: number) {
   const db = await getDb();
-  let query: any = db.select().from(sessions).where(eq(sessions.staffId, staffId)).orderBy(desc(sessions.createdAt));
+  let query: any = db
+    .select({
+      id: sessions.id,
+      folderId: sessions.folderId,
+      clientId: sessions.clientId,
+      staffId: sessions.staffId,
+      sessionTypeId: sessions.sessionTypeId,
+      sessionStatusId: sessions.sessionStatusId,
+      sessionResultId: sessions.sessionResultId,
+      interviewStartTime: sessions.interviewStartTime,
+      interviewEndTime: sessions.interviewEndTime,
+      interviewDuration: sessions.interviewDuration,
+      sessionStartTime: sessions.sessionStartTime,
+      sessionEndTime: sessions.sessionEndTime,
+      sessionDuration: sessions.sessionDuration,
+      billableHours: sessions.billableHours,
+      notes: sessions.notes,
+      scheduledDate: sessions.scheduledDate,
+      completedAt: sessions.completedAt,
+      createdAt: sessions.createdAt,
+      createdBy: sessions.createdBy,
+      updatedAt: sessions.updatedAt,
+      updatedBy: sessions.updatedBy,
+      clientName: clients.name,
+      folderNumber: caseFolders.folderNumber,
+      folderDescription: caseFolders.folderDescription,
+      sessionTypeName: sessionTypes.name,
+      sessionStatusName: sessionStatuses.name,
+    })
+    .from(sessions)
+    .leftJoin(clients, eq(sessions.clientId, clients.id))
+    .leftJoin(caseFolders, eq(sessions.folderId, caseFolders.id))
+    .leftJoin(sessionTypes, eq(sessions.sessionTypeId, sessionTypes.id))
+    .leftJoin(sessionStatuses, eq(sessions.sessionStatusId, sessionStatuses.id))
+    .where(eq(sessions.staffId, staffId))
+    .orderBy(desc(sessions.createdAt));
   if (typeof limit === "number") {
     query = query.limit(limit);
   }
+  return query;
+}
+
+export async function getSessionsByClientId(clientId: number, limit?: number) {
+  const db = await getDb();
+  let query: any = db
+    .select({
+      id: sessions.id,
+      folderId: sessions.folderId,
+      clientId: sessions.clientId,
+      staffId: sessions.staffId,
+      sessionTypeId: sessions.sessionTypeId,
+      sessionStatusId: sessions.sessionStatusId,
+      sessionResultId: sessions.sessionResultId,
+      interviewStartTime: sessions.interviewStartTime,
+      interviewEndTime: sessions.interviewEndTime,
+      interviewDuration: sessions.interviewDuration,
+      sessionStartTime: sessions.sessionStartTime,
+      sessionEndTime: sessions.sessionEndTime,
+      sessionDuration: sessions.sessionDuration,
+      billableHours: sessions.billableHours,
+      notes: sessions.notes,
+      scheduledDate: sessions.scheduledDate,
+      completedAt: sessions.completedAt,
+      createdAt: sessions.createdAt,
+      createdBy: sessions.createdBy,
+      updatedAt: sessions.updatedAt,
+      updatedBy: sessions.updatedBy,
+      clientName: clients.name,
+      folderNumber: caseFolders.folderNumber,
+      folderDescription: caseFolders.folderDescription,
+      sessionTypeName: sessionTypes.name,
+      sessionStatusName: sessionStatuses.name,
+    })
+    .from(sessions)
+    .leftJoin(clients, eq(sessions.clientId, clients.id))
+    .leftJoin(caseFolders, eq(sessions.folderId, caseFolders.id))
+    .leftJoin(sessionTypes, eq(sessions.sessionTypeId, sessionTypes.id))
+    .leftJoin(sessionStatuses, eq(sessions.sessionStatusId, sessionStatuses.id))
+    .where(eq(sessions.clientId, clientId))
+    .orderBy(desc(sessions.createdAt));
+
+  if (typeof limit === "number") {
+    query = query.limit(limit);
+  }
+
   return query;
 }
 

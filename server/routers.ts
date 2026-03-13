@@ -933,6 +933,9 @@ export const appRouter = router({
   sessions: router({
     listAll: protectedProcedure.query(() => db.getAllSessions()),
     listByFolder: protectedProcedure.input(z.object({ folderId: z.number() })).query(({ input }) => db.getSessionsByFolderId(input.folderId)),
+    listByClient: protectedProcedure
+      .input(z.object({ clientId: z.number(), limit: z.number().optional() }))
+      .query(({ input }) => db.getSessionsByClientId(input.clientId, input.limit)),
     listByStaff: protectedProcedure
       .input(z.object({ staffId: z.number(), limit: z.number().optional() }))
       .query(({ input }) => db.getSessionsByStaffId(input.staffId, input.limit)),
@@ -974,6 +977,10 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          folderId: z.number().optional(),
+          clientId: z.number().optional(),
+          staffId: z.number().optional(),
+          sessionTypeId: z.number().optional(),
           sessionStatusId: z.number().optional(),
           sessionResultId: z.number().optional(),
           interviewStartTime: z.date().optional(),

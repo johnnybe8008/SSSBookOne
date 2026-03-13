@@ -22,6 +22,10 @@ export default function ClientDetailScreen() {
 
   // Fetch client data
   const { data: client, isLoading } = trpc.clients.get.useQuery({ id: clientId });
+  const { data: clientSessions, isLoading: sessionsLoading } = trpc.sessions.listByClient.useQuery(
+    { clientId },
+    { enabled: Number.isFinite(clientId) && clientId > 0 }
+  );
   const { data: allClients } = trpc.clients.listAll.useQuery();
   const { data: allStaff } = trpc.staff.listAll.useQuery();
   const { data: allFsms } = trpc.fsms.list.useQuery();
@@ -266,11 +270,62 @@ export default function ClientDetailScreen() {
           {/* Session History */}
           <View className="bg-surface border border-border rounded-2xl p-4">
             <Text className="text-base font-semibold text-foreground mb-3">Session History</Text>
-            <View className="items-center py-6">
-              <IconSymbol name="calendar" size={48} color={colors.muted} />
-              <Text className="text-base text-muted text-center mt-4">No sessions recorded yet</Text>
-              <Text className="text-base text-muted text-center mt-2">Record your first session with this client</Text>
-            </View>
+            {sessionsLoading ? (
+              <View className="items-center py-6">
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text className="text-base text-muted text-center mt-3">Loading session history...</Text>
+              </View>
+            ) : clientSessions && clientSessions.length > 0 ? (
+              <View className="gap-3">
+                {[...clientSessions]
+                  .sort((a, b) => new Date(b.sessionStartTime || b.createdAt).getTime() - new Date(a.sessionStartTime || a.createdAt).getTime())
+                  .map((session: any) => {
+                    const folderLabel = session.folderDescription
+                      ? `#${session.folderNumber} ${session.folderDescription}`
+                      : `#${session.folderNumber || session.folderId}`;
+
+                    return (
+                      <View key={session.id} className="bg-background border border-border rounded-xl p-3">
+                        <View className="flex-row items-start justify-between">
+                          <View className="flex-1 pr-3">
+                            <Text className="text-sm font-semibold text-foreground">
+                              {session.sessionTypeName || `Type #${session.sessionTypeId}`}
+                            </Text>
+                            <Text className="text-sm text-muted mt-1">Folder {folderLabel}</Text>
+                            <Text className="text-sm text-muted mt-1">
+                              Status: {session.sessionStatusName || `#${session.sessionStatusId}`}
+                            </Text>
+                            <Text className="text-sm text-muted mt-1">
+                              {session.completedAt
+                                ? new Date(session.completedAt).toLocaleDateString()
+                                : session.scheduledDate
+                                ? new Date(session.scheduledDate).toLocaleDateString()
+                                : "Not scheduled"}
+                            </Text>
+                          </View>
+
+                          <TouchableOpacity
+                            onPress={() =>
+                              router.push({
+                                pathname: `/edit-session/${session.id}` as any,
+                                params: { returnTo: `/client/${client.id}` },
+                              } as any)
+                            }
+                          >
+                            <Text className="text-sm font-semibold text-primary">Edit</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  })}
+              </View>
+            ) : (
+              <View className="items-center py-6">
+                <IconSymbol name="calendar" size={48} color={colors.muted} />
+                <Text className="text-base text-muted text-center mt-4">No sessions recorded yet</Text>
+                <Text className="text-base text-muted text-center mt-2">Record your first session with this client</Text>
+              </View>
+            )}
           </View>
 
           {/* Metadata */}

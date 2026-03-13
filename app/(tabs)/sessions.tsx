@@ -19,33 +19,46 @@ import { useRouter } from "expo-router";
 export default function SessionsScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { user } = useAuth();
+  const { staff } = useAuth();
   const { isAdmin } = useStaffRole();
   const [showFilters, setShowFilters] = useState(false);
-
-  // Get staff record for current user
-  const { data: staffRecord } = trpc.staff.getByUserId.useQuery(
-    { userId: user?.id || 0 },
-    { enabled: !!user?.id }
-  );
 
   // Debug: log staffRecord and staffId
   if (!isAdmin) {
     // eslint-disable-next-line no-console
-    console.log('Staff user:', user, 'staffRecord:', staffRecord, 'staffId used:', staffRecord?.id);
+    console.log('Staff user:', staff, 'staffId used:', staff?.id);
   }
 
   // Get sessions: all for admin, only own for staff
   const { data: sessions, isLoading: sessionsLoading } = isAdmin
     ? trpc.sessions.listAll.useQuery()
     : trpc.sessions.listByStaff.useQuery(
-        { staffId: staffRecord?.id || 0 },
-        { enabled: !!staffRecord?.id }
+        { staffId: staff?.id || 0 },
+        { enabled: !!staff?.id }
       );
 
   // Get session types and statuses for filtering
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery();
   const { data: sessionStatuses } = trpc.sessionStatuses.list.useQuery();
+
+  const getSessionTypeLabel = (session: any) => {
+    if (session?.sessionTypeName) return session.sessionTypeName;
+    return sessionTypes?.find((t) => t.id === session.sessionTypeId)?.name || `Type #${session.sessionTypeId}`;
+  };
+
+  const getSessionStatusLabel = (session: any) => {
+    if (session?.sessionStatusName) return session.sessionStatusName;
+    return sessionStatuses?.find((s) => s.id === session.sessionStatusId)?.name || `Status #${session.sessionStatusId}`;
+  };
+
+  const getFolderLabel = (session: any) => {
+    const folderNumber = session?.folderNumber || session?.folderId;
+    const description = (session?.folderDescription || "").trim();
+    if (description) {
+      return `Folder #${folderNumber} ${description}`;
+    }
+    return `Folder #${folderNumber}`;
+  };
 
   const getStatusColor = (statusId: number) => {
     // This is a simplified version - in production, map statusId to actual status name
@@ -61,7 +74,6 @@ export default function SessionsScreen() {
 
   return (
     <ScreenContainer className="flex-1">
-      {/* Header with Filter Button */}
       <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
         <View className="flex-row items-center justify-between">
           <Text className="text-2xl font-bold text-foreground">Sessions</Text>
@@ -129,31 +141,38 @@ export default function SessionsScreen() {
                   <TouchableOpacity
                     key={session.id}
                     className="bg-surface rounded-2xl p-5 border border-border"
-                    onPress={() => {
-                      // Navigate to session detail
-                      router.push(`/session/${session.id}` as any);
-                    }}
+                    activeOpacity={1}
                   >
                     {/* Header with Client and Edit Indicator */}
                     <View className="flex-row items-start justify-between mb-3">
                       <View className="flex-1">
-                        <Text className="text-lg font-semibold text-foreground">Client #{session.clientId}</Text>
-                        <Text className="text-sm text-muted mt-1">Folder #{session.folderId}</Text>
+                        <Text className="text-lg font-semibold text-foreground">
+                          {session.clientName || `Client #${session.clientId}`}
+                        </Text>
+                        <Text className="text-sm text-muted mt-1">{getFolderLabel(session)}</Text>
                       </View>
-                      <View className="flex-row items-center gap-2">
-                        {canEdit && (
-                          <View className="px-3 py-1 bg-primary/20 rounded-full">
-                            <Text className="text-xs font-medium text-primary">Editable</Text>
-                          </View>
+                      <View className="items-end">
+                        {canEdit ? (
+                          <TouchableOpacity
+                            onPress={() =>
+                              router.push({
+                                pathname: `/edit-session/${session.id}` as any,
+                                params: { returnTo: "/(tabs)/sessions" },
+                              } as any)
+                            }
+                          >
+                            <Text className="text-sm font-semibold text-primary">Edit</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <Text className="text-xs font-medium text-muted">Locked</Text>
                         )}
-                        <IconSymbol name="chevron.right" size={20} color={colors.muted} />
                       </View>
                     </View>
 
                     {/* Session Type and Status */}
                     <View className="flex-row items-center gap-2 mb-3">
                       <View className="px-3 py-1 bg-background rounded-full border border-border">
-                        <Text className="text-xs font-medium text-foreground">Type #{session.sessionTypeId}</Text>
+                        <Text className="text-xs font-medium text-foreground">{getSessionTypeLabel(session)}</Text>
                       </View>
                       <View
                         className="px-3 py-1 rounded-full"
@@ -163,7 +182,7 @@ export default function SessionsScreen() {
                           className="text-xs font-medium"
                           style={{ color: getStatusColor(session.sessionStatusId) }}
                         >
-                          Status #{session.sessionStatusId}
+                          {getSessionStatusLabel(session)}
                         </Text>
                       </View>
                     </View>
@@ -212,8 +231,14 @@ export default function SessionsScreen() {
           ) : (
             <View className="items-center justify-center py-12">
               <IconSymbol name="calendar" size={48} color={colors.muted} />
-              <Text className="text-base text-muted text-center mt-4">No sessions recorded yet</Text>
-              <Text className="text-sm text-muted text-center mt-2">Start by recording your first session</Text>
+              <Text className="text-base text-muted text-center mt-4">
+                {isAdmin ? "No sessions recorded yet" : "No sessions found for your account"}
+              </Text>
+              <Text className="text-sm text-muted text-center mt-2">
+                {isAdmin
+                  ? "Start by recording your first session"
+                  : "Only sessions assigned to your staff ID appear here."}
+              </Text>
             </View>
           )}
         </ScrollView>

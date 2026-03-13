@@ -22,12 +22,24 @@ export default function RecordSessionScreen() {
   const params = useLocalSearchParams();
   const { data: user } = trpc.auth.me.useQuery();
   const utils = trpc.useUtils();
+  const routeSessionId = Array.isArray(params.sessionId) ? params.sessionId[0] : params.sessionId;
+  const routeId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const returnToParam = Array.isArray(params.returnTo) ? params.returnTo[0] : params.returnTo;
+  const returnToPath = typeof returnToParam === "string" && returnToParam.length > 0
+    ? returnToParam
+    : "/(tabs)/sessions";
+  const editSessionId = Number.parseInt((routeSessionId || routeId || "") as string, 10);
+  const isEditMode = Number.isFinite(editSessionId) && editSessionId > 0;
 
   // Fetch lookup data
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery();
   const { data: sessionStatuses } = trpc.sessionStatuses.list.useQuery();
   const { data: sessionResults } = trpc.sessionResults.list.useQuery();
   const { data: clients } = trpc.clients.listAll.useQuery();
+  const { data: existingSession, isLoading: existingSessionLoading } = trpc.sessions.get.useQuery(
+    { id: editSessionId },
+    { enabled: isEditMode }
+  );
 
   // Client selection state
   const [showClientModal, setShowClientModal] = useState(false);
@@ -53,6 +65,7 @@ export default function RecordSessionScreen() {
   const [sessionResultId, setSessionResultId] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [billableHours, setBillableHours] = useState("");
+  const [hasLoadedEditData, setHasLoadedEditData] = useState(false);
 
   // Interview Timer State
   const [interviewRunning, setInterviewRunning] = useState(false);
@@ -86,6 +99,10 @@ export default function RecordSessionScreen() {
   const { data: foldersData, refetch: refetchFolders } = trpc.folders.list.useQuery(
     { clientId: selectedClient?.id || 0 },
     { enabled: !!selectedClient }
+  );
+  const { data: editingSessionFolder } = trpc.folders.get.useQuery(
+    { id: existingSession?.folderId || 0 },
+    { enabled: !!existingSession?.folderId }
   );
 
   // Create folder mutation
@@ -138,6 +155,74 @@ export default function RecordSessionScreen() {
     }
   }, [params.clientId, clients]);
 
+  useEffect(() => {
+    if (!isEditMode || hasLoadedEditData || !existingSession || !clients) {
+      return;
+    }
+
+    const matchedClient = clients.find((c: any) => c.id === existingSession.clientId);
+    setSelectedClient(
+      matchedClient || {
+        id: existingSession.clientId,
+        name: `Client #${existingSession.clientId}`,
+        email: "",
+      }
+    );
+
+    setSelectedFolder(
+      editingSessionFolder
+        ? normalizeFolder(editingSessionFolder)
+        : {
+            id: existingSession.folderId,
+            folderNumber: String(existingSession.folderId),
+            folderDescription: "",
+          }
+    );
+
+    setSessionTypeId(existingSession.sessionTypeId ?? null);
+    setSessionStatusId(existingSession.sessionStatusId ?? null);
+    setSessionResultId(existingSession.sessionResultId ?? null);
+    setNotes(existingSession.notes || "");
+    setBillableHours(existingSession.billableHours || "");
+
+    const interviewStart = existingSession.interviewStartTime ? new Date(existingSession.interviewStartTime) : null;
+    const interviewEnd = existingSession.interviewEndTime ? new Date(existingSession.interviewEndTime) : null;
+    const sessionStart = existingSession.sessionStartTime ? new Date(existingSession.sessionStartTime) : null;
+    const sessionEnd = existingSession.sessionEndTime ? new Date(existingSession.sessionEndTime) : null;
+
+    if (interviewStart || interviewEnd || sessionStart || sessionEnd) {
+      setUseManualTime(true);
+    }
+    if (interviewStart) setManualInterviewStart(interviewStart);
+    if (interviewEnd) setManualInterviewEnd(interviewEnd);
+    if (sessionStart) setManualSessionStart(sessionStart);
+    if (sessionEnd) setManualSessionEnd(sessionEnd);
+
+    setHasLoadedEditData(true);
+  }, [isEditMode, hasLoadedEditData, existingSession, clients, editingSessionFolder]);
+
+  useEffect(() => {
+    if (!isEditMode || !editingSessionFolder) {
+      return;
+    }
+
+    const normalized = normalizeFolder(editingSessionFolder);
+    setSelectedFolder((prev: any) => {
+      if (!prev) {
+        return normalized;
+      }
+      if (prev.id !== normalized.id) {
+        return prev;
+      }
+
+      // Merge in full folder metadata when initial edit-mode fallback lacked details.
+      return {
+        ...prev,
+        ...normalized,
+      };
+    });
+  }, [isEditMode, editingSessionFolder]);
+
   // Update folders when data changes
   useEffect(() => {
     if (foldersData) {
@@ -145,7 +230,7 @@ export default function RecordSessionScreen() {
       setClientFolders(normalizedFolders);
       
       // If no folders exist, auto-generate a new folder
-      if (normalizedFolders.length === 0 && selectedClient && user?.id) {
+      if (!isEditMode && normalizedFolders.length === 0 && selectedClient && user?.id) {
         createFolder.mutate({
           clientId: selectedClient.id,
           createdByStaffId: user.id,
@@ -155,12 +240,12 @@ export default function RecordSessionScreen() {
           createdBy: user.id,
           updatedBy: user.id,
         });
-      } else if (normalizedFolders.length === 1) {
+      } else if (!selectedFolder && normalizedFolders.length === 1) {
         // Auto-select if only one folder
         setSelectedFolder(normalizedFolders[0]);
       }
     }
-  }, [foldersData, selectedClient, user?.id]);
+  }, [foldersData, selectedClient, user?.id, isEditMode, selectedFolder]);
 
   // Handler for selecting a client
   const handleSelectClient = (client: any) => {
@@ -272,6 +357,29 @@ export default function RecordSessionScreen() {
       console.error("Session creation error:", error);
       const errorMessage = error.message || "Failed to save session";
       Alert.alert("Error", `Failed to save session: ${errorMessage}\n\nPlease check all required fields are filled correctly.`);
+    },
+  });
+
+  const updateSession = trpc.sessions.update.useMutation({
+    onSuccess: () => {
+      utils.sessions.invalidate();
+
+      if (Platform.OS === "web") {
+        router.replace(returnToPath as any);
+        return;
+      }
+
+      Alert.alert("Success", "Session updated successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.replace(returnToPath as any),
+        },
+      ]);
+    },
+    onError: (error) => {
+      console.error("Session update error:", error);
+      const errorMessage = error.message || "Failed to update session";
+      Alert.alert("Error", `Failed to update session: ${errorMessage}`);
     },
   });
 
@@ -416,10 +524,14 @@ export default function RecordSessionScreen() {
       ? Math.floor((sessionEnd.getTime() - sessionStart.getTime()) / 60000) 
       : undefined;
 
+    const resolvedStaffId = isEditMode
+      ? existingSession?.staffId || user.id
+      : user.id;
+
     const sessionData = {
       folderId: selectedFolder.id,
       clientId: selectedClient.id,
-      staffId: user.id,
+      staffId: resolvedStaffId,
       sessionTypeId,
       sessionStatusId,
       sessionResultId: sessionResultId || undefined,
@@ -431,18 +543,42 @@ export default function RecordSessionScreen() {
       sessionDuration,
       billableHours: billableHours.trim() || undefined,
       notes: notes.trim() || undefined,
-      createdBy: user.id,
       updatedBy: user.id,
     };
 
+    if (isEditMode) {
+      updateSession.mutate({ id: editSessionId, ...sessionData });
+      return;
+    }
+
     console.log("Creating session with data:", sessionData);
-    createSession.mutate(sessionData);
+    createSession.mutate({ ...sessionData, createdBy: user.id });
   };
 
   const isActiveValue = (value: unknown) => value === 1 || value === "1" || value === true;
   const activeSessionTypes = sessionTypes?.filter((t: any) => isActiveValue(t.isActive)) || [];
   const activeSessionStatuses = sessionStatuses?.filter((s: any) => isActiveValue(s.isActive)) || [];
   const activeSessionResults = sessionResults?.filter((r: any) => isActiveValue(r.isActive)) || [];
+
+  if (isEditMode && existingSessionLoading && !hasLoadedEditData) {
+    return (
+      <ScreenContainer className="items-center justify-center">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ScreenContainer>
+    );
+  }
+
+  if (isEditMode && !existingSession) {
+    return (
+      <ScreenContainer className="items-center justify-center px-6">
+        <IconSymbol name="calendar.badge.exclamationmark" size={48} color={colors.muted} />
+        <Text className="text-base text-muted text-center mt-3">Session not found.</Text>
+        <TouchableOpacity className="mt-4" onPress={() => router.back()}>
+          <Text className="text-primary font-semibold">Go Back</Text>
+        </TouchableOpacity>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer className="flex-1">
@@ -452,7 +588,9 @@ export default function RecordSessionScreen() {
           <TouchableOpacity onPress={() => router.back()} className="absolute left-0 z-20">
             <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
-          <Text className="text-xl font-bold text-foreground text-center">Record Session</Text>
+          <Text className="text-xl font-bold text-foreground text-center">
+            {isEditMode ? "Edit Session" : "Record Session"}
+          </Text>
         </View>
       </View>
 
@@ -861,12 +999,14 @@ export default function RecordSessionScreen() {
           <TouchableOpacity
             className="bg-primary py-4 rounded-full items-center mb-6"
             onPress={handleSaveSession}
-            disabled={createSession.isPending}
+            disabled={createSession.isPending || updateSession.isPending}
           >
-            {createSession.isPending ? (
+            {createSession.isPending || updateSession.isPending ? (
               <ActivityIndicator size="small" color={colors.background} />
             ) : (
-              <Text className="text-background text-lg font-semibold">Save Session</Text>
+              <Text className="text-background text-lg font-semibold">
+                {isEditMode ? "Update Session" : "Save Session"}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
