@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
-import Constants from "expo-constants";
 import { router } from "expo-router";
+import { APP_VERSION } from "@/constants/const";
 
 export default function AboutScreen() {
   return (
@@ -19,10 +19,10 @@ export default function AboutScreen() {
         <View className="bg-surface rounded-2xl p-6 border border-border mb-6">
           <Text className="text-2xl font-bold text-primary mb-2">About SSS Book One</Text>
           <Text className="text-base text-muted mb-4">
-            Version: {Constants.expoConfig?.version || "2.0.6"}
+            Version: {APP_VERSION}
           </Text>
           <Text className="text-base text-foreground mb-2">
-            SSS Book One is a mobile counseling tracker app for managing sessions, clients, and cases.
+            SSS Book One is a mobile counseling tracker app for managing sessions, clients, and folders.
           </Text>
           <Text className="text-sm text-muted">
             Copyright © 2026. All rights reserved.

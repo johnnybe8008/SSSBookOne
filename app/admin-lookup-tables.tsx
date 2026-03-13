@@ -241,9 +241,9 @@ export default function AdminLookupTablesScreen() {
         <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center flex-1">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+              <Text className="text-3xl font-bold text-foreground">&lt;</Text>
             </TouchableOpacity>
-            <Text className="text-2xl font-bold text-foreground">Lookup Tables</Text>
+            <Text className="text-xl font-bold text-foreground">Lookup Tables</Text>
           </View>
           <TouchableOpacity onPress={() => {
             if (isAdding || editingItem) {

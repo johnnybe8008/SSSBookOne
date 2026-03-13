@@ -95,9 +95,9 @@ Jane Doe,jane@example.com,555-0200,,,555-0202,456 Oak Ave,Manager,Project Manage
       <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Client CSV Import</Text>
+          <Text className="text-xl font-bold text-foreground">Client CSV Import</Text>
         </View>
       </View>
 

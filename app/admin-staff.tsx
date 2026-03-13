@@ -170,7 +170,7 @@ export default function AdminStaffScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.primary }}>{'<'}</Text>
           </TouchableOpacity>
-          <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 24, color: colors.foreground, textAlign: 'center' }}>
+          <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 20, color: colors.foreground, textAlign: 'center' }}>
             Manage Staff
           </Text>
           <TouchableOpacity onPress={() => router.push("/admin-staff-add" as any)}>
@@ -211,7 +211,15 @@ export default function AdminStaffScreen() {
             >
               <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setOrgModalVisible(false)}>
                 <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Organizations</Text>
+                  <View style={{ position: 'relative', minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                    <Pressable
+                      onPress={() => setOrgModalVisible(false)}
+                      style={{ position: 'absolute', left: 0 }}
+                    >
+                      <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.foreground }}>{'<'}</Text>
+                    </Pressable>
+                    <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center' }}>Select Organizations</Text>
+                  </View>
                   <ScrollView style={{ maxHeight: 300 }}>
                     {organizations?.map((org: any) => (
                       <Pressable
@@ -267,7 +275,15 @@ export default function AdminStaffScreen() {
             >
               <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setDeptModalVisible(false)}>
                 <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Departments</Text>
+                  <View style={{ position: 'relative', minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                    <Pressable
+                      onPress={() => setDeptModalVisible(false)}
+                      style={{ position: 'absolute', left: 0 }}
+                    >
+                      <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.foreground }}>{'<'}</Text>
+                    </Pressable>
+                    <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center' }}>Select Departments</Text>
+                  </View>
                   <ScrollView style={{ maxHeight: 300 }}>
                     {Array.from(new Map((allStaffDepartments || []).map((d: any) => [d.name, d])).values()).map((dept: any) => (
                       <Pressable
@@ -323,7 +339,15 @@ export default function AdminStaffScreen() {
             >
               <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setTeamModalVisible(false)}>
                 <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Teams</Text>
+                  <View style={{ position: 'relative', minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                    <Pressable
+                      onPress={() => setTeamModalVisible(false)}
+                      style={{ position: 'absolute', left: 0 }}
+                    >
+                      <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.foreground }}>{'<'}</Text>
+                    </Pressable>
+                    <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center' }}>Select Teams</Text>
+                  </View>
                   <ScrollView style={{ maxHeight: 300 }}>
                     {Array.from(new Map((allTeams ?? []).map((t: any) => [t.name, t])).values()).map((team: any) => (
                       <Pressable
@@ -379,7 +403,15 @@ export default function AdminStaffScreen() {
             >
               <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setRoleModalVisible(false)}>
                 <View style={{ margin: 40, backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Select Roles</Text>
+                  <View style={{ position: 'relative', minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                    <Pressable
+                      onPress={() => setRoleModalVisible(false)}
+                      style={{ position: 'absolute', left: 0 }}
+                    >
+                      <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.foreground }}>{'<'}</Text>
+                    </Pressable>
+                    <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center' }}>Select Roles</Text>
+                  </View>
                   <ScrollView style={{ maxHeight: 300 }}>
                     {['admin', 'counselor', 'viewer'].map((role) => (
                       <Pressable

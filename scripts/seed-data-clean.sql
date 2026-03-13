@@ -137,37 +137,37 @@ INSERT INTO clients (departmentId, name, email, phone, address, dateOfBirth, gen
 (9, 'Jacob Thompson', 'jacob.thompson@email.com', '512-555-9003', '310 Learning Blvd, Austin, TX', '2016-02-28', 'Male', 'Mike Thompson', '512-555-9004', 'Self-Referral', 'Active', 'Elementary student - Grade 2', 1, 1);
 
 -- ============================================================================
--- CASES (15 total: 6 Mental Health + 3 Primary Care + 2 Patient Services + 2 Tech + 2 Education)
+-- FOLDERS (15 total: 6 Mental Health + 3 Primary Care + 2 Patient Services + 2 Tech + 2 Education)
 -- ============================================================================
--- Mental Health cases (clients 1-6)
-INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
-(1, 'CASE-2026-0001', 5, '2026-01-15', NULL, 'Active', 'Anxiety treatment plan - weekly sessions', 1, 1),
-(2, 'CASE-2026-0002', 5, '2026-01-16', NULL, 'Active', 'Depression treatment - bi-weekly sessions', 1, 1),
-(3, 'CASE-2026-0003', 5, '2026-01-17', NULL, 'Active', 'Family counseling - weekly family sessions', 1, 1),
-(4, 'CASE-2026-0004', 5, '2026-01-18', NULL, 'Active', 'Work stress management - weekly sessions', 1, 1),
-(5, 'CASE-2026-0005', 5, '2026-01-19', NULL, 'Active', 'Grief counseling - weekly sessions', 1, 1),
-(6, 'CASE-2026-0006', 5, '2026-01-20', '2026-02-10', 'Closed', 'Relationship counseling - completed successfully', 1, 1);
+-- Mental Health folders (clients 1-6)
+INSERT INTO caseFolders (clientId, folderNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(1, '001', 5, '2026-01-15', NULL, 'Active', 'Anxiety treatment plan - weekly sessions', 1, 1),
+(2, '002', 5, '2026-01-16', NULL, 'Active', 'Depression treatment - bi-weekly sessions', 1, 1),
+(3, '003', 5, '2026-01-17', NULL, 'Active', 'Family counseling - weekly family sessions', 1, 1),
+(4, '004', 5, '2026-01-18', NULL, 'Active', 'Work stress management - weekly sessions', 1, 1),
+(5, '005', 5, '2026-01-19', NULL, 'Active', 'Grief counseling - weekly sessions', 1, 1),
+(6, '006', 5, '2026-01-20', '2026-02-10', 'Closed', 'Relationship counseling - completed successfully', 1, 1);
 
--- Primary Care cases (clients 10-12)
-INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
-(10, 'CASE-2026-0007', 6, '2026-01-21', NULL, 'Active', 'Diabetes management program', 1, 1),
-(11, 'CASE-2026-0008', 6, '2026-01-22', NULL, 'Active', 'Hypertension treatment plan', 1, 1),
-(12, 'CASE-2026-0009', 6, '2026-01-23', '2026-02-05', 'Closed', 'Annual physical - completed', 1, 1);
+-- Primary Care folders (clients 10-12)
+INSERT INTO caseFolders (clientId, folderNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(10, '007', 6, '2026-01-21', NULL, 'Active', 'Diabetes management program', 1, 1),
+(11, '008', 6, '2026-01-22', NULL, 'Active', 'Hypertension treatment plan', 1, 1),
+(12, '009', 6, '2026-01-23', '2026-02-05', 'Closed', 'Annual physical - completed', 1, 1);
 
--- Patient Services cases (clients 13-14)
-INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
-(13, 'CASE-2026-0010', 7, '2026-01-24', NULL, 'Active', 'New patient intake process', 1, 1),
-(14, 'CASE-2026-0011', 7, '2026-01-25', NULL, 'Active', 'Insurance coordination and verification', 1, 1);
+-- Patient Services folders (clients 13-14)
+INSERT INTO caseFolders (clientId, folderNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(13, '010', 7, '2026-01-24', NULL, 'Active', 'New patient intake process', 1, 1),
+(14, '011', 7, '2026-01-25', NULL, 'Active', 'Insurance coordination and verification', 1, 1);
 
--- Tech Solutions cases (clients 15-16)
-INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
-(15, 'CASE-2026-0012', 1, '2026-01-26', NULL, 'Active', 'UI/UX design consultation project', 1, 1),
-(16, 'CASE-2026-0013', 1, '2026-01-27', '2026-02-08', 'Closed', 'Web development support - project completed', 1, 1);
+-- Tech Solutions folders (clients 15-16)
+INSERT INTO caseFolders (clientId, folderNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(15, '012', 1, '2026-01-26', NULL, 'Active', 'UI/UX design consultation project', 1, 1),
+(16, '013', 1, '2026-01-27', '2026-02-08', 'Closed', 'Web development support - project completed', 1, 1);
 
--- Education First cases (clients 17-18)
-INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
-(17, 'CASE-2026-0014', 9, '2026-01-28', NULL, 'Active', 'Grade 3 academic support program', 1, 1),
-(18, 'CASE-2026-0015', 9, '2026-01-29', NULL, 'Active', 'Grade 2 reading improvement plan', 1, 1);
+-- Education First folders (clients 17-18)
+INSERT INTO caseFolders (clientId, folderNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(17, '014', 9, '2026-01-28', NULL, 'Active', 'Grade 3 academic support program', 1, 1),
+(18, '015', 9, '2026-01-29', NULL, 'Active', 'Grade 2 reading improvement plan', 1, 1);
 
 -- ============================================================================
 -- SESSION LOOKUP TABLES
@@ -196,98 +196,100 @@ INSERT INTO sessionResults (name, description, createdBy, updatedBy) VALUES
 
 -- ============================================================================
 -- SESSIONS (2-4 sessions per case = 45 total)
--- Mental Health: 24 sessions (6 cases × 4 sessions)
--- Primary Care: 9 sessions (3 cases × 3 sessions)
--- Patient Services: 4 sessions (2 cases × 2 sessions)
--- Tech Solutions: 6 sessions (2 cases × 3 sessions)
--- Education: 2 sessions (2 cases × 1 session each)
+-- Mental Health: 24 sessions (6 folders × 4 sessions)
+-- Primary Care: 9 sessions (3 folders × 3 sessions)
+-- Patient Services: 4 sessions (2 folders × 2 sessions)
+-- Tech Solutions: 6 sessions (2 folders × 3 sessions)
+-- Education: 2 sessions (2 folders × 1 session each)
 -- ============================================================================
--- Case 1: Jennifer Adams - Anxiety (4 sessions, all completed)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 1: Jennifer Adams - Anxiety (4 sessions, all completed)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (1, 1, 5, 1, 2, 2, '2026-01-20 10:00:00', '2026-01-20 11:00:00', 60, '1.0', 'Initial assessment. Client expressed anxiety about work deadlines.', '2026-01-20 11:00:00', 1, 1),
 (1, 1, 5, 1, 2, 2, '2026-01-27 10:00:00', '2026-01-27 11:00:00', 60, '1.0', 'Introduced breathing exercises and coping strategies.', '2026-01-27 11:00:00', 1, 1),
 (1, 1, 5, 1, 2, 1, '2026-02-03 10:00:00', '2026-02-03 11:00:00', 60, '1.0', 'Client reported significant improvement in managing anxiety.', '2026-02-03 11:00:00', 1, 1),
 (1, 1, 5, 1, 1, NULL, '2026-02-17 10:00:00', NULL, NULL, NULL, 'Follow-up session scheduled.', NULL, 1, 1);
 
--- Case 2: Christopher Davis - Depression (4 sessions, 3 completed, 1 no-show)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 2: Christopher Davis - Depression (4 sessions, 3 completed, 1 no-show)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (2, 2, 5, 1, 2, 3, '2026-01-21 14:00:00', '2026-01-21 15:00:00', 60, '1.0', 'Initial assessment. Client showing signs of depression.', '2026-01-21 15:00:00', 1, 1),
 (2, 2, 5, 1, 2, 3, '2026-01-28 14:00:00', '2026-01-28 15:00:00', 60, '1.0', 'Discussed treatment options and set goals.', '2026-01-28 15:00:00', 1, 1),
 (2, 2, 5, 1, 4, NULL, '2026-02-04 14:00:00', NULL, NULL, NULL, 'Client did not show up for session.', NULL, 1, 1),
 (2, 2, 5, 1, 2, 2, '2026-02-11 14:00:00', '2026-02-11 15:00:00', 60, '1.0', 'Client returned. Discussed missed session and progress.', '2026-02-11 15:00:00', 1, 1);
 
--- Case 3: Patricia Miller - Family Counseling (4 sessions, all completed)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 3: Patricia Miller - Family Counseling (4 sessions, all completed)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (3, 3, 5, 3, 2, 2, '2026-01-22 16:00:00', '2026-01-22 17:30:00', 90, '1.5', 'Family session with spouse and children. Identified communication issues.', '2026-01-22 17:30:00', 1, 1),
 (3, 3, 5, 3, 2, 2, '2026-01-29 16:00:00', '2026-01-29 17:30:00', 90, '1.5', 'Worked on active listening techniques.', '2026-01-29 17:30:00', 1, 1),
 (3, 3, 5, 3, 2, 1, '2026-02-05 16:00:00', '2026-02-05 17:30:00', 90, '1.5', 'Family showing excellent progress in communication.', '2026-02-05 17:30:00', 1, 1),
 (3, 3, 5, 3, 1, NULL, '2026-02-19 16:00:00', NULL, NULL, NULL, 'Follow-up family session scheduled.', NULL, 1, 1);
 
--- Case 4: Daniel Wilson - Work Stress (4 sessions, 2 completed, 1 cancelled, 1 scheduled)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 4: Daniel Wilson - Work Stress (4 sessions, 2 completed, 1 cancelled, 1 scheduled)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (4, 4, 5, 1, 2, 2, '2026-01-23 09:00:00', '2026-01-23 10:00:00', 60, '1.0', 'Discussed work-related stressors and burnout.', '2026-01-23 10:00:00', 1, 1),
 (4, 4, 5, 1, 3, NULL, '2026-01-30 09:00:00', NULL, NULL, NULL, 'Client cancelled due to work conflict.', NULL, 1, 1),
 (4, 4, 5, 1, 2, 2, '2026-02-06 09:00:00', '2026-02-06 10:00:00', 60, '1.0', 'Introduced work-life balance strategies.', '2026-02-06 10:00:00', 1, 1),
 (4, 4, 5, 1, 1, NULL, '2026-02-20 09:00:00', NULL, NULL, NULL, 'Scheduled follow-up session.', NULL, 1, 1);
 
--- Case 5: Linda Moore - Grief Counseling (4 sessions, all completed)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 5: Linda Moore - Grief Counseling (4 sessions, all completed)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (5, 5, 5, 1, 2, 3, '2026-01-24 11:00:00', '2026-01-24 12:00:00', 60, '1.0', 'Initial grief counseling session. Client lost parent recently.', '2026-01-24 12:00:00', 1, 1),
 (5, 5, 5, 1, 2, 3, '2026-01-31 11:00:00', '2026-01-31 12:00:00', 60, '1.0', 'Discussed stages of grief and coping mechanisms.', '2026-01-31 12:00:00', 1, 1),
 (5, 5, 5, 1, 2, 2, '2026-02-07 11:00:00', '2026-02-07 12:00:00', 60, '1.0', 'Client showing good progress in processing grief.', '2026-02-07 12:00:00', 1, 1),
 (5, 5, 5, 1, 1, NULL, '2026-02-21 11:00:00', NULL, NULL, NULL, 'Scheduled follow-up session.', NULL, 1, 1);
 
--- Case 6: James Taylor - Relationship Counseling (4 sessions, all completed, case closed)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 6: James Taylor - Relationship Counseling (4 sessions, all completed, case closed)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (6, 6, 5, 1, 2, 2, '2026-01-25 13:00:00', '2026-01-25 14:00:00', 60, '1.0', 'Initial relationship counseling session with partner.', '2026-01-25 14:00:00', 1, 1),
 (6, 6, 5, 1, 2, 2, '2026-02-01 13:00:00', '2026-02-01 14:00:00', 60, '1.0', 'Worked on conflict resolution techniques.', '2026-02-01 14:00:00', 1, 1),
 (6, 6, 5, 1, 2, 1, '2026-02-08 13:00:00', '2026-02-08 14:00:00', 60, '1.0', 'Couple showing excellent progress. Relationship improving.', '2026-02-08 14:00:00', 1, 1),
-(6, 6, 5, 1, 2, 1, '2026-02-10 13:00:00', '2026-02-10 14:00:00', 60, '1.0', 'Final session. Case successfully closed.', '2026-02-10 14:00:00', 1, 1);
+(6, 6, 5, 1, 2, 1, '2026-02-10 13:00:00', '2026-02-10 14:00:00', 60, '1.0', 'Final session. Folder successfully closed.', '2026-02-10 14:00:00', 1, 1);
 
--- Case 7: Margaret Johnson - Diabetes Management (3 sessions)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 7: Margaret Johnson - Diabetes Management (3 sessions)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (7, 10, 6, 1, 2, 2, '2026-01-22 09:00:00', '2026-01-22 10:00:00', 60, '1.0', 'Initial diabetes assessment and blood sugar monitoring plan.', '2026-01-22 10:00:00', 1, 1),
 (7, 10, 6, 1, 2, 2, '2026-01-29 09:00:00', '2026-01-29 10:00:00', 60, '1.0', 'Reviewed diet plan and medication adjustments.', '2026-01-29 10:00:00', 1, 1),
 (7, 10, 6, 1, 1, NULL, '2026-02-19 09:00:00', NULL, NULL, NULL, 'Follow-up appointment scheduled.', NULL, 1, 1);
 
--- Case 8: George Williams - Hypertension Treatment (3 sessions)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 8: George Williams - Hypertension Treatment (3 sessions)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (8, 11, 6, 1, 2, 2, '2026-01-23 10:00:00', '2026-01-23 11:00:00', 60, '1.0', 'Blood pressure monitoring and medication review.', '2026-01-23 11:00:00', 1, 1),
 (8, 11, 6, 1, 2, 1, '2026-01-30 10:00:00', '2026-01-30 11:00:00', 60, '1.0', 'Excellent progress. BP readings within normal range.', '2026-01-30 11:00:00', 1, 1),
 (8, 11, 6, 1, 1, NULL, '2026-02-20 10:00:00', NULL, NULL, NULL, 'Quarterly check-up scheduled.', NULL, 1, 1);
 
--- Case 9: Carol Martinez - Annual Physical (3 sessions, case closed)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 9: Carol Martinez - Annual Physical (3 sessions, case closed)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (9, 12, 6, 5, 2, 1, '2026-01-24 14:00:00', '2026-01-24 15:30:00', 90, '1.5', 'Complete physical examination and lab work ordered.', '2026-01-24 15:30:00', 1, 1),
 (9, 12, 6, 6, 2, 1, '2026-01-31 14:00:00', '2026-01-31 14:30:00', 30, '0.5', 'Lab results review. All tests normal.', '2026-01-31 14:30:00', 1, 1),
 (9, 12, 6, 6, 2, 1, '2026-02-05 14:00:00', '2026-02-05 14:30:00', 30, '0.5', 'Final consultation. Annual physical complete.', '2026-02-05 14:30:00', 1, 1);
 
--- Case 10: Steven Davis - New Patient Intake (2 sessions)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 10: Steven Davis - New Patient Intake (2 sessions)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (10, 13, 7, 5, 2, 1, '2026-01-25 11:00:00', '2026-01-25 12:00:00', 60, '1.0', 'New patient registration and medical history intake.', '2026-01-25 12:00:00', 1, 1),
 (10, 13, 7, 6, 1, NULL, '2026-02-15 11:00:00', NULL, NULL, NULL, 'Follow-up appointment scheduled.', NULL, 1, 1);
 
--- Case 11: Nancy Brown - Insurance Coordination (2 sessions)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 11: Nancy Brown - Insurance Coordination (2 sessions)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (11, 14, 7, 5, 2, 2, '2026-01-26 13:00:00', '2026-01-26 14:00:00', 60, '1.0', 'Insurance verification and benefits coordination.', '2026-01-26 14:00:00', 1, 1),
 (11, 14, 7, 6, 1, NULL, '2026-02-16 13:00:00', NULL, NULL, NULL, 'Insurance approval follow-up scheduled.', NULL, 1, 1);
 
--- Case 12: Kevin Lee - UI/UX Consultation (3 sessions)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 12: Kevin Lee - UI/UX Consultation (3 sessions)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (12, 15, 1, 1, 2, 2, '2026-01-27 10:00:00', '2026-01-27 12:00:00', 120, '2.0', 'Initial UI/UX design review and requirements gathering.', '2026-01-27 12:00:00', 1, 1),
 (12, 15, 1, 1, 2, 2, '2026-02-03 10:00:00', '2026-02-03 12:00:00', 120, '2.0', 'Wireframe review and design iterations.', '2026-02-03 12:00:00', 1, 1),
 (12, 15, 1, 1, 1, NULL, '2026-02-24 10:00:00', NULL, NULL, NULL, 'Final design review scheduled.', NULL, 1, 1);
 
--- Case 13: Rachel Green - Web Development Support (3 sessions, case closed)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 13: Rachel Green - Web Development Support (3 sessions, case closed)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (13, 16, 1, 1, 2, 2, '2026-01-28 14:00:00', '2026-01-28 16:00:00', 120, '2.0', 'Web development project kickoff and requirements.', '2026-01-28 16:00:00', 1, 1),
 (13, 16, 1, 1, 2, 1, '2026-02-04 14:00:00', '2026-02-04 16:00:00', 120, '2.0', 'Development progress review. Excellent progress.', '2026-02-04 16:00:00', 1, 1),
-(13, 16, 1, 1, 2, 1, '2026-02-08 14:00:00', '2026-02-08 16:00:00', 120, '2.0', 'Project completion and handoff. Case closed.', '2026-02-08 16:00:00', 1, 1);
+(13, 16, 1, 1, 2, 1, '2026-02-08 14:00:00', '2026-02-08 16:00:00', 120, '2.0', 'Project completion and handoff. Folder closed.', '2026-02-08 16:00:00', 1, 1);
 
--- Case 14: Emily Parker - Grade 3 Academic Support (1 session)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 14: Emily Parker - Grade 3 Academic Support (1 session)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (14, 17, 9, 1, 2, 2, '2026-01-29 15:00:00', '2026-01-29 16:00:00', 60, '1.0', 'Initial academic assessment for Grade 3 student.', '2026-01-29 16:00:00', 1, 1);
 
--- Case 15: Jacob Thompson - Grade 2 Reading Improvement (1 session)
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+-- Folder 15: Jacob Thompson - Grade 2 Reading Improvement (1 session)
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 (15, 18, 9, 1, 2, 2, '2026-01-30 15:00:00', '2026-01-30 16:00:00', 60, '1.0', 'Reading skills assessment for Grade 2 student.', '2026-01-30 16:00:00', 1, 1);
+
+

@@ -432,9 +432,9 @@ export default function AdminReportsScreen() {
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+              <Text className="text-3xl font-bold text-foreground">&lt;</Text>
             </TouchableOpacity>
-            <Text className="text-2xl font-bold text-foreground">Reports & Analytics</Text>
+            <Text className="text-xl font-bold text-foreground">Reports & Analytics</Text>
           </View>
           <View className="flex-row gap-2">
             <TouchableOpacity

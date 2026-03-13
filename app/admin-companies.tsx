@@ -263,9 +263,9 @@ export default function AdminCompaniesScreen() {
       <View className="px-6 pt-4 pb-3 bg-background border-b border-border flex-row items-center justify-between">
         <View className="flex-row items-center flex-1">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Manage Companies</Text>
+          <Text className="text-xl font-bold text-foreground">Manage Companies</Text>
         </View>
         <TouchableOpacity onPress={() => {
           if (isAdding || editingCompany) {

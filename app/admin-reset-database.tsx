@@ -61,9 +61,9 @@ export default function AdminResetDatabaseScreen() {
       <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Reset Database</Text>
+          <Text className="text-xl font-bold text-foreground">Reset Database</Text>
         </View>
       </View>
 
@@ -84,7 +84,7 @@ export default function AdminResetDatabaseScreen() {
               <Text className="text-sm text-foreground">• All companies, divisions, departments, and teams</Text>
               <Text className="text-sm text-foreground">• All clients and their records</Text>
               <Text className="text-sm text-foreground">• All FSMs (Field Service Managers)</Text>
-              <Text className="text-sm text-foreground">• All counseling sessions and cases</Text>
+              <Text className="text-sm text-foreground">• All counseling sessions and folders</Text>
               <Text className="text-sm text-foreground">• All staff members (except admin staff)</Text>
               <Text className="text-sm text-foreground">• All groups and staff teams</Text>
               <Text className="text-sm text-foreground">• All notifications</Text>

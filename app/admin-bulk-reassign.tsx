@@ -139,9 +139,9 @@ export default function AdminBulkReassignScreen() {
         {/* Header */}
         <View className="flex-row items-center justify-between mb-6">
           <TouchableOpacity onPress={() => router.back()}>
-            <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Bulk Reassign Clients</Text>
+          <Text className="text-xl font-bold text-foreground">Bulk Reassign Clients</Text>
           <View style={{ width: 24 }} />
         </View>
 

@@ -250,10 +250,10 @@ export default function AdminStaffEditScreen() {
         {/* Header (chevron, single line title) */}
         <View className="mb-2 flex-row items-center justify-between">
           <TouchableOpacity onPress={() => router.back()} className="flex-row items-center gap-2">
-            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text className="text-2xl font-bold text-foreground text-center">Update Staff Member</Text>
+            <Text className="text-xl font-bold text-foreground text-center">Update Staff Member</Text>
           </View>
           <View style={{ width: 24 }} />
         </View>
@@ -334,7 +334,7 @@ export default function AdminStaffEditScreen() {
               <View className="flex-1">
                 <Text className="text-base font-semibold text-foreground">VIP Rated</Text>
                 <Text className="text-sm text-muted mt-1">
-                  Can create cases for VIP clients
+                  Can create folders for VIP clients
                 </Text>
               </View>
               <View
@@ -524,13 +524,16 @@ export default function AdminStaffEditScreen() {
 
       {/* Organization Selection Modal */}
       <Modal visible={showOrganizationModal} animationType="slide" transparent>
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
-            <View className="p-6 border-b border-border flex-row justify-between items-center">
-              <Text className="text-xl font-bold text-foreground">Select Organization</Text>
-              <TouchableOpacity onPress={() => { setShowOrganizationModal(false); setOrganizationSearch(""); }}>
-                <Text className="text-primary font-semibold text-lg">Done</Text>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="bg-background rounded-2xl p-5 w-[92%]" style={{ maxHeight: '82%' }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => { setShowOrganizationModal(false); setOrganizationSearch(""); }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Organization</Text>
             </View>
             <TextInput
               placeholder="Search organizations..."
@@ -542,6 +545,7 @@ export default function AdminStaffEditScreen() {
             <FlatList
               data={filteredOrganizations}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }: any) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -557,19 +561,25 @@ export default function AdminStaffEditScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => { setShowOrganizationModal(false); setOrganizationSearch(""); }} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
       {/* Staff Department Selection Modal */}
       <Modal visible={showStaffDepartmentModal} animationType="slide" transparent>
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
-            <View className="p-6 border-b border-border flex-row justify-between items-center">
-              <Text className="text-xl font-bold text-foreground">Select Department</Text>
-              <TouchableOpacity onPress={() => { setShowStaffDepartmentModal(false); setStaffDepartmentSearch(""); }}>
-                <Text className="text-primary font-semibold text-lg">Done</Text>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="bg-background rounded-2xl p-5 w-[92%]" style={{ maxHeight: '82%' }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => { setShowStaffDepartmentModal(false); setStaffDepartmentSearch(""); }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Department</Text>
             </View>
             <TextInput
               placeholder="Search departments..."
@@ -581,6 +591,7 @@ export default function AdminStaffEditScreen() {
             <FlatList
               data={filteredStaffDepartments}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }: any) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -595,19 +606,25 @@ export default function AdminStaffEditScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => { setShowStaffDepartmentModal(false); setStaffDepartmentSearch(""); }} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
       {/* Team Selection Modal */}
       <Modal visible={showTeamModal} animationType="slide" transparent>
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-background rounded-t-3xl" style={{ maxHeight: '80%' }}>
-            <View className="p-6 border-b border-border flex-row justify-between items-center">
-              <Text className="text-xl font-bold text-foreground">Select Team</Text>
-              <TouchableOpacity onPress={() => { setShowTeamModal(false); setTeamSearch(""); }}>
-                <Text className="text-primary font-semibold text-lg">Done</Text>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="bg-background rounded-2xl p-5 w-[92%]" style={{ maxHeight: '82%' }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => { setShowTeamModal(false); setTeamSearch(""); }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Team</Text>
             </View>
             <TextInput
               placeholder="Search teams..."
@@ -619,6 +636,7 @@ export default function AdminStaffEditScreen() {
             <FlatList
               data={filteredTeams}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }: any) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -632,6 +650,9 @@ export default function AdminStaffEditScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => { setShowTeamModal(false); setTeamSearch(""); }} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -640,7 +661,15 @@ export default function AdminStaffEditScreen() {
       <Modal visible={showDeptAddModal} transparent animationType="slide">
         <View className="flex-1 justify-center items-center bg-black/30">
           <View className="bg-surface p-6 rounded-xl w-80">
-            <Text className="text-lg font-bold mb-4">Add Department</Text>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowDeptAddModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-center">Add Department</Text>
+            </View>
             <TextInput
               value={newDeptName}
               onChangeText={setNewDeptName}
@@ -677,7 +706,15 @@ export default function AdminStaffEditScreen() {
       <Modal visible={showTeamAddModal} transparent animationType="slide">
         <View className="flex-1 justify-center items-center bg-black/30">
           <View className="bg-surface p-6 rounded-xl w-80">
-            <Text className="text-lg font-bold mb-4">Add Team</Text>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowTeamAddModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-center">Add Team</Text>
+            </View>
             <TextInput
               value={newTeamName}
               onChangeText={setNewTeamName}

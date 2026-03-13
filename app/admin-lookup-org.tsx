@@ -74,9 +74,9 @@ export default function AdminLookupOrgScreen() {
       <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
         <View className="flex-row items-center mb-3">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Organizational Lookup Tables</Text>
+          <Text className="text-xl font-bold text-foreground">Organizational Lookup Tables</Text>
         </View>
 
         {/* Global Search Bar */}

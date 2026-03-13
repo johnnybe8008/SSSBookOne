@@ -308,9 +308,9 @@ export default function EditClientScreen() {
         <View className="relative min-h-[48px] items-center justify-center">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="absolute left-0 z-20 h-10 w-10 rounded-full border border-border bg-surface items-center justify-center"
+            className="absolute left-0 z-20"
           >
-            <IconSymbol name="chevron.left" size={26} color={colors.primary} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-foreground text-center">Edit Client</Text>
         </View>
@@ -688,10 +688,18 @@ export default function EditClientScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={showCompanyModal} animationType="slide" transparent onRequestClose={() => setShowCompanyModal(false)}>
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-3xl p-6" style={{ maxHeight: "80%" }}>
-            <Text className="text-xl font-bold text-foreground mb-4">Select Company</Text>
+      <Modal visible={showCompanyModal} animationType="fade" transparent onRequestClose={() => setShowCompanyModal(false)}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] bg-background rounded-2xl p-5" style={{ maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowCompanyModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Company</Text>
+            </View>
             <TextInput
               className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
               placeholder="Search company..."
@@ -702,6 +710,7 @@ export default function EditClientScreen() {
             <FlatList
               data={filteredCompanies}
               keyExtractor={(item) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   className="px-4 py-3 border-b border-border"
@@ -714,14 +723,25 @@ export default function EditClientScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowCompanyModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Modal visible={showDepartmentModal} animationType="slide" transparent onRequestClose={() => setShowDepartmentModal(false)}>
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-3xl p-6" style={{ maxHeight: "80%" }}>
-            <Text className="text-xl font-bold text-foreground mb-4">Select Department</Text>
+      <Modal visible={showDepartmentModal} animationType="fade" transparent onRequestClose={() => setShowDepartmentModal(false)}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] bg-background rounded-2xl p-5" style={{ maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowDepartmentModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Department</Text>
+            </View>
             <TextInput
               className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
               placeholder="Search department..."
@@ -732,6 +752,7 @@ export default function EditClientScreen() {
             <FlatList
               data={filteredDepartments}
               keyExtractor={(item) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   className="px-4 py-3 border-b border-border"
@@ -744,14 +765,25 @@ export default function EditClientScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowDepartmentModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Modal visible={showTeamModal} animationType="slide" transparent onRequestClose={() => setShowTeamModal(false)}>
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-3xl p-6" style={{ maxHeight: "80%" }}>
-            <Text className="text-xl font-bold text-foreground mb-4">Select Team</Text>
+      <Modal visible={showTeamModal} animationType="fade" transparent onRequestClose={() => setShowTeamModal(false)}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] bg-background rounded-2xl p-5" style={{ maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowTeamModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Team</Text>
+            </View>
             <TextInput
               className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
               placeholder="Search team..."
@@ -762,6 +794,7 @@ export default function EditClientScreen() {
             <FlatList
               data={filteredTeams}
               keyExtractor={(item) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   className="px-4 py-3 border-b border-border"
@@ -774,14 +807,25 @@ export default function EditClientScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowTeamModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Modal visible={showClientReferralModal} animationType="slide" transparent onRequestClose={() => setShowClientReferralModal(false)}>
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-3xl p-6" style={{ maxHeight: "80%" }}>
-            <Text className="text-xl font-bold text-foreground mb-4">Select Referring Client</Text>
+      <Modal visible={showClientReferralModal} animationType="fade" transparent onRequestClose={() => setShowClientReferralModal(false)}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] bg-background rounded-2xl p-5" style={{ maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowClientReferralModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Referring Client</Text>
+            </View>
             <TextInput
               className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
               placeholder="Search client..."
@@ -792,6 +836,7 @@ export default function EditClientScreen() {
             <FlatList
               data={filteredClientReferrals}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }: { item: any }) => (
                 <TouchableOpacity
                   className="px-4 py-3 border-b border-border"
@@ -804,14 +849,25 @@ export default function EditClientScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowClientReferralModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Modal visible={showStaffReferralModal} animationType="slide" transparent onRequestClose={() => setShowStaffReferralModal(false)}>
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-3xl p-6" style={{ maxHeight: "80%" }}>
-            <Text className="text-xl font-bold text-foreground mb-4">Select Referring Staff</Text>
+      <Modal visible={showStaffReferralModal} animationType="fade" transparent onRequestClose={() => setShowStaffReferralModal(false)}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] bg-background rounded-2xl p-5" style={{ maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowStaffReferralModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Referring Staff</Text>
+            </View>
             <TextInput
               className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
               placeholder="Search staff..."
@@ -822,6 +878,7 @@ export default function EditClientScreen() {
             <FlatList
               data={filteredStaffReferrals}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }: { item: any }) => (
                 <TouchableOpacity
                   className="px-4 py-3 border-b border-border"
@@ -834,14 +891,25 @@ export default function EditClientScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowStaffReferralModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Modal visible={showFsmReferralModal} animationType="slide" transparent onRequestClose={() => setShowFsmReferralModal(false)}>
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-3xl p-6" style={{ maxHeight: "80%" }}>
-            <Text className="text-xl font-bold text-foreground mb-4">Select Referring FSM</Text>
+      <Modal visible={showFsmReferralModal} animationType="fade" transparent onRequestClose={() => setShowFsmReferralModal(false)}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] bg-background rounded-2xl p-5" style={{ maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowFsmReferralModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Referring FSM</Text>
+            </View>
             <TextInput
               className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
               placeholder="Search fsm..."
@@ -852,6 +920,7 @@ export default function EditClientScreen() {
             <FlatList
               data={filteredFsmReferrals}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }: { item: any }) => (
                 <TouchableOpacity
                   className="px-4 py-3 border-b border-border"
@@ -864,6 +933,9 @@ export default function EditClientScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowFsmReferralModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

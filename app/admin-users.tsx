@@ -105,9 +105,9 @@ export default function AdminUsersScreen() {
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+              <Text className="text-3xl font-bold text-foreground">&lt;</Text>
             </TouchableOpacity>
-            <Text className="text-2xl font-bold text-foreground">Staff Management</Text>
+            <Text className="text-xl font-bold text-foreground">Staff Management</Text>
           </View>
           <TouchableOpacity
             className="bg-primary w-10 h-10 rounded-full items-center justify-center"

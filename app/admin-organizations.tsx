@@ -5,6 +5,7 @@ import { trpc } from '@/lib/trpc';
 import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/use-colors';
 import { useAuth } from '@/hooks/use-auth';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenContainer } from '../components/screen-container';
 import type { Organization, StaffDepartment, Team } from '../drizzle/schema';
 
@@ -880,7 +881,15 @@ export default function AdminOrganizationsScreen() {
                                             </View>
                                           )}
               <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxHeight: '80%' }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Add Department</Text>
+                <View style={{ position: 'relative', minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                  <TouchableOpacity
+                    onPress={() => setAddDeptModalVisible(false)}
+                    style={{ position: 'absolute', left: 0 }}
+                  >
+                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.foreground }}>{'<'}</Text>
+                  </TouchableOpacity>
+                  <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center' }}>Add Department</Text>
+                </View>
                 {/* Search input for departments */}
                 <TextInput
                   style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 12 }}
@@ -997,7 +1006,15 @@ export default function AdminOrganizationsScreen() {
                 return null;
               })()}
               <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxHeight: '80%' }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Add Team</Text>
+                <View style={{ position: 'relative', minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                  <TouchableOpacity
+                    onPress={() => setAddTeamModalVisible(false)}
+                    style={{ position: 'absolute', left: 0 }}
+                  >
+                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.foreground }}>{'<'}</Text>
+                  </TouchableOpacity>
+                  <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center' }}>Add Team</Text>
+                </View>
                 {/* Department dropdown */}
                 <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Select Department</Text>
                 <View style={{ marginBottom: 16 }}>

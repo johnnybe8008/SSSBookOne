@@ -5,8 +5,8 @@ import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { useStaffRole } from "@/hooks/use-staff-role";
 import { trpc } from "@/lib/trpc";
+import { APP_VERSION } from "@/constants/const";
 import { useRouter } from "expo-router";
-import Constants from "expo-constants";
 
 /**
  * More Screen (More Tab)
@@ -367,7 +367,7 @@ export default function MoreScreen() {
 
         {/* App Version */}
         <Text className="text-xs text-muted text-center mt-6">
-          SSS Book One v{Constants.expoConfig?.version || "2.0.6"}
+          SSS Book One v{APP_VERSION}
         </Text>
       </ScrollView>
     </ScreenContainer>

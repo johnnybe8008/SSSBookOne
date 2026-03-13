@@ -71,7 +71,7 @@ async function runSeedSQL() {
     console.log("     • 2 Patient Services clients");
     console.log("     • 2 Tech Solutions clients");
     console.log("     • 2 Education clients");
-    console.log("   - 15 Cases (1 per client)");
+    console.log("   - 15 Folders (1 per client)");
     console.log("   - 45 Sessions total:");
     console.log("     • 24 Mental Health sessions");
     console.log("     • 9 Primary Care sessions");

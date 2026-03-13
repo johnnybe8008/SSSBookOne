@@ -5,7 +5,7 @@ async function testSessionCreation() {
     console.log("Testing session creation API...");
     
     const testData = {
-      caseId: 1,
+      folderId: 1,
       clientId: 1,
       staffId: 1,
       sessionTypeId: 1,

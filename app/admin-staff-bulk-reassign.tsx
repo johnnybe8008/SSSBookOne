@@ -155,13 +155,12 @@ export default function AdminStaffBulkReassignScreen() {
           onPress={() => router.back()}
           className="flex-row items-center gap-2 mb-4"
         >
-          <IconSymbol name="chevron.left" size={24} color={colors.primary} />
-          <Text className="text-primary text-base font-semibold">Back</Text>
+          <Text className="text-3xl font-bold text-foreground">&lt;</Text>
         </TouchableOpacity>
 
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-3xl font-bold text-foreground">Bulk Staff Reassignment</Text>
+          <Text className="text-xl font-bold text-foreground">Bulk Staff Reassignment</Text>
           <Text className="text-sm text-muted mt-1">
             Reassign multiple staff members to a different team
           </Text>

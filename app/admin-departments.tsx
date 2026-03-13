@@ -113,10 +113,10 @@ export default function AdminDepartmentsScreen() {
         <View className="flex-row items-center justify-between mb-2">
           <View className="flex-row items-center flex-1">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <IconSymbol name="chevron.left" size={24} color={colors.primary} />
+              <Text className="text-3xl font-bold text-foreground">&lt;</Text>
             </TouchableOpacity>
             <View className="flex-1">
-              <Text className="text-2xl font-bold text-foreground">Manage Departments</Text>
+              <Text className="text-xl font-bold text-foreground">Manage Departments</Text>
               <Text className="text-sm text-muted mt-1">{divisionName}</Text>
             </View>
           </View>

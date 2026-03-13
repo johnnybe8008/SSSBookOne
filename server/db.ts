@@ -121,7 +121,7 @@ export async function updateStaff(id, data) {
 }
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { organizations, staffDepartments, teams, staff, companies, divisions, departments, companyTeams, clients, fsms } from "../drizzle/schema";
+import { organizations, staffDepartments, teams, staff, companies, divisions, departments, companyTeams, clients, fsms, caseFolders, sessions, sessionTypes, sessionStatuses, sessionResults } from "../drizzle/schema";
 // Create a new client company
 export async function createCompany(input) {
   const db = await getDb();
@@ -149,7 +149,7 @@ export async function updateTeam(id, data) {
     .where(eq(teams.id, id));
   return { success: true };
 }
-import { eq, like, or } from "drizzle-orm";
+import { and, desc, eq, gte, like, lte, or } from "drizzle-orm";
 
 
 // Fetch all organizations, sorted by name
@@ -419,5 +419,245 @@ export async function updateFSM(id: number, data: any) {
 export async function deleteFSM(id: number) {
   const db = await getDb();
   await db.delete(fsms).where(eq(fsms.id, id));
+  return { success: true };
+}
+
+// --- FOLDERS DB FUNCTIONS ---
+export async function getFoldersByClientId(clientId: number) {
+  await getDb();
+  const [rows] = await _connection.query(
+    `SELECT id, folderNumber, folderDescription, clientId, createdByStaffId, startDate, endDate, status, notes, createdAt, createdBy, updatedAt, updatedBy
+     FROM caseFolders
+     WHERE clientId = ?
+     ORDER BY createdAt DESC`,
+    [clientId]
+  );
+  return rows as any[];
+}
+
+export async function getFolderById(id: number) {
+  await getDb();
+  const [rows] = await _connection.query(
+    `SELECT id, folderNumber, folderDescription, clientId, createdByStaffId, startDate, endDate, status, notes, createdAt, createdBy, updatedAt, updatedBy
+     FROM caseFolders
+     WHERE id = ?
+     LIMIT 1`,
+    [id]
+  );
+  const row = (rows as any[])[0];
+  return row || null;
+}
+
+export async function getFolderByFolderNumber(clientId: number, folderNumber: string) {
+  await getDb();
+  const [rows] = await _connection.query(
+    `SELECT id, folderNumber, folderDescription, clientId, createdByStaffId, startDate, endDate, status, notes, createdAt, createdBy, updatedAt, updatedBy
+     FROM caseFolders
+     WHERE clientId = ? AND folderNumber = ?
+     LIMIT 1`,
+    [clientId, folderNumber]
+  );
+  const row = (rows as any[])[0];
+  return row || null;
+}
+
+export async function getNextFolderNumber(clientId: number) {
+  const db = await getDb();
+  const [latestFolder] = await db
+    .select({ folderNumber: caseFolders.folderNumber })
+    .from(caseFolders)
+    .where(eq(caseFolders.clientId, clientId))
+    .orderBy(desc(caseFolders.folderNumber))
+    .limit(1);
+
+  const latestNumber = latestFolder ? Number.parseInt(latestFolder.folderNumber, 10) : 0;
+  if (latestNumber >= 999) {
+    throw new Error("Folder number limit reached for this client (999)");
+  }
+
+  return String(latestNumber + 1).padStart(3, "0");
+}
+
+export async function createFolder(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const resolvedFolderNumber = data.folderNumber || (await getNextFolderNumber(data.clientId));
+  const [result] = await db.insert(caseFolders).values({ ...data, folderNumber: resolvedFolderNumber });
+  return { id: result.insertId, ...data, folderNumber: resolvedFolderNumber };
+}
+
+export async function updateFolder(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+
+  if (updateData.folderNumber) {
+    const currentFolder = await getFolderById(id);
+    const clientId = updateData.clientId || currentFolder?.clientId;
+    if (!clientId) {
+      throw new Error("Client ID is required to validate folder number uniqueness");
+    }
+    const existing = await getFolderByFolderNumber(clientId, updateData.folderNumber);
+    if (existing && existing.id !== id) {
+      throw new Error("Folder number already exists for this client");
+    }
+  }
+
+  await db.update(caseFolders).set(updateData).where(eq(caseFolders.id, id));
+  return { success: true };
+}
+
+export async function deleteFolder(id: number) {
+  const db = await getDb();
+  await db.delete(caseFolders).where(eq(caseFolders.id, id));
+  return { success: true };
+}
+
+// --- SESSIONS DB FUNCTIONS ---
+export async function getAllSessions() {
+  const db = await getDb();
+  return db.select().from(sessions).orderBy(desc(sessions.createdAt));
+}
+
+export async function getSessionsByFolderId(folderId: number) {
+  const db = await getDb();
+  return db.select().from(sessions).where(eq(sessions.folderId, folderId)).orderBy(desc(sessions.createdAt));
+}
+
+export async function getSessionsByStaffId(staffId: number, limit?: number) {
+  const db = await getDb();
+  let query: any = db.select().from(sessions).where(eq(sessions.staffId, staffId)).orderBy(desc(sessions.createdAt));
+  if (typeof limit === "number") {
+    query = query.limit(limit);
+  }
+  return query;
+}
+
+export async function getUpcomingSessions(staffId: number, days: number) {
+  const db = await getDb();
+  const now = new Date();
+  const end = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  return db
+    .select()
+    .from(sessions)
+    .where(and(eq(sessions.staffId, staffId), gte(sessions.scheduledDate, now), lte(sessions.scheduledDate, end)));
+}
+
+export async function getRecentSessions(staffId: number, days: number) {
+  const db = await getDb();
+  const now = new Date();
+  const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  return db
+    .select()
+    .from(sessions)
+    .where(and(eq(sessions.staffId, staffId), gte(sessions.createdAt, start), lte(sessions.createdAt, now)))
+    .orderBy(desc(sessions.createdAt));
+}
+
+export async function getSessionById(id: number) {
+  const db = await getDb();
+  const [row] = await db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
+  return row || null;
+}
+
+export async function canEditSession(sessionId: number, isAdmin: boolean) {
+  if (isAdmin) return true;
+  const db = await getDb();
+  const [row] = await db.select().from(sessions).where(eq(sessions.id, sessionId)).limit(1);
+  return !!row;
+}
+
+export async function createSession(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(sessions).values(data);
+  return { id: result.insertId, ...data };
+}
+
+// --- SESSION LOOKUP DB FUNCTIONS ---
+export async function getAllSessionTypes() {
+  const db = await getDb();
+  return db.select().from(sessionTypes).orderBy(sessionTypes.name);
+}
+
+export async function getSessionTypeById(id: number) {
+  const db = await getDb();
+  const [row] = await db.select().from(sessionTypes).where(eq(sessionTypes.id, id)).limit(1);
+  return row || null;
+}
+
+export async function createSessionType(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(sessionTypes).values(data);
+  return { id: result.insertId, ...data };
+}
+
+export async function updateSessionType(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(sessionTypes).set(updateData).where(eq(sessionTypes.id, id));
+  return { success: true };
+}
+
+export async function getAllSessionStatuses() {
+  const db = await getDb();
+  return db.select().from(sessionStatuses).orderBy(sessionStatuses.name);
+}
+
+export async function getSessionStatusById(id: number) {
+  const db = await getDb();
+  const [row] = await db.select().from(sessionStatuses).where(eq(sessionStatuses.id, id)).limit(1);
+  return row || null;
+}
+
+export async function createSessionStatus(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(sessionStatuses).values(data);
+  return { id: result.insertId, ...data };
+}
+
+export async function updateSessionStatus(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(sessionStatuses).set(updateData).where(eq(sessionStatuses.id, id));
+  return { success: true };
+}
+
+export async function getAllSessionResults() {
+  const db = await getDb();
+  return db.select().from(sessionResults).orderBy(sessionResults.name);
+}
+
+export async function getSessionResultById(id: number) {
+  const db = await getDb();
+  const [row] = await db.select().from(sessionResults).where(eq(sessionResults.id, id)).limit(1);
+  return row || null;
+}
+
+export async function createSessionResult(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(sessionResults).values(data);
+  return { id: result.insertId, ...data };
+}
+
+export async function updateSessionResult(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(sessionResults).set(updateData).where(eq(sessionResults.id, id));
+  return { success: true };
+}
+
+export async function updateSession(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(sessions).set(updateData).where(eq(sessions.id, id));
+  return { success: true };
+}
+
+export async function deleteSession(id: number) {
+  const db = await getDb();
+  await db.delete(sessions).where(eq(sessions.id, id));
   return { success: true };
 }

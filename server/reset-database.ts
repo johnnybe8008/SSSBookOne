@@ -9,7 +9,7 @@ import {
   clients,
   fsms,
   sessions,
-  cases,
+  caseFolders,
   staff,
   notifications
 } from "../drizzle/schema";
@@ -36,7 +36,7 @@ export async function resetDatabase(adminUserId: number): Promise<{ success: boo
     // Delete in correct order to respect foreign key constraints
     await db.delete(notifications);
     await db.delete(sessions);
-    await db.delete(cases);
+    await db.delete(caseFolders);
     await db.delete(clients);
     await db.delete(fsms);
     await db.delete(companyTeams);

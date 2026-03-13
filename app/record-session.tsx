@@ -1,7 +1,6 @@
 import DateTimePicker from '@/components/ui/DateTimePicker';
 import { useState, useEffect, useRef } from "react";
 import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, FlatList, Platform } from "react-native";
-import { Platform as RNPlatform } from 'react-native';
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -15,7 +14,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
  * - Dual timers (Interview Time + Session Time)
  * - Session metadata (type, status, result)
  * - Notes and billable hours
- * - Save to database linked to client and case
+ * - Save to database linked to client and folder
  */
 export default function RecordSessionScreen() {
   const colors = useColors();
@@ -36,9 +35,16 @@ export default function RecordSessionScreen() {
   
   // Session metadata
   const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [selectedCase, setSelectedCase] = useState<any>(null);
-  const [clientCases, setClientCases] = useState<any[]>([]);
-  const [showCaseModal, setShowCaseModal] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<any>(null);
+  const [clientFolders, setClientFolders] = useState<any[]>([]);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [showFolderEditModal, setShowFolderEditModal] = useState(false);
+  const [editingFolder, setEditingFolder] = useState<any>(null);
+  const [editFolderStartDate, setEditFolderStartDate] = useState("");
+  const [editFolderEndDate, setEditFolderEndDate] = useState("");
+  const [editFolderStatus, setEditFolderStatus] = useState<"Active" | "Closed" | "On Hold">("Active");
+  const [editFolderDescription, setEditFolderDescription] = useState("");
+  const [editFolderNotes, setEditFolderNotes] = useState("");
   const [showSessionTypeModal, setShowSessionTypeModal] = useState(false);
   const [showSessionStatusModal, setShowSessionStatusModal] = useState(false);
   const [showSessionResultModal, setShowSessionResultModal] = useState(false);
@@ -62,16 +68,6 @@ export default function RecordSessionScreen() {
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const sessionIntervalRef = useRef<any>(null);
 
-  // Helper function to format date for datetime-local input
-  const formatDateTimeLocal = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
   // Manual time input state with default values
   const [useManualTime, setUseManualTime] = useState(false);
   const now = new Date();
@@ -86,20 +82,42 @@ export default function RecordSessionScreen() {
   // Picker modal visibility
   const [showPicker, setShowPicker] = useState<{field: null | string, mode: 'date' | 'time'}>({field: null, mode: 'date'});
 
-  // Fetch cases for selected client
-  const { data: casesData, refetch: refetchCases } = trpc.cases.list.useQuery(
+  // Fetch folders for selected client
+  const { data: foldersData, refetch: refetchFolders } = trpc.folders.list.useQuery(
     { clientId: selectedClient?.id || 0 },
     { enabled: !!selectedClient }
   );
 
-  // Create case mutation
-  const createCase = trpc.cases.create.useMutation({
-    onSuccess: (newCase) => {
-      setSelectedCase(newCase);
-      refetchCases();
+  // Create folder mutation
+  const createFolder = trpc.folders.create.useMutation({
+    onSuccess: (newFolder) => {
+      setSelectedFolder(newFolder);
+      refetchFolders();
     },
     onError: (error) => {
-      Alert.alert("Error", error.message || "Failed to create case");
+      Alert.alert("Error", error.message || "Failed to create folder");
+    },
+  });
+
+  const updateFolder = trpc.folders.update.useMutation({
+    onSuccess: async () => {
+      await refetchFolders();
+      if (editingFolder && selectedFolder?.id === editingFolder.id) {
+        setSelectedFolder((prev: any) => prev ? {
+          ...prev,
+          startDate: editFolderStartDate,
+          endDate: editFolderEndDate || null,
+          status: editFolderStatus,
+          folderDescription: editFolderDescription || null,
+          notes: editFolderNotes || null,
+        } : prev);
+      }
+      setShowFolderEditModal(false);
+      setEditingFolder(null);
+      Alert.alert("Success", "Folder updated successfully.");
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message || "Failed to update folder");
     },
   });
 
@@ -120,44 +138,93 @@ export default function RecordSessionScreen() {
     }
   }, [params.clientId, clients]);
 
-  // Update cases when data changes
+  // Update folders when data changes
   useEffect(() => {
-    if (casesData) {
-      setClientCases(casesData);
+    if (foldersData) {
+      const normalizedFolders = foldersData.map((folder: any) => normalizeFolder(folder));
+      setClientFolders(normalizedFolders);
       
-      // If no cases exist, auto-generate a new case
-      if (casesData.length === 0 && selectedClient && staff?.id) {
-        const caseNumber = `CASE-${selectedClient.id}-${Date.now()}`;
-        createCase.mutate({
-          caseNumber,
+      // If no folders exist, auto-generate a new folder
+      if (normalizedFolders.length === 0 && selectedClient && user?.id) {
+        createFolder.mutate({
           clientId: selectedClient.id,
-          createdByStaffId: staff.id,
+          createdByStaffId: user.id,
           startDate: new Date(),
           status: "Active",
-          notes: "Auto-generated case",
-          createdBy: staff.id,
-          updatedBy: staff.id,
+          notes: "Auto-generated folder",
+          createdBy: user.id,
+          updatedBy: user.id,
         });
-      } else if (casesData.length === 1) {
-        // Auto-select if only one case
-        setSelectedCase(casesData[0]);
+      } else if (normalizedFolders.length === 1) {
+        // Auto-select if only one folder
+        setSelectedFolder(normalizedFolders[0]);
       }
     }
-  }, [casesData, selectedClient, user?.id]);
+  }, [foldersData, selectedClient, user?.id]);
 
   // Handler for selecting a client
   const handleSelectClient = (client: any) => {
     setSelectedClient(client);
-    setSelectedCase(null);
-    setClientCases([]);
+    setSelectedFolder(null);
+    setClientFolders([]);
     setShowClientModal(false);
     setClientSearch("");
   };
 
-  // Handler for selecting a case
-  const handleSelectCase = (caseItem: any) => {
-    setSelectedCase(caseItem);
-    setShowCaseModal(false);
+  // Handler for selecting a folder
+  const handleSelectFolder = (folderItem: any) => {
+    setSelectedFolder(normalizeFolder(folderItem));
+    setShowFolderModal(false);
+  };
+
+  const openFolderEditor = (folderItem: any) => {
+    const normalizedFolder = normalizeFolder(folderItem);
+    setEditingFolder(normalizedFolder);
+    setEditFolderStartDate(formatDateOnly(normalizedFolder.startDate));
+    setEditFolderEndDate(normalizedFolder.endDate ? formatDateOnly(normalizedFolder.endDate) : "");
+    setEditFolderStatus((normalizedFolder.status || "Active") as "Active" | "Closed" | "On Hold");
+    setEditFolderDescription(getFolderDescription(normalizedFolder));
+    setEditFolderNotes(normalizedFolder.notes || "");
+    setShowFolderEditModal(true);
+  };
+
+  const saveFolderEdits = () => {
+    if (!editingFolder || !user?.id) {
+      Alert.alert("Error", "Unable to update folder right now.");
+      return;
+    }
+
+    if (!editFolderStartDate) {
+      Alert.alert("Validation Error", "Start date is required.");
+      return;
+    }
+
+    const startDate = parseDateOnly(editFolderStartDate);
+    if (!startDate) {
+      Alert.alert("Validation Error", "Start date must be in YYYY-MM-DD format.");
+      return;
+    }
+
+    const endDate = editFolderEndDate ? parseDateOnly(editFolderEndDate) : null;
+    if (editFolderEndDate && !endDate) {
+      Alert.alert("Validation Error", "End date must be in YYYY-MM-DD format.");
+      return;
+    }
+
+    if (endDate && endDate < startDate) {
+      Alert.alert("Validation Error", "End date must be on or after start date.");
+      return;
+    }
+
+    updateFolder.mutate({
+      id: editingFolder.id,
+      startDate,
+      endDate: endDate || undefined,
+      status: editFolderStatus,
+      folderDescription: editFolderDescription.trim() || undefined,
+      notes: editFolderNotes.trim() || undefined,
+      updatedBy: user.id,
+    });
   };
 
   // Create session mutation
@@ -167,10 +234,10 @@ export default function RecordSessionScreen() {
       utils.sessions.invalidate();
       // Reset all form state to initial values
       setSelectedClient(null);
-      setSelectedCase(null);
-      setClientCases([]);
+      setSelectedFolder(null);
+      setClientFolders([]);
       setShowClientModal(false);
-      setShowCaseModal(false);
+      setShowFolderModal(false);
       setShowSessionTypeModal(false);
       setShowSessionStatusModal(false);
       setShowSessionResultModal(false);
@@ -291,15 +358,30 @@ export default function RecordSessionScreen() {
 
   const handleSaveSession = () => {
     // Validation
-    if (!selectedClient || !selectedCase) {
-      Alert.alert("Validation Error", "Please select a client and case");
+    if (!selectedClient?.id) {
+      Alert.alert("Validation Error", "Please select a client before saving.");
+      setShowClientModal(true);
       return;
     }
-    if (!sessionTypeId || !sessionStatusId) {
-      Alert.alert("Validation Error", "Please select session type and status");
+
+    if (!selectedFolder?.id) {
+      Alert.alert("Validation Error", "Please select a folder before saving.");
+      setShowFolderModal(true);
       return;
     }
-    if (!staff?.id) {
+
+    if (!sessionTypeId) {
+      Alert.alert("Validation Error", "Please select a session type before saving.");
+      setShowSessionTypeModal(true);
+      return;
+    }
+
+    if (!sessionStatusId) {
+      Alert.alert("Validation Error", "Please select a session status before saving.");
+      setShowSessionStatusModal(true);
+      return;
+    }
+    if (!user?.id) {
       Alert.alert("Error", "Staff not authenticated");
       return;
     }
@@ -335,9 +417,9 @@ export default function RecordSessionScreen() {
       : undefined;
 
     const sessionData = {
-      caseId: selectedCase.id,
+      folderId: selectedFolder.id,
       clientId: selectedClient.id,
-      staffId: staff.id,
+      staffId: user.id,
       sessionTypeId,
       sessionStatusId,
       sessionResultId: sessionResultId || undefined,
@@ -349,63 +431,82 @@ export default function RecordSessionScreen() {
       sessionDuration,
       billableHours: billableHours.trim() || undefined,
       notes: notes.trim() || undefined,
-      createdBy: staff.id,
-      updatedBy: staff.id,
+      createdBy: user.id,
+      updatedBy: user.id,
     };
 
     console.log("Creating session with data:", sessionData);
     createSession.mutate(sessionData);
   };
 
-  const activeSessionTypes = sessionTypes?.filter((t: any) => t.isActive === 1) || [];
-  const activeSessionStatuses = sessionStatuses?.filter((s: any) => s.isActive === 1) || [];
-  const activeSessionResults = sessionResults?.filter((r: any) => r.isActive === 1) || [];
+  const isActiveValue = (value: unknown) => value === 1 || value === "1" || value === true;
+  const activeSessionTypes = sessionTypes?.filter((t: any) => isActiveValue(t.isActive)) || [];
+  const activeSessionStatuses = sessionStatuses?.filter((s: any) => isActiveValue(s.isActive)) || [];
+  const activeSessionResults = sessionResults?.filter((r: any) => isActiveValue(r.isActive)) || [];
 
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border" style={{ position: 'relative' }}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ position: 'absolute', top: 16, left: 16, zIndex: 10, backgroundColor: '#e0e0e0', borderRadius: 16, padding: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-        >
-          <Text style={{ fontSize: 32, fontWeight: 'bold', color: colors.primary, fontFamily: 'inherit', lineHeight: 32 }}>&lt;</Text>
-        </TouchableOpacity>
-        <View className="flex-row items-center justify-center">
-          <View>
-            <Text className="text-2xl font-bold text-foreground">Record Session</Text>
-            <Text className="text-sm text-muted mt-1">Track counseling session with dual timers</Text>
-          </View>
+      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+        <View className="relative min-h-[48px] items-center justify-center">
+          <TouchableOpacity onPress={() => router.back()} className="absolute left-0 z-20">
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+          </TouchableOpacity>
+          <Text className="text-xl font-bold text-foreground text-center">Record Session</Text>
         </View>
       </View>
 
       <ScrollView ref={scrollViewRef} className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
-          {/* Client & Case Selection */}
+          {/* Client & Folder Selection */}
           <View className="bg-surface border border-border rounded-2xl p-4">
-            <Text className="text-base font-semibold text-foreground mb-2">Client & Case</Text>
             {selectedClient ? (
               <View>
-                <Text className="text-base text-foreground">{selectedClient.name}</Text>
+                <Text className="text-base font-bold text-foreground">Client: {selectedClient.name}</Text>
                 
-                {/* Case Selection */}
-                {clientCases.length > 1 ? (
+                {/* Folder Selection */}
+                {clientFolders.length > 1 ? (
                   <TouchableOpacity 
                     className="mt-2 bg-background border border-border rounded-xl p-3"
-                    onPress={() => setShowCaseModal(true)}
+                    onPress={() => setShowFolderModal(true)}
                   >
-                    <Text className="text-sm text-muted">Case:</Text>
-                    <Text className="text-base text-foreground">
-                      {selectedCase ? selectedCase.caseNumber : "Select a case"}
+                    <Text className="text-base font-bold text-foreground">
+                      {selectedFolder
+                        ? `Folder: ${selectedFolder.folderNumber}${getFolderDescription(selectedFolder) ? ` - ${getFolderDescription(selectedFolder)}` : ""}`
+                        : "Select a folder"}
                     </Text>
+                    {selectedFolder ? (
+                      <View className="mt-2 gap-1">
+                        <Text className="text-sm font-bold text-foreground">
+                          Status: {selectedFolder.status || "-"}   Start: {formatDateOnly(selectedFolder.startDate)}   End: {selectedFolder.endDate ? formatDateOnly(selectedFolder.endDate) : "-"}
+                        </Text>
+                        {selectedFolder.notes ? (
+                          <Text className="text-sm text-muted">Notes: {selectedFolder.notes}</Text>
+                        ) : null}
+                      </View>
+                    ) : null}
                   </TouchableOpacity>
                 ) : (
-                  <Text className="text-sm text-muted mt-1">
-                    Case: {selectedCase?.caseNumber || "Generating..."}
-                  </Text>
+                  <View className="mt-1">
+                    <Text className="text-base font-bold text-foreground">
+                      {selectedFolder
+                        ? `Folder: ${selectedFolder.folderNumber}${getFolderDescription(selectedFolder) ? ` - ${getFolderDescription(selectedFolder)}` : ""}`
+                        : "Folder: Generating..."}
+                    </Text>
+                    {selectedFolder ? (
+                      <View className="mt-1 gap-1">
+                        <Text className="text-sm font-bold text-foreground">
+                          Status: {selectedFolder.status || "-"}   Start: {formatDateOnly(selectedFolder.startDate)}   End: {selectedFolder.endDate ? formatDateOnly(selectedFolder.endDate) : "-"}
+                        </Text>
+                        {selectedFolder.notes ? (
+                          <Text className="text-sm text-muted">Notes: {selectedFolder.notes}</Text>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
                 )}
                 
-                <TouchableOpacity className="mt-2" onPress={() => { setSelectedClient(null); setSelectedCase(null); setClientCases([]); }}>
+                <TouchableOpacity className="mt-2" onPress={() => { setSelectedClient(null); setSelectedFolder(null); setClientFolders([]); }}>
                   <Text className="text-sm text-primary">Change Client</Text>
                 </TouchableOpacity>
               </View>
@@ -520,7 +621,7 @@ export default function RecordSessionScreen() {
                 <View className="gap-2">
                   <View>
                     <Text className="text-sm text-muted mb-1">Start Time</Text>
-                    {RNPlatform.OS === 'web' ? (
+                    {Platform.OS === 'web' ? (
                       <input
                         type="datetime-local"
                         className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
@@ -541,7 +642,7 @@ export default function RecordSessionScreen() {
                   </View>
                   <View>
                     <Text className="text-sm text-muted mb-1">End Time</Text>
-                    {RNPlatform.OS === 'web' ? (
+                    {Platform.OS === 'web' ? (
                       <input
                         type="datetime-local"
                         className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
@@ -569,7 +670,7 @@ export default function RecordSessionScreen() {
                 <View className="gap-2">
                   <View>
                     <Text className="text-sm text-muted mb-1">Start Time</Text>
-                    {RNPlatform.OS === 'web' ? (
+                    {Platform.OS === 'web' ? (
                       <input
                         type="datetime-local"
                         className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
@@ -590,7 +691,7 @@ export default function RecordSessionScreen() {
                   </View>
                   <View>
                     <Text className="text-sm text-muted mb-1">End Time</Text>
-                    {RNPlatform.OS === 'web' ? (
+                    {Platform.OS === 'web' ? (
                       <input
                         type="datetime-local"
                         className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
@@ -774,21 +875,19 @@ export default function RecordSessionScreen() {
       {/* Client Selection Modal */}
       <Modal
         visible={showClientModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        animationType="fade"
         onRequestClose={() => setShowClientModal(false)}
       >
-        <ScreenContainer>
-          <View className="flex-1 p-4">
-            {/* Modal Header */}
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-2xl font-bold text-foreground">Select Client</Text>
-              <TouchableOpacity onPress={() => setShowClientModal(false)}>
-                <Text className="text-primary font-semibold">Done</Text>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity onPress={() => setShowClientModal(false)} className="absolute left-0">
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Client</Text>
             </View>
 
-            {/* Search Bar */}
             <View className="mb-4">
               <TextInput
                 className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
@@ -800,10 +899,10 @@ export default function RecordSessionScreen() {
               />
             </View>
 
-            {/* Client List */}
             <FlatList
               data={filteredClients}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   className="bg-surface border border-border rounded-xl p-4 mb-3"
@@ -821,71 +920,194 @@ export default function RecordSessionScreen() {
                 </View>
               }
             />
+
+            <TouchableOpacity onPress={() => setShowClientModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
-        </ScreenContainer>
+        </View>
       </Modal>
 
-      {/* Case Selection Modal */}
+      {/* Folder Selection Modal */}
       <Modal
-        visible={showCaseModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowCaseModal(false)}
+        visible={showFolderModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFolderModal(false)}
       >
-        <ScreenContainer>
-          <View className="flex-1 p-4">
-            {/* Modal Header */}
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-2xl font-bold text-foreground">Select Case</Text>
-              <TouchableOpacity onPress={() => setShowCaseModal(false)}>
-                <Text className="text-primary font-semibold">Done</Text>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity onPress={() => setShowFolderModal(false)} className="absolute left-0">
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Folder</Text>
             </View>
 
-            {/* Case List */}
             <FlatList
-              data={clientCases}
+              data={clientFolders}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 460 }}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  className="bg-surface border border-border rounded-xl p-4 mb-3"
-                  onPress={() => handleSelectCase(item)}
-                >
-                  <Text className="text-base font-semibold text-foreground">{item.caseNumber}</Text>
-                  <Text className="text-sm text-muted mt-1">Status: {item.status}</Text>
-                  {item.notes && (
-                    <Text className="text-sm text-muted mt-1">{item.notes}</Text>
-                  )}
-                </TouchableOpacity>
+                <View className="bg-surface border border-border rounded-xl p-4 mb-3">
+                  <TouchableOpacity onPress={() => handleSelectFolder(item)}>
+                    <Text className="text-base font-bold text-foreground">
+                      {`Folder: ${item.folderNumber}${getFolderDescription(item) ? ` - ${getFolderDescription(item)}` : ""}`}
+                    </Text>
+                    <Text className="text-sm font-bold text-foreground mt-1">
+                      Status: {item.status || "-"}   Start: {formatDateOnly(item.startDate)}   End: {item.endDate ? formatDateOnly(item.endDate) : "-"}
+                    </Text>
+                    {item.notes && (
+                      <Text className="text-sm text-muted mt-1">Notes: {item.notes}</Text>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity className="mt-3" onPress={() => openFolderEditor(item)}>
+                    <Text className="text-primary font-semibold">Edit Folder</Text>
+                  </TouchableOpacity>
+                </View>
               )}
               ListEmptyComponent={
                 <View className="items-center justify-center py-8">
-                  <Text className="text-muted">No cases found</Text>
+                  <Text className="text-muted">No folders found</Text>
                 </View>
               }
             />
+
+            <TouchableOpacity onPress={() => setShowFolderModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
-        </ScreenContainer>
+        </View>
+      </Modal>
+
+      {/* Folder Edit Modal */}
+      <Modal
+        visible={showFolderEditModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFolderEditModal(false)}
+      >
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "86%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity onPress={() => setShowFolderEditModal(false)} className="absolute left-0">
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">
+                Edit Folder {editingFolder?.folderNumber || ""}
+              </Text>
+            </View>
+
+            <ScrollView style={{ maxHeight: 480 }} showsVerticalScrollIndicator={false}>
+              <View className="gap-3">
+                <View>
+                  <Text className="text-sm font-medium text-foreground mb-2">Start Date (YYYY-MM-DD)</Text>
+                  <TextInput
+                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="2026-03-12"
+                    placeholderTextColor={colors.muted}
+                    value={editFolderStartDate}
+                    onChangeText={setEditFolderStartDate}
+                  />
+                </View>
+
+                <View>
+                  <Text className="text-sm font-medium text-foreground mb-2">End Date (optional)</Text>
+                  <TextInput
+                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="2026-03-30"
+                    placeholderTextColor={colors.muted}
+                    value={editFolderEndDate}
+                    onChangeText={setEditFolderEndDate}
+                  />
+                </View>
+
+                <View>
+                  <Text className="text-sm font-medium text-foreground mb-2">Status</Text>
+                  <View className="flex-row gap-2">
+                    {(["Active", "Closed", "On Hold"] as const).map((status) => (
+                      <TouchableOpacity
+                        key={status}
+                        className={`px-4 py-2 rounded-xl border ${editFolderStatus === status ? "bg-primary border-primary" : "bg-surface border-border"}`}
+                        onPress={() => setEditFolderStatus(status)}
+                      >
+                        <Text className={editFolderStatus === status ? "text-background font-semibold" : "text-foreground font-semibold"}>
+                          {status}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View>
+                  <Text className="text-sm font-medium text-foreground mb-2">Description</Text>
+                  <TextInput
+                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="Folder description"
+                    placeholderTextColor={colors.muted}
+                    value={editFolderDescription}
+                    onChangeText={setEditFolderDescription}
+                  />
+                </View>
+
+                <View>
+                  <Text className="text-sm font-medium text-foreground mb-2">Notes</Text>
+                  <TextInput
+                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="Folder notes"
+                    placeholderTextColor={colors.muted}
+                    value={editFolderNotes}
+                    onChangeText={setEditFolderNotes}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+              </View>
+            </ScrollView>
+
+            <View className="mt-4 gap-2">
+              <TouchableOpacity
+                className="bg-primary py-3 rounded-xl items-center"
+                onPress={saveFolderEdits}
+                disabled={updateFolder.isPending}
+              >
+                {updateFolder.isPending ? (
+                  <ActivityIndicator size="small" color={colors.background} />
+                ) : (
+                  <Text className="text-background font-semibold">Save Folder Updates</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="bg-surface border border-border py-3 rounded-xl items-center"
+                onPress={() => setShowFolderEditModal(false)}
+              >
+                <Text className="text-foreground font-semibold">Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
 
       {/* Session Type Modal */}
       <Modal
         visible={showSessionTypeModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        animationType="fade"
         onRequestClose={() => setShowSessionTypeModal(false)}
       >
-        <ScreenContainer>
-          <View className="flex-1 p-4">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-2xl font-bold text-foreground">Select Session Type</Text>
-              <TouchableOpacity onPress={() => setShowSessionTypeModal(false)}>
-                <Text className="text-primary font-semibold">Done</Text>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity onPress={() => setShowSessionTypeModal(false)} className="absolute left-0">
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Session Type</Text>
             </View>
             <FlatList
               data={activeSessionTypes}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 460 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   className="bg-surface border border-border rounded-xl p-4 mb-3"
@@ -898,28 +1120,32 @@ export default function RecordSessionScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowSessionTypeModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
-        </ScreenContainer>
+        </View>
       </Modal>
 
       {/* Session Status Modal */}
       <Modal
         visible={showSessionStatusModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        animationType="fade"
         onRequestClose={() => setShowSessionStatusModal(false)}
       >
-        <ScreenContainer>
-          <View className="flex-1 p-4">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-2xl font-bold text-foreground">Select Session Status</Text>
-              <TouchableOpacity onPress={() => setShowSessionStatusModal(false)}>
-                <Text className="text-primary font-semibold">Done</Text>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity onPress={() => setShowSessionStatusModal(false)} className="absolute left-0">
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Session Status</Text>
             </View>
             <FlatList
               data={activeSessionStatuses}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 460 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   className="bg-surface border border-border rounded-xl p-4 mb-3"
@@ -932,24 +1158,27 @@ export default function RecordSessionScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowSessionStatusModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
-        </ScreenContainer>
+        </View>
       </Modal>
 
       {/* Session Result Modal */}
       <Modal
         visible={showSessionResultModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        animationType="fade"
         onRequestClose={() => setShowSessionResultModal(false)}
       >
-        <ScreenContainer>
-          <View className="flex-1 p-4">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-2xl font-bold text-foreground">Select Session Result</Text>
-              <TouchableOpacity onPress={() => setShowSessionResultModal(false)}>
-                <Text className="text-primary font-semibold">Done</Text>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity onPress={() => setShowSessionResultModal(false)} className="absolute left-0">
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Session Result</Text>
             </View>
             <TouchableOpacity
               className="bg-surface border border-border rounded-xl p-4 mb-3"
@@ -963,6 +1192,7 @@ export default function RecordSessionScreen() {
             <FlatList
               data={activeSessionResults}
               keyExtractor={(item: any) => item.id.toString()}
+              style={{ maxHeight: 420 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   className="bg-surface border border-border rounded-xl p-4 mb-3"
@@ -975,8 +1205,11 @@ export default function RecordSessionScreen() {
                 </TouchableOpacity>
               )}
             />
+            <TouchableOpacity onPress={() => setShowSessionResultModal(false)} className="mt-4">
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
-        </ScreenContainer>
+        </View>
       </Modal>
     </ScreenContainer>
   );
@@ -998,4 +1231,36 @@ function parseLocalDateTime(value: string) {
   const [hour, minute] = timePart.split(':').map(Number);
   const local = new Date(year, month - 1, day, hour, minute);
   return new Date(local.getTime() + local.getTimezoneOffset() * 60000);
+}
+
+function formatDateOnly(value: string | Date) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function parseDateOnly(value: string) {
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const [year, month, day] = trimmed.split('-').map(Number);
+  const parsed = new Date(year, month - 1, day);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+function getFolderDescription(folder: any) {
+  return folder?.folderDescription || folder?.folderdescription || "";
+}
+
+function normalizeFolder(folder: any) {
+  if (!folder) return folder;
+  return {
+    ...folder,
+    folderDescription:
+      folder.folderDescription ??
+      folder.folderdescription ??
+      folder.folder_description ??
+      "",
+  };
 }

@@ -70,20 +70,20 @@ INSERT INTO clients (departmentId, name, dateOfBirth, mobilePhone, email, addres
 (8, 'Ava Thompson', '2005-10-19', '555-2011', 'ava.t@email.com', '852 Hickory Rd, Southern City', 2, 'fsm', 1, 1),
 (8, 'Ethan White', '2006-01-07', '555-2012', 'ethan.w@email.com', '963 Walnut St, Southern City', NULL, NULL, 1, 1);
 
--- Insert Cases
-INSERT INTO cases (clientId, caseNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
-(1, 'CASE-2026-0001', 1, '2026-01-15', NULL, 'Active', 'Initial case assessment for Alice Johnson', 1, 1),
-(2, 'CASE-2026-0002', 2, '2026-01-16', NULL, 'On Hold', 'Initial case assessment for Robert Chen', 1, 1),
-(3, 'CASE-2026-0003', 3, '2026-01-17', '2026-02-17', 'Closed', 'Initial case assessment for Maria Garcia', 1, 1),
-(4, 'CASE-2026-0004', 4, '2026-01-18', NULL, 'Active', 'Initial case assessment for David Smith', 1, 1),
-(5, 'CASE-2026-0005', 6, '2026-01-19', NULL, 'On Hold', 'Initial case assessment for Emma Wilson', 1, 1),
-(6, 'CASE-2026-0006', 6, '2026-01-20', '2026-02-20', 'Closed', 'Initial case assessment for James Brown', 1, 1),
-(7, 'CASE-2026-0007', 7, '2026-01-21', NULL, 'Active', 'Initial case assessment for Sophia Martinez', 1, 1),
-(8, 'CASE-2026-0008', 8, '2026-01-22', NULL, 'On Hold', 'Initial case assessment for Michael Lee', 1, 1),
-(9, 'CASE-2026-0009', 9, '2026-01-23', '2026-02-23', 'Closed', 'Initial case assessment for Olivia Taylor', 1, 1),
-(10, 'CASE-2026-0010', 10, '2026-01-24', NULL, 'Active', 'Initial case assessment for William Anderson', 1, 1),
-(11, 'CASE-2026-0011', 10, '2026-01-25', NULL, 'On Hold', 'Initial case assessment for Ava Thompson', 1, 1),
-(12, 'CASE-2026-0012', 10, '2026-01-26', '2026-02-26', 'Closed', 'Initial case assessment for Ethan White', 1, 1);
+-- Insert Folders
+INSERT INTO caseFolders (clientId, folderNumber, createdByStaffId, startDate, endDate, status, notes, createdBy, updatedBy) VALUES
+(1, '001', 1, '2026-01-15', NULL, 'Active', 'Initial case assessment for Alice Johnson', 1, 1),
+(2, '002', 2, '2026-01-16', NULL, 'On Hold', 'Initial case assessment for Robert Chen', 1, 1),
+(3, '003', 3, '2026-01-17', '2026-02-17', 'Closed', 'Initial case assessment for Maria Garcia', 1, 1),
+(4, '004', 4, '2026-01-18', NULL, 'Active', 'Initial case assessment for David Smith', 1, 1),
+(5, '005', 6, '2026-01-19', NULL, 'On Hold', 'Initial case assessment for Emma Wilson', 1, 1),
+(6, '006', 6, '2026-01-20', '2026-02-20', 'Closed', 'Initial case assessment for James Brown', 1, 1),
+(7, '007', 7, '2026-01-21', NULL, 'Active', 'Initial case assessment for Sophia Martinez', 1, 1),
+(8, '008', 8, '2026-01-22', NULL, 'On Hold', 'Initial case assessment for Michael Lee', 1, 1),
+(9, '009', 9, '2026-01-23', '2026-02-23', 'Closed', 'Initial case assessment for Olivia Taylor', 1, 1),
+(10, '010', 10, '2026-01-24', NULL, 'Active', 'Initial case assessment for William Anderson', 1, 1),
+(11, '011', 10, '2026-01-25', NULL, 'On Hold', 'Initial case assessment for Ava Thompson', 1, 1),
+(12, '012', 10, '2026-01-26', '2026-02-26', 'Closed', 'Initial case assessment for Ethan White', 1, 1);
 
 -- Insert Session Types
 INSERT INTO sessionTypes (name, description, createdBy, updatedBy) VALUES
@@ -111,7 +111,7 @@ INSERT INTO sessionResults (name, description, createdBy, updatedBy) VALUES
 ('Needs Follow-up', 'Client needs additional follow-up', 1, 1);
 
 -- Insert Sessions
-INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
+INSERT INTO sessions (folderId, clientId, staffId, sessionTypeId, sessionStatusId, sessionResultId, sessionStartTime, sessionEndTime, sessionDuration, billableHours, notes, completedAt, createdBy, updatedBy) VALUES
 -- Case 1 sessions (Alice Johnson - Individual Counseling)
 (1, 1, 1, 1, 2, 2, '2026-01-20 10:00:00', '2026-01-20 11:00:00', 60, '1.0', 'Session 1 completed successfully. Client showed good progress.', '2026-01-20 11:00:00', 1, 1),
 (1, 1, 1, 1, 2, 2, '2026-01-27 10:00:00', '2026-01-27 11:00:00', 60, '1.0', 'Session 2 completed successfully. Client showed good progress.', '2026-01-27 11:00:00', 1, 1),
@@ -141,3 +141,5 @@ INSERT INTO sessions (caseId, clientId, staffId, sessionTypeId, sessionStatusId,
 (9, 9, 9, 1, 2, 2, '2026-01-28 14:00:00', '2026-01-28 15:00:00', 60, '1.0', 'Session completed.', '2026-01-28 15:00:00', 1, 1),
 -- Case 10 sessions (William Anderson)
 (10, 10, 10, 1, 2, 2, '2026-01-29 09:00:00', '2026-01-29 10:00:00', 60, '1.0', 'Session completed.', '2026-01-29 10:00:00', 1, 1);
+
+

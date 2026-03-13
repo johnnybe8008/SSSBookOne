@@ -216,12 +216,13 @@ export const clients = mysqlTable("clients", {
 });
 
 // ============================================================================
-// CASE MANAGEMENT
+// FOLDER MANAGEMENT
 // ============================================================================
 
-export const cases = mysqlTable("cases", {
+export const caseFolders = mysqlTable("caseFolders", {
   id: int("id").autoincrement().primaryKey(),
-  caseNumber: varchar("caseNumber", { length: 100 }).notNull().unique(),
+  folderNumber: varchar("folderNumber", { length: 3 }).notNull(),
+  folderDescription: text("folderDescription"),
   clientId: int("clientId").notNull(),
   createdByStaffId: int("createdByStaffId").notNull(),
   startDate: timestamp("startDate").notNull(),
@@ -274,7 +275,7 @@ export const sessionResults = mysqlTable("sessionResults", {
 
 export const sessions = mysqlTable("sessions", {
   id: int("id").autoincrement().primaryKey(),
-  caseId: int("caseId").notNull(),
+  folderId: int("folderId").notNull(),
   clientId: int("clientId").notNull(),
   staffId: int("staffId").notNull(),
   sessionTypeId: int("sessionTypeId").notNull(),
@@ -359,8 +360,8 @@ export type InsertFSM = typeof fsms.$inferInsert;
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = typeof clients.$inferInsert;
 
-export type Case = typeof cases.$inferSelect;
-export type InsertCase = typeof cases.$inferInsert;
+export type CaseFolder = typeof caseFolders.$inferSelect;
+export type InsertCaseFolder = typeof caseFolders.$inferInsert;
 
 export type SessionType = typeof sessionTypes.$inferSelect;
 export type InsertSessionType = typeof sessionTypes.$inferInsert;

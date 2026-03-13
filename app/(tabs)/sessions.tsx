@@ -138,7 +138,7 @@ export default function SessionsScreen() {
                     <View className="flex-row items-start justify-between mb-3">
                       <View className="flex-1">
                         <Text className="text-lg font-semibold text-foreground">Client #{session.clientId}</Text>
-                        <Text className="text-sm text-muted mt-1">Case #{session.caseId}</Text>
+                        <Text className="text-sm text-muted mt-1">Folder #{session.folderId}</Text>
                       </View>
                       <View className="flex-row items-center gap-2">
                         {canEdit && (

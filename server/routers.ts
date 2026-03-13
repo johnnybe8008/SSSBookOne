@@ -779,15 +779,21 @@ export const appRouter = router({
       }),
   }),
 
-  // Cases
-  cases: router({
-    list: protectedProcedure.input(z.object({ clientId: z.number() })).query(({ input }) => db.getCasesByClientId(input.clientId)),
-    get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getCaseById(input.id)),
-    getByCaseNumber: protectedProcedure.input(z.object({ caseNumber: z.string() })).query(({ input }) => db.getCaseByCaseNumber(input.caseNumber)),
+  // Folders
+  folders: router({
+    list: protectedProcedure.input(z.object({ clientId: z.number() })).query(({ input }) => db.getFoldersByClientId(input.clientId)),
+    get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getFolderById(input.id)),
+    getByFolderNumber: protectedProcedure
+      .input(z.object({ clientId: z.number(), folderNumber: z.string().regex(/^\d{3}$/) }))
+      .query(({ input }) => db.getFolderByFolderNumber(input.clientId, input.folderNumber)),
+    nextFolderNumber: protectedProcedure
+      .input(z.object({ clientId: z.number() }))
+      .query(({ input }) => db.getNextFolderNumber(input.clientId)),
     create: writeAccessProcedure
       .input(
         z.object({
-          caseNumber: z.string().max(100),
+          folderNumber: z.string().regex(/^\d{3}$/).optional(),
+          folderDescription: z.string().optional(),
           clientId: z.number(),
           createdByStaffId: z.number(),
           startDate: z.date(),
@@ -798,22 +804,44 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => db.createCase(input)),
+      .mutation(({ input }) => {
+        if (input.endDate && input.endDate < input.startDate) {
+          throw new Error("Folder end date must be on or after start date");
+        }
+        return db.createFolder(input);
+      }),
     update: writeAccessProcedure
       .input(
         z.object({
           id: z.number(),
+          clientId: z.number().optional(),
+          folderNumber: z.string().regex(/^\d{3}$/).optional(),
+          folderDescription: z.string().optional(),
+          startDate: z.date().optional(),
           endDate: z.date().optional(),
           status: z.enum(["Active", "Closed", "On Hold"]).optional(),
           notes: z.string().optional(),
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
-        return db.updateCase(id, data);
+
+        if (data.folderNumber && ctx.user?.role !== "admin") {
+          throw new Error("Only admin staff can edit folder numbers");
+        }
+
+        if (data.endDate) {
+          const existingFolder = await db.getFolderById(id);
+          const resolvedStartDate = data.startDate || existingFolder?.startDate;
+          if (resolvedStartDate && data.endDate < resolvedStartDate) {
+            throw new Error("Folder end date must be on or after start date");
+          }
+        }
+
+        return db.updateFolder(id, data);
       }),
-    delete: writeAccessProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCase(input.id)),
+    delete: writeAccessProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteFolder(input.id)),
   }),
 
   // Session Lookup Tables
@@ -830,32 +858,34 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createSessionType(input)),
-    create: adminOnlyProcedure
-      .input(
-        z.object({
-          organizationId: z.number(),
-          staffDepartmentId: z.number().optional(),
-          name: z.string().min(1).max(255),
-          createdBy: z.number(),
-          updatedBy: z.number(),
-        })
-      )
-      .mutation(({ input }) => db.createTeam(input)),
     update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
-          name: z.string().min(1).max(255).optional(),
-          address: z.string().optional(),
-          phone: z.string().optional(),
-          email: z.string().optional(),
+          name: z.string().min(1).max(100).optional(),
+          isActive: z.number().optional(),
           updatedBy: z.number(),
         })
       )
       .mutation(({ input }) => {
         const { id, ...data } = input;
-        return db.updateTeam(id, data);
+        return db.updateSessionType(id, data);
       }),
+  }),
+
+  sessionStatuses: router({
+    list: protectedProcedure.query(() => db.getAllSessionStatuses()),
+    get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getSessionStatusById(input.id)),
+    create: adminOnlyProcedure
+      .input(
+        z.object({
+          name: z.string().min(1).max(100),
+          isActive: z.number().default(1),
+          createdBy: z.number(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => db.createSessionStatus(input)),
     update: adminOnlyProcedure
       .input(
         z.object({
@@ -902,7 +932,7 @@ export const appRouter = router({
   // Sessions
   sessions: router({
     listAll: protectedProcedure.query(() => db.getAllSessions()),
-    listByCase: protectedProcedure.input(z.object({ caseId: z.number() })).query(({ input }) => db.getSessionsByCaseId(input.caseId)),
+    listByFolder: protectedProcedure.input(z.object({ folderId: z.number() })).query(({ input }) => db.getSessionsByFolderId(input.folderId)),
     listByStaff: protectedProcedure
       .input(z.object({ staffId: z.number(), limit: z.number().optional() }))
       .query(({ input }) => db.getSessionsByStaffId(input.staffId, input.limit)),
@@ -919,7 +949,7 @@ export const appRouter = router({
     create: writeAccessProcedure
       .input(
         z.object({
-          caseId: z.number(),
+          folderId: z.number(),
           clientId: z.number(),
           staffId: z.number(),
           sessionTypeId: z.number(),

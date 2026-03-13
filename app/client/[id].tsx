@@ -123,9 +123,9 @@ export default function ClientDetailScreen() {
         <View className="relative min-h-[48px] items-center justify-center">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="absolute left-0 z-20 h-10 w-10 rounded-full border border-border bg-surface items-center justify-center"
+            className="absolute left-0 z-20"
           >
-            <IconSymbol name="chevron.left" size={26} color={colors.primary} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
           <View className="px-10">
             <Text className="text-2xl font-bold text-foreground text-center">{client.name}</Text>

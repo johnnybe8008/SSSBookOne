@@ -161,7 +161,7 @@ export default function AdminStaffAddScreen() {
             <Text className="text-primary text-3xl font-bold">&lt;</Text>
           </TouchableOpacity>
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text className="text-2xl font-bold text-foreground text-center">Add a New Staff Member</Text>
+            <Text className="text-xl font-bold text-foreground text-center">Add a New Staff Member</Text>
           </View>
         </View>
 
@@ -234,7 +234,7 @@ export default function AdminStaffAddScreen() {
               VIP Rated
             </Text>
             <Text className="text-sm text-muted ml-2" style={{ flex: 2, textAlign: 'left' }}>
-              Can create cases for VIP clients
+              Can create folders for VIP clients
             </Text>
             <View
               className={`w-12 h-7 rounded-full p-1${isVipRated ? " bg-warning" : " bg-border"}`}
@@ -467,7 +467,15 @@ export default function AdminStaffAddScreen() {
       <Modal visible={showDeptModal} transparent animationType="slide">
         <View className="flex-1 justify-center items-center bg-black/30">
           <View className="bg-surface p-6 rounded-xl w-80">
-            <Text className="text-lg font-bold mb-4">Add Department</Text>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowDeptModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-center">Add Department</Text>
+            </View>
             <TextInput
               value={newDeptName}
               onChangeText={setNewDeptName}
@@ -504,7 +512,15 @@ export default function AdminStaffAddScreen() {
       <Modal visible={showTeamModal} transparent animationType="slide">
         <View className="flex-1 justify-center items-center bg-black/30">
           <View className="bg-surface p-6 rounded-xl w-80">
-            <Text className="text-lg font-bold mb-4">Add Team</Text>
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => setShowTeamModal(false)}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-center">Add Team</Text>
+            </View>
             <TextInput
               value={newTeamName}
               onChangeText={setNewTeamName}

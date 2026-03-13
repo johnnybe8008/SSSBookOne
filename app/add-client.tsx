@@ -410,11 +410,11 @@ export default function AddClientScreen() {
         <View className="relative min-h-[48px] items-center justify-center">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="absolute left-0 z-20 h-10 w-10 rounded-full border border-border bg-surface items-center justify-center"
+            className="absolute left-0 z-20"
           >
-            <IconSymbol name="chevron.left" size={26} color={colors.primary} />
+            <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground text-center">Add New Client</Text>
+          <Text className="text-xl font-bold text-foreground text-center">Add New Client</Text>
         </View>
       </View>
 
@@ -810,26 +810,39 @@ export default function AddClientScreen() {
       <Modal
         visible={showCompanyModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowCompanyModal(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}>
           <View 
-            style={{ backgroundColor: colors.background }} 
-            className="rounded-t-3xl p-6"
+            style={{ backgroundColor: colors.background, maxHeight: '82%' }} 
+            className="w-[92%] rounded-2xl p-5"
           >
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-foreground">Select Company</Text>
-              <TouchableOpacity onPress={() => {
-                setShowCompanyModal(false);
-                setCompanySearchQuery("");
-              }}>
-                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowCompanyModal(false);
+                  setCompanySearchQuery("");
+                }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Company</Text>
             </View>
             
             {!showCreateCompany ? (
               <>
+
+            <TouchableOpacity
+              onPress={() => {
+                setShowCompanyModal(false);
+                setCompanySearchQuery("");
+              }}
+              className="mt-4"
+            >
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
                 <TextInput
                   value={companySearchQuery}
                   onChangeText={setCompanySearchQuery}
@@ -1000,19 +1013,22 @@ export default function AddClientScreen() {
       <Modal
         visible={showDepartmentModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowDepartmentModal(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-foreground">Select Department</Text>
-              <TouchableOpacity onPress={() => {
-                setShowDepartmentModal(false);
-                setDepartmentSearchQuery("");
-              }}>
-                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}>
+          <View style={{ backgroundColor: colors.background, maxHeight: '82%' }} className="w-[92%] rounded-2xl p-5">
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowDepartmentModal(false);
+                  setDepartmentSearchQuery("");
+                }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Department</Text>
             </View>
             <TextInput
               value={departmentSearchQuery}
@@ -1100,7 +1116,7 @@ export default function AddClientScreen() {
             <FlatList
               data={filteredDepartments}
               keyExtractor={(item) => `department-modal-${item.id}`}
-              style={{ maxHeight: 400 }}
+              style={{ maxHeight: 360 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -1122,6 +1138,15 @@ export default function AddClientScreen() {
               }
             />
             )}
+            <TouchableOpacity
+              onPress={() => {
+                setShowDepartmentModal(false);
+                setDepartmentSearchQuery("");
+              }}
+              className="mt-4"
+            >
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1130,19 +1155,22 @@ export default function AddClientScreen() {
       <Modal
         visible={showTeamModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowTeamModal(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-foreground">Select Team</Text>
-              <TouchableOpacity onPress={() => {
-                setShowTeamModal(false);
-                setTeamSearchQuery("");
-              }}>
-                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}>
+          <View style={{ backgroundColor: colors.background, maxHeight: '82%' }} className="w-[92%] rounded-2xl p-5">
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowTeamModal(false);
+                  setTeamSearchQuery("");
+                }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Team</Text>
             </View>
             <TextInput
               value={teamSearchQuery}
@@ -1155,7 +1183,7 @@ export default function AddClientScreen() {
             <FlatList
               data={filteredTeams}
               keyExtractor={(item) => `team-modal-${item.id}`}
-              style={{ maxHeight: 400 }}
+              style={{ maxHeight: 360 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -1176,6 +1204,15 @@ export default function AddClientScreen() {
                 <Text style={{ color: colors.muted }} className="text-center py-8">No teams found</Text>
               }
             />
+            <TouchableOpacity
+              onPress={() => {
+                setShowTeamModal(false);
+                setTeamSearchQuery("");
+              }}
+              className="mt-4"
+            >
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1184,19 +1221,22 @@ export default function AddClientScreen() {
       <Modal
         visible={showClientReferralModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowClientReferralModal(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-foreground">Select Client Referral</Text>
-              <TouchableOpacity onPress={() => {
-                setShowClientReferralModal(false);
-                setClientReferralSearchQuery("");
-              }}>
-                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}>
+          <View style={{ backgroundColor: colors.background, maxHeight: '82%' }} className="w-[92%] rounded-2xl p-5">
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowClientReferralModal(false);
+                  setClientReferralSearchQuery("");
+                }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Client Referral</Text>
             </View>
             <TextInput
               value={clientReferralSearchQuery}
@@ -1209,7 +1249,7 @@ export default function AddClientScreen() {
             <FlatList
               data={filteredClientReferrals}
               keyExtractor={(item) => `client-referral-${item.id}`}
-              style={{ maxHeight: 400 }}
+              style={{ maxHeight: 360 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -1230,6 +1270,15 @@ export default function AddClientScreen() {
                 <Text style={{ color: colors.muted }} className="text-center py-8">No clients found</Text>
               }
             />
+            <TouchableOpacity
+              onPress={() => {
+                setShowClientReferralModal(false);
+                setClientReferralSearchQuery("");
+              }}
+              className="mt-4"
+            >
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1238,19 +1287,22 @@ export default function AddClientScreen() {
       <Modal
         visible={showStaffReferralModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowStaffReferralModal(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-foreground">Select Staff Referral</Text>
-              <TouchableOpacity onPress={() => {
-                setShowStaffReferralModal(false);
-                setStaffReferralSearchQuery("");
-              }}>
-                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}>
+          <View style={{ backgroundColor: colors.background, maxHeight: '82%' }} className="w-[92%] rounded-2xl p-5">
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowStaffReferralModal(false);
+                  setStaffReferralSearchQuery("");
+                }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Staff Referral</Text>
             </View>
             <TextInput
               value={staffReferralSearchQuery}
@@ -1263,7 +1315,7 @@ export default function AddClientScreen() {
             <FlatList
               data={filteredStaffReferrals}
               keyExtractor={(item) => `staff-referral-${item.id}`}
-              style={{ maxHeight: 400 }}
+              style={{ maxHeight: 360 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -1284,6 +1336,15 @@ export default function AddClientScreen() {
                 <Text style={{ color: colors.muted }} className="text-center py-8">No staff found</Text>
               }
             />
+            <TouchableOpacity
+              onPress={() => {
+                setShowStaffReferralModal(false);
+                setStaffReferralSearchQuery("");
+              }}
+              className="mt-4"
+            >
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1292,19 +1353,22 @@ export default function AddClientScreen() {
       <Modal
         visible={showFsmModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowFsmModal(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: colors.background }} className="rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-foreground">Select FSM</Text>
-              <TouchableOpacity onPress={() => {
-                setShowFsmModal(false);
-                setFsmSearchQuery("");
-              }}>
-                <IconSymbol name="chevron.right" size={24} color={colors.foreground} />
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}>
+          <View style={{ backgroundColor: colors.background, maxHeight: '82%' }} className="w-[92%] rounded-2xl p-5">
+            <View className="relative min-h-[44px] items-center justify-center mb-4">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowFsmModal(false);
+                  setFsmSearchQuery("");
+                }}
+                className="absolute left-0"
+              >
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
               </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select FSM</Text>
             </View>
             <TextInput
               value={fsmSearchQuery}
@@ -1317,7 +1381,7 @@ export default function AddClientScreen() {
             <FlatList
               data={filteredFsms}
               keyExtractor={(item) => `fsm-${item.id}`}
-              style={{ maxHeight: 400 }}
+              style={{ maxHeight: 360 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -1338,6 +1402,15 @@ export default function AddClientScreen() {
                 <Text style={{ color: colors.muted }} className="text-center py-8">No FSMs found</Text>
               }
             />
+            <TouchableOpacity
+              onPress={() => {
+                setShowFsmModal(false);
+                setFsmSearchQuery("");
+              }}
+              className="mt-4"
+            >
+              <Text className="text-primary font-semibold text-center">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
