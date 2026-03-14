@@ -24,22 +24,37 @@ export const OWNER_OPEN_ID = env.ownerId;
 export const OWNER_NAME = env.ownerName;
 export const API_BASE_URL = env.apiBaseUrl;
 
+function getExpoHostName(): string | null {
+  try {
+    const linkingUrl = Linking.createURL("/");
+    const normalized = linkingUrl
+      .replace(/^exp:\/\//, "http://")
+      .replace(/^exps:\/\//, "https://");
+    const parsed = new URL(normalized);
+    return parsed.hostname || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Get the API base URL, deriving from current hostname if not set.
  * Metro runs on 8081, API server runs on 3000.
  * URL pattern: https://PORT-sandboxid.region.domain
  */
 export function getApiBaseUrl(): string {
-
-  // Debug: log the API_BASE_URL and env
-  if (typeof window !== "undefined") {
-    // Only log in browser
-    console.log("[getApiBaseUrl] API_BASE_URL:", API_BASE_URL);
-    console.log("[getApiBaseUrl] process.env.EXPO_PUBLIC_API_BASE_URL:", process.env.EXPO_PUBLIC_API_BASE_URL);
-  }
-  // If API_BASE_URL is set, use it
+  // If API_BASE_URL is explicitly set, use it, but fix localhost for physical devices.
   if (API_BASE_URL) {
-    return API_BASE_URL.replace(/\/$/, "");
+    const trimmed = API_BASE_URL.replace(/\/$/, "");
+    if (ReactNative.Platform.OS !== "web" && /localhost|127\.0\.0\.1/.test(trimmed)) {
+      const host = getExpoHostName();
+      if (host) {
+        return trimmed
+          .replace("localhost", host)
+          .replace("127.0.0.1", host);
+      }
+    }
+    return trimmed;
   }
 
   // On web, derive from current hostname by replacing port 8081 with 3000
@@ -49,6 +64,14 @@ export function getApiBaseUrl(): string {
     const apiHostname = hostname.replace(/^8081-/, "3000-");
     if (apiHostname !== hostname) {
       return `${protocol}//${apiHostname}`;
+    }
+  }
+
+  // On native, derive API host from Expo host and assume API server runs on port 3000.
+  if (ReactNative.Platform.OS !== "web") {
+    const host = getExpoHostName();
+    if (host) {
+      return `http://${host}:3000`;
     }
   }
 
