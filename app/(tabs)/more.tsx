@@ -19,24 +19,18 @@ import { useRouter } from "expo-router";
  */
 export default function MoreScreen() {
     // Debug: Log session token and staff info when More tab is opened
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
       const match = document.cookie.match(/(?:^|; )session_token=([^;]*)/);
       const token = match ? decodeURIComponent(match[1]) : null;
-      console.log('[MoreScreen][DEBUG] session_token from cookie:', token);
+      console.log("[MoreScreen][DEBUG] session_token from cookie:", token);
     }
     // ...existing code...
     // Ensure only one useAuth destructuring
     // ...existing code...
   const colors = useColors();
   const router = useRouter();
-  const { user, staff, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const { role, isAdmin, canManageStaff, canManageOrganizations } = useStaffRole();
-
-  // Get staff record for current user
-  const { data: staffRecord, isLoading: staffLoading, refetch: refetchStaff } = trpc.staff.getByUserId.useQuery(
-    { userId: user?.id || 0 },
-    { enabled: !!user?.id }
-  );
+  const { staff, isAuthenticated, loading: authLoading, logout } = useAuth();
+  const { isAdmin } = useStaffRole();
 
   // Fix admin account mutation
   const fixAdminMutation = trpc.auth.fixAdmin.useMutation();
@@ -73,7 +67,7 @@ export default function MoreScreen() {
     }
   };
 
-  if (authLoading || staffLoading) {
+  if (authLoading) {
     return (
       <ScreenContainer className="items-center justify-center">
         <ActivityIndicator size="large" color={colors.primary} />
@@ -97,8 +91,6 @@ export default function MoreScreen() {
     );
   }
 
-  const isVipRated = staffRecord?.isVipRated === 1;
-
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
@@ -110,13 +102,13 @@ export default function MoreScreen() {
         {/* Profile Section */}
         <View className="bg-surface rounded-2xl p-6 border border-border mb-6">
           <Text className="text-2xl font-semibold text-primary mb-1">
-            {staffRecord?.name || staff?.name || user?.name || "User"}
+            {staff?.name || "User"}
           </Text>
           <Text className="text-base text-muted mb-1">
-            {(staffRecord?.role || staff?.role) ? (staffRecord?.role || staff?.role).charAt(0).toUpperCase() + (staffRecord?.role || staff?.role).slice(1) : ""}
+            {staff?.role ? staff.role.charAt(0).toUpperCase() + staff.role.slice(1) : ""}
           </Text>
-          {(staffRecord?.email || staff?.email) && (
-            <Text className="text-sm text-muted mb-1">{staffRecord?.email || staff?.email}</Text>
+          {staff?.email && (
+            <Text className="text-sm text-muted mb-1">{staff.email}</Text>
           )}
         </View>
 

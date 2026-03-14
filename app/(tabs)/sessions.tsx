@@ -25,13 +25,16 @@ export default function SessionsScreen() {
   const [selectedStatusIds, setSelectedStatusIds] = useState<number[]>([]);
   const [selectedClientIds, setSelectedClientIds] = useState<number[]>([]);
   const [selectedFolderIds, setSelectedFolderIds] = useState<number[]>([]);
+  const [selectedStaffIds, setSelectedStaffIds] = useState<number[]>([]);
   const [summaryOnly, setSummaryOnly] = useState(false);
   const [showStatusFilterModal, setShowStatusFilterModal] = useState(false);
   const [showClientFilterModal, setShowClientFilterModal] = useState(false);
   const [showFolderFilterModal, setShowFolderFilterModal] = useState(false);
+  const [showStaffFilterModal, setShowStaffFilterModal] = useState(false);
   const [statusSearch, setStatusSearch] = useState("");
   const [clientSearch, setClientSearch] = useState("");
   const [folderSearch, setFolderSearch] = useState("");
+  const [staffSearch, setStaffSearch] = useState("");
 
   // Debug: log staffRecord and staffId
   if (!isAdmin) {
@@ -52,6 +55,7 @@ export default function SessionsScreen() {
   const { data: sessionStatuses } = trpc.sessionStatuses.list.useQuery();
   const { data: allClients } = trpc.clients.listAll.useQuery(undefined, { enabled: isAdmin });
   const { data: allFolders } = trpc.folders.listAll.useQuery(undefined, { enabled: isAdmin });
+  const { data: allStaff } = trpc.staff.listAll.useQuery(undefined, { enabled: isAdmin });
 
   const isActiveValue = (value: unknown) => value === 1 || value === "1" || value === true;
   const activeSessionStatuses = sessionStatuses?.filter((s: any) => isActiveValue(s.isActive)) || [];
@@ -72,6 +76,17 @@ export default function SessionsScreen() {
       return name.includes(query) || email.includes(query);
     });
   }, [allClients, clientSearch]);
+
+  const filteredStaffOptions = useMemo(() => {
+    const query = staffSearch.trim().toLowerCase();
+    const source = allStaff || [];
+    if (!query) return source;
+    return source.filter((member: any) => {
+      const name = (member.name || "").toLowerCase();
+      const email = (member.email || "").toLowerCase();
+      return name.includes(query) || email.includes(query);
+    });
+  }, [allStaff, staffSearch]);
 
   const folderOptions = useMemo(() => {
     const source = allFolders || [];
@@ -102,9 +117,12 @@ export default function SessionsScreen() {
       if (isAdmin && selectedFolderIds.length > 0 && !selectedFolderIds.includes(session.folderId)) {
         return false;
       }
+      if (isAdmin && selectedStaffIds.length > 0 && !selectedStaffIds.includes(session.staffId)) {
+        return false;
+      }
       return true;
     });
-  }, [sessions, selectedStatusIds, isAdmin, selectedClientIds, selectedFolderIds]);
+  }, [sessions, selectedStatusIds, isAdmin, selectedClientIds, selectedFolderIds, selectedStaffIds]);
 
   const sortedFilteredSessions = useMemo(() => {
     return [...filteredSessions].sort((a: any, b: any) => {
@@ -120,7 +138,7 @@ export default function SessionsScreen() {
 
   const hasAnyFilter =
     selectedStatusIds.length > 0 ||
-    (isAdmin && (selectedClientIds.length > 0 || selectedFolderIds.length > 0));
+    (isAdmin && (selectedClientIds.length > 0 || selectedFolderIds.length > 0 || selectedStaffIds.length > 0));
   const PICKER_MAX_ROWS = 8;
   const PICKER_ROW_HEIGHT = 40;
   const pickerMaxHeight = PICKER_MAX_ROWS * PICKER_ROW_HEIGHT;
@@ -150,6 +168,26 @@ export default function SessionsScreen() {
       }
       return [...prev, id];
     });
+  };
+
+  const toggleStaffFilter = (id: number) => {
+    setSelectedStaffIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((v) => v !== id);
+      }
+      return [...prev, id];
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSelectedStatusIds([]);
+    setSelectedClientIds([]);
+    setSelectedFolderIds([]);
+    setSelectedStaffIds([]);
+    setStatusSearch("");
+    setClientSearch("");
+    setFolderSearch("");
+    setStaffSearch("");
   };
 
   useEffect(() => {
@@ -262,8 +300,41 @@ export default function SessionsScreen() {
       {/* Filter Panel (collapsed by default) */}
       {showFilters && (
         <View className="px-6 py-4 bg-surface border-b border-border">
+          {hasAnyFilter && (
+            <View className="flex-row justify-end mb-3">
+              <TouchableOpacity
+                className="px-4 py-2 bg-background rounded-full border border-border"
+                onPress={clearAllFilters}
+              >
+                <Text className="text-sm font-medium text-foreground">Clear All</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {isAdmin && (
             <View className="mb-4 gap-3">
+              <View>
+                <Text className="text-sm font-semibold text-foreground mb-2">Filter by Staff</Text>
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    className="flex-1 px-4 py-2 bg-background rounded-full border border-border"
+                    onPress={() => setShowStaffFilterModal(true)}
+                  >
+                    <Text className="text-sm font-medium text-foreground">
+                      {selectedStaffIds.length > 0
+                        ? `${selectedStaffIds.length} staff selected`
+                        : "No staff filter"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="px-4 py-2 bg-background rounded-full border border-border"
+                    onPress={() => setSelectedStaffIds([])}
+                  >
+                    <Text className="text-sm font-medium text-foreground">Clear</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
               <View>
                 <Text className="text-sm font-semibold text-foreground mb-2">Filter by Clients</Text>
                 <View className="flex-row gap-2">
@@ -541,6 +612,76 @@ export default function SessionsScreen() {
           )}
         </ScrollView>
       </View>
+
+      <Modal
+        visible={showStaffFilterModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowStaffFilterModal(false)}
+      >
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-3">
+              <TouchableOpacity onPress={() => setShowStaffFilterModal(false)} className="absolute left-0">
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Staff</Text>
+            </View>
+            <TextInput
+              className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
+              placeholder="Search staff..."
+              placeholderTextColor={colors.muted}
+              value={staffSearch}
+              onChangeText={setStaffSearch}
+            />
+
+            <View
+              className="rounded-xl overflow-hidden"
+              style={{ backgroundColor: "#f5f8fa", maxHeight: pickerMaxHeight, marginBottom: 4 }}
+            >
+              <ScrollView>
+                {filteredStaffOptions.length === 0 ? (
+                  <View className="px-3 py-3">
+                    <Text className="text-sm" style={{ color: colors.muted }}>No staff found.</Text>
+                  </View>
+                ) : (
+                  filteredStaffOptions.map((item: any) => {
+                    const checked = selectedStaffIds.includes(item.id);
+                    return (
+                      <TouchableOpacity
+                        key={String(item.id)}
+                        className="flex-row items-center px-3"
+                        style={{ minHeight: PICKER_ROW_HEIGHT }}
+                        onPress={() => toggleStaffFilter(item.id)}
+                      >
+                        <View
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 6,
+                            borderWidth: 2,
+                            borderColor: checked ? colors.primary : "#ccc",
+                            backgroundColor: checked ? colors.primary : "#fff",
+                            marginRight: 10,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          {checked ? <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}>✓</Text> : null}
+                        </View>
+                        <Text className="text-sm text-foreground" numberOfLines={1}>
+                          {item.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
+
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showStatusFilterModal}

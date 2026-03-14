@@ -47,6 +47,17 @@ export default function DashboardScreen() {
     { enabled: !!staffId }
   );
 
+  const { data: clients } = trpc.clients.listAll.useQuery(undefined, { enabled: !!staffId });
+
+  const clientNameById = new Map<number, string>((clients || []).map((c: any) => [Number(c.id), c.name || ""]));
+
+  const getClientLabel = (session: any) => {
+    const fromSession = (session?.clientName || "").trim();
+    if (fromSession) return fromSession;
+    const fromLookup = (clientNameById.get(Number(session?.clientId)) || "").trim();
+    return fromLookup || `Client #${session?.clientId}`;
+  };
+
   // Show loading indicator while authenticating
   if (authLoading) {
     return (
@@ -132,7 +143,7 @@ export default function DashboardScreen() {
                     }}
                   >
                     <View className="flex-1">
-                      <Text className="text-base font-medium text-foreground">Client #{session.clientId}</Text>
+                      <Text className="text-base font-medium text-foreground">{getClientLabel(session)}</Text>
                       <Text className="text-sm text-muted">
                         {session.scheduledDate ? new Date(session.scheduledDate).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Not scheduled"}
                       </Text>
@@ -165,7 +176,7 @@ export default function DashboardScreen() {
                     }}
                   >
                     <View className="flex-1">
-                      <Text className="text-base font-medium text-foreground">Client #{session.clientId}</Text>
+                      <Text className="text-base font-medium text-foreground">{getClientLabel(session)}</Text>
                       <View className="flex-row items-center gap-2 mt-1">
                         <Text className="text-sm text-muted">
                           {session.completedAt ? new Date(session.completedAt).toLocaleDateString() : "In progress"}

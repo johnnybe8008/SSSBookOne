@@ -1,4 +1,4 @@
-import DateTimePicker from '@/components/ui/DateTimePicker';
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useState, useEffect, useRef } from "react";
 import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, FlatList, Platform } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
@@ -187,7 +187,11 @@ export default function RecordSessionScreen() {
 
     const interviewStart = existingSession.interviewStartTime ? new Date(existingSession.interviewStartTime) : null;
     const interviewEnd = existingSession.interviewEndTime ? new Date(existingSession.interviewEndTime) : null;
-    const sessionStart = existingSession.sessionStartTime ? new Date(existingSession.sessionStartTime) : null;
+    const sessionStart = existingSession.sessionStartTime
+      ? new Date(existingSession.sessionStartTime)
+      : existingSession.scheduledDate
+      ? new Date(existingSession.scheduledDate)
+      : null;
     const sessionEnd = existingSession.sessionEndTime ? new Date(existingSession.sessionEndTime) : null;
 
     if (interviewStart || interviewEnd || sessionStart || sessionEnd) {
