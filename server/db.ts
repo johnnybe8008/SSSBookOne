@@ -435,6 +435,19 @@ export async function getFoldersByClientId(clientId: number) {
   return rows as any[];
 }
 
+export async function getAllFoldersWithClient() {
+  await getDb();
+  const [rows] = await _connection.query(
+    `SELECT cf.id, cf.folderNumber, cf.folderDescription, cf.clientId, c.name AS clientName,
+            cf.createdByStaffId, cf.startDate, cf.endDate, cf.status, cf.notes, cf.createdAt,
+            cf.createdBy, cf.updatedAt, cf.updatedBy
+     FROM caseFolders cf
+     LEFT JOIN clients c ON c.id = cf.clientId
+     ORDER BY c.name ASC, cf.folderNumber ASC`
+  );
+  return rows as any[];
+}
+
 export async function getFolderById(id: number) {
   await getDb();
   const [rows] = await _connection.query(
@@ -775,4 +788,85 @@ export async function deleteSession(id: number) {
   const db = await getDb();
   await db.delete(sessions).where(eq(sessions.id, id));
   return { success: true };
+}
+
+// --- REPORTING DB FUNCTIONS ---
+function parseHoursValue(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  const str = String(value).trim();
+  if (!str) return null;
+  const match = str.match(/\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isFinite(num) ? num : null;
+}
+
+function getEffectiveSessionDate(row: any): Date | null {
+  const candidate = row.sessionStartTime || row.completedAt || row.scheduledDate || row.createdAt;
+  if (!candidate) return null;
+  const dt = new Date(candidate);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function getSessionHours(row: any): number {
+  const fromBillable = parseHoursValue(row.billableHours);
+  if (fromBillable !== null) return fromBillable;
+
+  if (typeof row.sessionDuration === "number" && Number.isFinite(row.sessionDuration)) {
+    return row.sessionDuration / 60;
+  }
+
+  if (row.sessionStartTime && row.sessionEndTime) {
+    const start = new Date(row.sessionStartTime).getTime();
+    const end = new Date(row.sessionEndTime).getTime();
+    if (!Number.isNaN(start) && !Number.isNaN(end) && end >= start) {
+      return (end - start) / (1000 * 60 * 60);
+    }
+  }
+
+  return 0;
+}
+
+export async function getBillableHoursByStaff(staffId: number, startDate: Date, endDate: Date) {
+  await getDb();
+  const [rows] = await _connection.query(
+    `SELECT billableHours, sessionDuration, sessionStartTime, sessionEndTime, completedAt, scheduledDate, createdAt
+     FROM sessions
+     WHERE staffId = ?`,
+    [staffId]
+  );
+
+  let total = 0;
+  for (const row of rows as any[]) {
+    const effective = getEffectiveSessionDate(row);
+    if (!effective) continue;
+    if (effective < startDate || effective > endDate) continue;
+    total += getSessionHours(row);
+  }
+  return Number(total.toFixed(2));
+}
+
+export async function getBillableHoursByClient(clientId: number, startDate: Date, endDate: Date) {
+  await getDb();
+  const [rows] = await _connection.query(
+    `SELECT billableHours, sessionDuration, sessionStartTime, sessionEndTime, completedAt, scheduledDate, createdAt
+     FROM sessions
+     WHERE clientId = ?`,
+    [clientId]
+  );
+
+  let total = 0;
+  for (const row of rows as any[]) {
+    const effective = getEffectiveSessionDate(row);
+    if (!effective) continue;
+    if (effective < startDate || effective > endDate) continue;
+    total += getSessionHours(row);
+  }
+  return Number(total.toFixed(2));
+}
+
+export async function getMonthlyBillableHours(staffId: number, year: number, month: number) {
+  const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
+  const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+  return getBillableHoursByStaff(staffId, startDate, endDate);
 }

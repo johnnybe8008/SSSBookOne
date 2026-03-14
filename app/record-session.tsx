@@ -498,6 +498,7 @@ export default function RecordSessionScreen() {
     let interviewEnd: Date | undefined;
     let sessionStart: Date | undefined;
     let sessionEnd: Date | undefined;
+    let scheduledDate: Date | undefined;
 
     if (useManualTime) {
       // Use manual time input - parse datetime-local format (YYYY-MM-DDTHH:MM)
@@ -505,6 +506,27 @@ export default function RecordSessionScreen() {
       interviewEnd = manualInterviewEnd;
       sessionStart = manualSessionStart;
       sessionEnd = manualSessionEnd;
+
+      const nowMs = Date.now();
+      const futureStartCandidates: Date[] = [];
+
+      const interviewStartIsFuture = !!interviewStart && interviewStart.getTime() > nowMs;
+      const sessionStartIsFuture = !!sessionStart && sessionStart.getTime() > nowMs;
+
+      // Start times are optional: if either start is future, schedule using future start(s).
+      if (interviewStartIsFuture && interviewStart) {
+        futureStartCandidates.push(interviewStart);
+        interviewEnd = undefined;
+      }
+      if (sessionStartIsFuture && sessionStart) {
+        futureStartCandidates.push(sessionStart);
+        sessionEnd = undefined;
+      }
+
+      // If both future, this naturally uses the earlier of the two.
+      if (futureStartCandidates.length > 0) {
+        scheduledDate = new Date(Math.min(...futureStartCandidates.map((d) => d.getTime())));
+      }
     } else {
       // Use timer values
       interviewStart = interviewStartTime || undefined;
@@ -541,6 +563,7 @@ export default function RecordSessionScreen() {
       sessionStartTime: sessionStart,
       sessionEndTime: sessionEnd,
       sessionDuration,
+      scheduledDate,
       billableHours: billableHours.trim() || undefined,
       notes: notes.trim() || undefined,
       updatedBy: user.id,
@@ -753,6 +776,9 @@ export default function RecordSessionScreen() {
             </View>
           ) : (
             <View className="bg-surface border border-border rounded-2xl p-4 gap-4">
+              <Text className="text-xs text-muted">
+                If a manual start time is in the future, it is treated as scheduled and its end time is ignored.
+              </Text>
               {/* Manual Interview Time */}
               <View>
                 <Text className="text-base font-semibold text-foreground mb-2">Interview Time (Optional)</Text>

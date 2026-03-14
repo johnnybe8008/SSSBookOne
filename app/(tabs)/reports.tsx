@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -18,14 +18,9 @@ import { useAuth } from "@/hooks/use-auth";
  */
 export default function ReportsScreen() {
   const colors = useColors();
-  const { user } = useAuth();
+  const { staff } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year">("month");
-
-  // Get staff record for current user
-  const { data: staffRecord } = trpc.staff.getByUserId.useQuery(
-    { userId: user?.id || 0 },
-    { enabled: !!user?.id }
-  );
+  const staffId = staff?.id || 0;
 
   // Calculate date range based on selected period
   const getDateRange = () => {
@@ -52,27 +47,70 @@ export default function ReportsScreen() {
   // Get billable hours report
   const { data: reportData, isLoading: reportLoading } = trpc.reports.billableHoursByStaff.useQuery(
     {
-      staffId: staffRecord?.id || 0,
+      staffId,
       startDate,
       endDate,
     },
-    { enabled: !!staffRecord?.id }
+    { enabled: !!staffId }
   );
+
+  const { data: allSessions, isLoading: sessionsLoading } = trpc.sessions.listAll.useQuery(undefined, {
+    enabled: !!staffId,
+  });
 
   // Get monthly billable hours for current month
   const currentDate = new Date();
   const { data: currentMonthHours } = trpc.reports.monthlyBillableHours.useQuery(
     {
-      staffId: staffRecord?.id || 0,
+      staffId,
       year: currentDate.getFullYear(),
       month: currentDate.getMonth() + 1,
     },
-    { enabled: !!staffRecord?.id }
+    { enabled: !!staffId }
   );
 
-  const averageSessionDuration = reportData?.sessions.length
-    ? reportData.sessions.reduce((sum, s) => sum + (s.sessionDuration || 0), 0) / reportData.sessions.length
+  const getEffectiveSessionDate = (session: any): Date | null => {
+    const candidate = session.sessionStartTime || session.completedAt || session.scheduledDate || session.createdAt;
+    if (!candidate) return null;
+    const dt = new Date(candidate);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  };
+
+  const getSessionDurationMinutes = (session: any): number => {
+    if (typeof session.sessionDuration === "number" && Number.isFinite(session.sessionDuration)) {
+      return session.sessionDuration;
+    }
+    if (session.sessionStartTime && session.sessionEndTime) {
+      const start = new Date(session.sessionStartTime).getTime();
+      const end = new Date(session.sessionEndTime).getTime();
+      if (!Number.isNaN(start) && !Number.isNaN(end) && end >= start) {
+        return Math.round((end - start) / (1000 * 60));
+      }
+    }
+    return 0;
+  };
+
+  const filteredSessions = useMemo(() => {
+    if (!allSessions || !staffId) return [];
+    return allSessions
+      .filter((s: any) => Number(s.staffId) === Number(staffId))
+      .filter((s: any) => {
+        const dt = getEffectiveSessionDate(s);
+        return !!dt && dt >= startDate && dt <= endDate;
+      })
+      .sort((a: any, b: any) => {
+        const aTime = getEffectiveSessionDate(a)?.getTime() || 0;
+        const bTime = getEffectiveSessionDate(b)?.getTime() || 0;
+        return bTime - aTime;
+      });
+  }, [allSessions, staffId, startDate, endDate]);
+
+  const averageSessionDuration = filteredSessions.length
+    ? filteredSessions.reduce((sum: number, s: any) => sum + getSessionDurationMinutes(s), 0) / filteredSessions.length
     : 0;
+
+  const reportHours = typeof reportData === "number" ? reportData : 0;
+  const isLoading = reportLoading || sessionsLoading;
 
   return (
     <ScreenContainer className="flex-1">
@@ -132,7 +170,7 @@ export default function ReportsScreen() {
           </View>
         </View>
 
-        {reportLoading ? (
+        {isLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
@@ -146,7 +184,7 @@ export default function ReportsScreen() {
                   <Text className="text-sm font-medium text-muted">Total Sessions</Text>
                   <IconSymbol name="calendar" size={20} color={colors.primary} />
                 </View>
-                <Text className="text-3xl font-bold text-foreground">{reportData?.totalSessions || 0}</Text>
+                <Text className="text-3xl font-bold text-foreground">{filteredSessions.length}</Text>
                 <Text className="text-xs text-muted mt-1">
                   {selectedPeriod === "week" ? "Last 7 days" : selectedPeriod === "month" ? "Last 30 days" : "Last 365 days"}
                 </Text>
@@ -159,7 +197,7 @@ export default function ReportsScreen() {
                   <IconSymbol name="clock.fill" size={20} color={colors.success} />
                 </View>
                 <Text className="text-3xl font-bold text-foreground">
-                  {reportData?.totalBillableHours.toFixed(2) || "0.00"}
+                  {reportHours.toFixed(2)}
                 </Text>
                 <Text className="text-xs text-muted mt-1">Hours billed in selected period</Text>
               </View>
@@ -185,11 +223,11 @@ export default function ReportsScreen() {
             </View>
 
             {/* Recent Sessions List */}
-            {reportData && reportData.sessions.length > 0 && (
+            {filteredSessions.length > 0 && (
               <View className="mb-6">
                 <Text className="text-lg font-semibold text-foreground mb-4">Recent Sessions</Text>
                 <View className="gap-3">
-                  {reportData.sessions.slice(0, 10).map((session) => (
+                  {filteredSessions.slice(0, 10).map((session: any) => (
                     <View
                       key={session.id}
                       className="bg-surface rounded-xl p-4 border border-border flex-row items-center justify-between"
@@ -201,7 +239,7 @@ export default function ReportsScreen() {
                         </Text>
                       </View>
                       <View className="items-end">
-                        <Text className="text-lg font-bold text-primary">{session.billableHours || "0.00"}</Text>
+                        <Text className="text-lg font-bold text-primary">{String(session.billableHours || "0.00")}</Text>
                         <Text className="text-xs text-muted">hours</Text>
                       </View>
                     </View>

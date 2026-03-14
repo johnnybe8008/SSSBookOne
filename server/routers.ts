@@ -781,6 +781,7 @@ export const appRouter = router({
 
   // Folders
   folders: router({
+    listAll: protectedProcedure.query(() => db.getAllFoldersWithClient()),
     list: protectedProcedure.input(z.object({ clientId: z.number() })).query(({ input }) => db.getFoldersByClientId(input.clientId)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getFolderById(input.id)),
     getByFolderNumber: protectedProcedure

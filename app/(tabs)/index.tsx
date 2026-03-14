@@ -19,41 +19,36 @@ import { useRouter } from "expo-router";
  */
 export default function DashboardScreen() {
   const colors = useColors();
-  const { user, staff, isAuthenticated, loading: authLoading } = useAuth();
+  const { staff, isAuthenticated, loading: authLoading } = useAuth();
   const { canWrite } = useStaffRole();
   const router = useRouter();
-
-  // Get staff record for current user
-  const { data: staffRecord, isLoading: staffLoading } = trpc.staff.getByUserId.useQuery(
-    { userId: user?.id || 0 },
-    { enabled: !!user?.id }
-  );
+  const staffId = staff?.id || 0;
 
   // Get upcoming sessions (next 7 days)
   const { data: upcomingSessions, isLoading: upcomingLoading } = trpc.sessions.upcoming.useQuery(
-    { staffId: staffRecord?.id || 0, days: 7 },
-    { enabled: !!staffRecord?.id }
+    { staffId, days: 7 },
+    { enabled: !!staffId }
   );
 
   // Get recent sessions (last 7 days)
   const { data: recentSessions, isLoading: recentLoading } = trpc.sessions.recent.useQuery(
-    { staffId: staffRecord?.id || 0, days: 7 },
-    { enabled: !!staffRecord?.id }
+    { staffId, days: 7 },
+    { enabled: !!staffId }
   );
 
   // Get monthly billable hours
   const currentDate = new Date();
   const { data: monthlyHours, isLoading: hoursLoading } = trpc.reports.monthlyBillableHours.useQuery(
     {
-      staffId: staffRecord?.id || 0,
+      staffId,
       year: currentDate.getFullYear(),
       month: currentDate.getMonth() + 1,
     },
-    { enabled: !!staffRecord?.id }
+    { enabled: !!staffId }
   );
 
-  // Show loading indicator while authenticating or loading staff info
-  if (authLoading || staffLoading) {
+  // Show loading indicator while authenticating
+  if (authLoading) {
     return (
       <ScreenContainer className="items-center justify-center">
         <ActivityIndicator size="large" color={colors.primary} />
@@ -92,11 +87,11 @@ export default function DashboardScreen() {
           <View>
             <Text className="text-3xl font-bold text-foreground">Welcome back,</Text>
             <Text className="text-2xl font-semibold text-primary">
-              {staffRecord?.name || staff?.name || user?.name || user?.email || ""}
+              {staff?.name || ""}
             </Text>
-            {((staffRecord?.role || staff?.role) && (staffRecord?.role || staff?.role) !== (staffRecord?.name || staff?.name || user?.name || user?.email)) && (
+            {(staff?.role && staff?.role !== staff?.name) && (
               <Text className="text-base text-muted mt-1">
-                {(staffRecord?.role || staff?.role)?.charAt(0).toUpperCase() + (staffRecord?.role || staff?.role)?.slice(1)}
+                {staff?.role?.charAt(0).toUpperCase() + staff?.role?.slice(1)}
               </Text>
             )}
             <Text className="text-sm text-muted mt-1">{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Text>
