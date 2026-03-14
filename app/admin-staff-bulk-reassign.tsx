@@ -1,77 +1,140 @@
-import { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import { useMemo, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput } from "react-native";
 import { router } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
-import { OrganizationalBreadcrumbs } from "@/components/organizational-breadcrumbs";
 
 export default function AdminStaffBulkReassignScreen() {
   const colors = useColors();
-  
-  // Filters for source staff
-  const [filterOrgId, setFilterOrgId] = useState<number | null>(null);
-  const [filterDeptId, setFilterDeptId] = useState<number | null>(null);
-  const [filterTeamId, setFilterTeamId] = useState<number | null>(null);
-  
-  // Destination organization
-  const [destOrgId, setDestOrgId] = useState<number | null>(null);
-  const [destDeptId, setDestDeptId] = useState<number | null>(null);
-  const [destTeamId, setDestTeamId] = useState<number | null>(null);
-  
-  // Selected staff
+  const utils = trpc.useUtils();
+  const { data: me } = trpc.auth.me.useQuery();
+
+  const [showFilters, setShowFilters] = useState(true);
+
+  const [filterOrgId, setFilterOrgId] = useState<number>(0);
+  const [filterDeptId, setFilterDeptId] = useState<number>(0);
+  const [filterTeamId, setFilterTeamId] = useState<number>(0);
+
+  const [destOrgId, setDestOrgId] = useState<number>(0);
+  const [destDeptId, setDestDeptId] = useState<number>(0);
+  const [destTeamId, setDestTeamId] = useState<number>(0);
+
   const [selectedStaffIds, setSelectedStaffIds] = useState<number[]>([]);
 
-  // Fetch organizational data
-  const { data: organizations } = trpc.organizations.list.useQuery();
-  // Fetch all staff departments and teams (0 = all)
-  const { data: allStaffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
-  const { data: allTeams } = trpc.teams.list.useQuery({ groupId: 0 });
-  
-  // Filter departments and teams based on selected organizations
-  const filterDepartments = filterOrgId
-    ? allStaffDepartments?.filter((d: any) => d.organizationId === filterOrgId)
-    : allStaffDepartments;
-  const filterTeams = filterOrgId
-    ? allTeams?.filter((t: any) => t.groupId === filterOrgId)
-    : allTeams;
-  const destDepartments = destOrgId
-    ? allStaffDepartments?.filter((d: any) => d.organizationId === destOrgId)
-    : allStaffDepartments;
-  const destTeams = destOrgId
-    ? allTeams?.filter((t: any) => t.groupId === destOrgId)
-    : allTeams;
+  const [showOrgModal, setShowOrgModal] = useState(false);
+  const [showDeptModal, setShowDeptModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [showDestOrgModal, setShowDestOrgModal] = useState(false);
+  const [showDestDeptModal, setShowDestDeptModal] = useState(false);
+  const [showDestTeamModal, setShowDestTeamModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
 
-  // Fetch all staff
+  const [orgSearch, setOrgSearch] = useState("");
+  const [deptSearch, setDeptSearch] = useState("");
+  const [teamSearch, setTeamSearch] = useState("");
+  const [destOrgSearch, setDestOrgSearch] = useState("");
+  const [destDeptSearch, setDestDeptSearch] = useState("");
+  const [destTeamSearch, setDestTeamSearch] = useState("");
+  const [staffSearch, setStaffSearch] = useState("");
+
+  const PICKER_ROW_HEIGHT = 40;
+  const pickerMaxHeight = PICKER_ROW_HEIGHT * 8;
+
+  const { data: organizations } = trpc.organizations.list.useQuery();
+  const { data: allDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
+  const { data: allTeams } = trpc.teams.list.useQuery({ organizationId: 0 });
   const { data: allStaff, isLoading } = trpc.staff.listAll.useQuery();
 
-  // Filter staff based on selected filters
-  const filteredStaff = allStaff?.filter((staff: any) => {
-    if (!filterOrgId && !filterDeptId && !filterTeamId) return true;
-    
-    if (filterTeamId && staff.teamId === filterTeamId) return true;
-    
-    // If filtering by org or dept, need to check team's org/dept
-    if (filterOrgId || filterDeptId) {
-      const team = filterTeams?.find((t: any) => t.id === staff.teamId);
-      if (!team) return false;
-      
-      if (filterDeptId && team.staffDepartmentId !== filterDeptId) return false;
-      if (filterOrgId && team.groupId !== filterOrgId) return false;
-      
-      return true;
-    }
-    
-    return false;
-  });
+  const filteredDepartments = useMemo(() => {
+    const source = allDepartments || [];
+    return filterOrgId > 0 ? source.filter((d: any) => Number(d.organizationId) === Number(filterOrgId)) : source;
+  }, [allDepartments, filterOrgId]);
 
-  const utils = trpc.useUtils();
+  const filteredTeams = useMemo(() => {
+    const source = allTeams || [];
+    return source.filter((t: any) => {
+      if (filterOrgId > 0 && Number(t.groupId) !== Number(filterOrgId)) return false;
+      if (filterDeptId > 0 && Number(t.staffDepartmentId) !== Number(filterDeptId)) return false;
+      return true;
+    });
+  }, [allTeams, filterOrgId, filterDeptId]);
+
+  const destDepartments = useMemo(() => {
+    const source = allDepartments || [];
+    return destOrgId > 0 ? source.filter((d: any) => Number(d.organizationId) === Number(destOrgId)) : source;
+  }, [allDepartments, destOrgId]);
+
+  const destTeams = useMemo(() => {
+    const source = allTeams || [];
+    return source.filter((t: any) => {
+      if (destOrgId > 0 && Number(t.groupId) !== Number(destOrgId)) return false;
+      if (destDeptId > 0 && Number(t.staffDepartmentId) !== Number(destDeptId)) return false;
+      return true;
+    });
+  }, [allTeams, destOrgId, destDeptId]);
+
+  const sourceStaff = useMemo(() => {
+    const source = allStaff || [];
+    return source.filter((s: any) => {
+      if (filterTeamId > 0) {
+        return Number(s.teamId) === Number(filterTeamId);
+      }
+      if (filterOrgId === 0 && filterDeptId === 0) {
+        return true;
+      }
+      const team = (allTeams || []).find((t: any) => Number(t.id) === Number(s.teamId));
+      if (!team) return false;
+      if (filterOrgId > 0 && Number(team.groupId) !== Number(filterOrgId)) return false;
+      if (filterDeptId > 0 && Number(team.staffDepartmentId) !== Number(filterDeptId)) return false;
+      return true;
+    });
+  }, [allStaff, allTeams, filterOrgId, filterDeptId, filterTeamId]);
+
+  const filteredStaffOptions = useMemo(() => {
+    const q = staffSearch.trim().toLowerCase();
+    if (!q) return sourceStaff;
+    return sourceStaff.filter((s: any) => {
+      const name = (s.name || "").toLowerCase();
+      const email = (s.email || "").toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
+  }, [sourceStaff, staffSearch]);
+
+  const searchList = (items: any[] | undefined, search: string, pick: (v: any) => string) => {
+    const q = search.trim().toLowerCase();
+    const source = items || [];
+    if (!q) return source;
+    return source.filter((item) => pick(item).toLowerCase().includes(q));
+  };
+
+  const orgOptions = searchList(organizations as any[], orgSearch, (v) => v.name || "");
+  const deptOptions = searchList(filteredDepartments as any[], deptSearch, (v) => v.name || "");
+  const teamOptions = searchList(filteredTeams as any[], teamSearch, (v) => v.name || "");
+  const destOrgOptions = searchList(organizations as any[], destOrgSearch, (v) => v.name || "");
+  const destDeptOptions = searchList(destDepartments as any[], destDeptSearch, (v) => v.name || "");
+  const destTeamOptions = searchList(destTeams as any[], destTeamSearch, (v) => v.name || "");
+
+  const orgLabel = organizations?.find((o: any) => Number(o.id) === Number(filterOrgId))?.name || "All Organizations";
+  const deptLabel = (allDepartments || []).find((d: any) => Number(d.id) === Number(filterDeptId))?.name || "All Departments";
+  const teamLabel = (allTeams || []).find((t: any) => Number(t.id) === Number(filterTeamId))?.name || "All Teams";
+
+  const destOrgLabel = organizations?.find((o: any) => Number(o.id) === Number(destOrgId))?.name || "Select Organization";
+  const destDeptLabel = (allDepartments || []).find((d: any) => Number(d.id) === Number(destDeptId))?.name || "Select Department";
+  const destTeamLabel = (allTeams || []).find((t: any) => Number(t.id) === Number(destTeamId))?.name || "Select Team";
+
+  const selectedStaff = useMemo(() => {
+    const selected = new Set(selectedStaffIds);
+    return (allStaff || []).filter((s: any) => selected.has(Number(s.id)));
+  }, [allStaff, selectedStaffIds]);
+
+  const hasAnyFilter = filterOrgId > 0 || filterDeptId > 0 || filterTeamId > 0 || selectedStaffIds.length > 0;
+
   const bulkUpdateStaff = trpc.staff.bulkUpdate.useMutation({
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       utils.staff.listAll.invalidate();
-      Alert.alert("Success", `${selectedStaffIds.length} staff members reassigned successfully`);
+      Alert.alert("Success", `${res?.updated || selectedStaffIds.length} staff member(s) reassigned successfully`);
       setSelectedStaffIds([]);
       router.back();
     },
@@ -80,12 +143,16 @@ export default function AdminStaffBulkReassignScreen() {
     },
   });
 
-  const toggleStaffSelection = (staffId: number) => {
-    if (selectedStaffIds.includes(staffId)) {
-      setSelectedStaffIds(selectedStaffIds.filter(id => id !== staffId));
-    } else {
-      setSelectedStaffIds([...selectedStaffIds, staffId]);
-    }
+  const toggleStaffSelection = (id: number) => {
+    setSelectedStaffIds((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
+  };
+
+  const clearAllFilters = () => {
+    setFilterOrgId(0);
+    setFilterDeptId(0);
+    setFilterTeamId(0);
+    setSelectedStaffIds([]);
+    setStaffSearch("");
   };
 
   const handleBulkReassign = () => {
@@ -97,10 +164,14 @@ export default function AdminStaffBulkReassignScreen() {
       Alert.alert("Error", "Please select a destination team");
       return;
     }
+    if (!me?.id) {
+      Alert.alert("Error", "Unable to determine current admin user");
+      return;
+    }
 
     Alert.alert(
       "Confirm Bulk Reassignment",
-      `Reassign ${selectedStaffIds.length} staff member(s) to the selected team?`,
+      `Reassign ${selectedStaffIds.length} staff member(s) to ${destTeamLabel}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -109,7 +180,7 @@ export default function AdminStaffBulkReassignScreen() {
             bulkUpdateStaff.mutate({
               staffIds: selectedStaffIds,
               teamId: destTeamId,
-              updatedBy: 1, // Admin user
+              updatedBy: Number(me.id),
             });
           },
         },
@@ -117,270 +188,377 @@ export default function AdminStaffBulkReassignScreen() {
     );
   };
 
-  const getStaffBreadcrumbs = (staff: any) => {
-    const breadcrumbs: string[] = [];
-    
-    if (staff.teamId && filterTeams) {
-      const team = filterTeams.find((t: any) => t.id === staff.teamId);
-      if (team) {
-        const org = organizations?.find((o: any) => o.id === team.groupId);
-        if (org) breadcrumbs.push(org.name);
-        
-        const dept = filterDepartments?.find((d: any) => d.id === team.staffDepartmentId);
-        if (dept) breadcrumbs.push(dept.name);
-        
-        breadcrumbs.push(team.name);
-      }
-    }
-    
-    return breadcrumbs;
-  };
+  const renderSingleSelectModal = (
+    visible: boolean,
+    onClose: () => void,
+    title: string,
+    search: string,
+    setSearch: (v: string) => void,
+    placeholder: string,
+    options: any[],
+    getLabel: (item: any) => string,
+    selectedId: number,
+    onPick: (id: number) => void,
+    allowClear = true
+  ) => (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+        <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+          <View className="relative min-h-[44px] items-center justify-center mb-3">
+            <TouchableOpacity onPress={onClose} className="absolute left-0">
+              <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+            </TouchableOpacity>
+            <Text className="text-xl font-bold text-foreground text-center">{title}</Text>
+          </View>
+
+          <TextInput
+            className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
+            placeholder={placeholder}
+            placeholderTextColor={colors.muted}
+            value={search}
+            onChangeText={setSearch}
+          />
+
+          <View className="rounded-xl overflow-hidden" style={{ backgroundColor: "#f5f8fa", maxHeight: pickerMaxHeight }}>
+            <ScrollView>
+              {allowClear && (
+                <TouchableOpacity className="px-3 flex-row items-center" style={{ minHeight: PICKER_ROW_HEIGHT }} onPress={() => onPick(0)}>
+                  <Text className="text-sm text-foreground">Clear selection</Text>
+                </TouchableOpacity>
+              )}
+              {options.map((item: any) => {
+                const id = Number(item.id);
+                const checked = selectedId > 0 && selectedId === id;
+                return (
+                  <TouchableOpacity key={String(id)} className="px-3 flex-row items-center" style={{ minHeight: PICKER_ROW_HEIGHT }} onPress={() => onPick(id)}>
+                    <View
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 6,
+                        borderWidth: 2,
+                        borderColor: checked ? colors.primary : "#ccc",
+                        backgroundColor: checked ? colors.primary : "#fff",
+                        marginRight: 10,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      {checked ? <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}>✓</Text> : null}
+                    </View>
+                    <Text className="text-sm text-foreground" numberOfLines={1}>{getLabel(item)}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (isLoading) {
     return (
-      <ScreenContainer className="p-4">
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#0a7ea4" />
-          <Text className="mt-4 text-muted">Loading staff...</Text>
-        </View>
+      <ScreenContainer className="items-center justify-center">
+        <ActivityIndicator size="large" color={colors.primary} />
       </ScreenContainer>
     );
   }
 
   return (
-    <ScreenContainer className="p-4">
-      <ScrollView>
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="flex-row items-center gap-2 mb-4"
-        >
-          <Text className="text-3xl font-bold text-foreground">&lt;</Text>
-        </TouchableOpacity>
-
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-xl font-bold text-foreground">Bulk Staff Reassignment</Text>
-          <Text className="text-sm text-muted mt-1">
-            Reassign multiple staff members to a different team
-          </Text>
+    <ScreenContainer className="flex-1">
+      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+              <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+            </TouchableOpacity>
+            <Text className="text-2xl font-bold text-foreground">Bulk Staff Reassign</Text>
+          </View>
+          <TouchableOpacity
+            className="flex-row items-center gap-2 px-4 py-2 bg-surface rounded-full border border-border"
+            onPress={() => setShowFilters((v) => !v)}
+          >
+            <IconSymbol name="line.3.horizontal.decrease" size={18} color={colors.foreground} />
+            <Text className="text-sm font-medium text-foreground">Filter</Text>
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Source Filters */}
-        <View className="mb-6">
-          <Text className="text-lg font-bold text-foreground mb-3">Filter Staff (Source)</Text>
-          
-          {/* Organization Filter */}
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-foreground mb-2">Organization</Text>
-            <View className="bg-surface border border-border rounded-lg">
-              <Picker
-                selectedValue={filterOrgId}
-                onValueChange={(value) => {
-                  setFilterOrgId(value);
-                  setFilterDeptId(null);
-                  setFilterTeamId(null);
-                }}
-                style={{ color: colors.foreground }}
-              >
-                <Picker.Item label="All Organizations" value={null} />
-                {organizations?.map((org: any) => (
-                  <Picker.Item key={org.id} label={org.name} value={org.id} />
-                ))}
-              </Picker>
+      {showFilters && (
+        <View className="px-6 py-4 bg-surface border-b border-border gap-3">
+          {hasAnyFilter && (
+            <View className="flex-row justify-end">
+              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={clearAllFilters}>
+                <Text className="text-sm font-medium text-foreground">Clear All</Text>
+              </TouchableOpacity>
             </View>
+          )}
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Source Organization</Text>
+            <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowOrgModal(true)}>
+              <Text className="text-sm font-medium text-foreground">{orgLabel}</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Department Filter */}
-          {filterOrgId && (
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2">Department</Text>
-              <View className="bg-surface border border-border rounded-lg">
-                <Picker
-                  selectedValue={filterDeptId}
-                  onValueChange={(value) => {
-                    setFilterDeptId(value);
-                    setFilterTeamId(null);
-                  }}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="All Departments" value={null} />
-                  {filterDepartments?.map((dept: any) => (
-                    <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-          )}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Source Department</Text>
+            <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowDeptModal(true)}>
+              <Text className="text-sm font-medium text-foreground">{deptLabel}</Text>
+            </TouchableOpacity>
+          </View>
 
-          {/* Team Filter */}
-          {filterOrgId && (
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2">Team</Text>
-              <View className="bg-surface border border-border rounded-lg">
-                <Picker
-                  selectedValue={filterTeamId}
-                  onValueChange={setFilterTeamId}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="All Teams" value={null} />
-                  {filterTeams?.filter((t: any) => !filterDeptId || t.staffDepartmentId === filterDeptId).map((team: any) => (
-                    <Picker.Item key={team.id} label={team.name} value={team.id} />
-                  ))}
-                </Picker>
-              </View>
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Source Team</Text>
+            <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowTeamModal(true)}>
+              <Text className="text-sm font-medium text-foreground">{teamLabel}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Select Staff</Text>
+            <View className="flex-row gap-2">
+              <TouchableOpacity className="flex-1 px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowStaffModal(true)}>
+                <Text className="text-sm font-medium text-foreground">
+                  {selectedStaffIds.length > 0 ? `${selectedStaffIds.length} selected` : "No staff selected"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setSelectedStaffIds([])}>
+                <Text className="text-sm font-medium text-foreground">Clear</Text>
+              </TouchableOpacity>
             </View>
-          )}
+          </View>
         </View>
+      )}
 
-        {/* Staff Selection */}
-        <View className="mb-6">
-          <Text className="text-lg font-bold text-foreground mb-3">
-            Select Staff ({selectedStaffIds.length} selected)
-          </Text>
-          
-          {filteredStaff && filteredStaff.length > 0 ? (
-            <View className="gap-2">
-              {filteredStaff.map((staff: any) => (
-                <TouchableOpacity
-                  key={staff.id}
-                  onPress={() => toggleStaffSelection(staff.id)}
-                  className={`rounded-lg p-4 border ${
-                    selectedStaffIds.includes(staff.id)
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-surface"
-                  }`}
-                >
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-1">
-                      <Text className="text-base font-semibold text-foreground">
-                        {staff.name}
-                      </Text>
-                      <Text className="text-sm text-muted mt-1">{staff.email}</Text>
-                      <OrganizationalBreadcrumbs items={getStaffBreadcrumbs(staff)} className="mt-2" />
-                    </View>
-                    <View
-                      className={`w-6 h-6 rounded border-2 items-center justify-center ${
-                        selectedStaffIds.includes(staff.id)
-                          ? "border-primary bg-primary"
-                          : "border-border"
-                      }`}
-                    >
-                      {selectedStaffIds.includes(staff.id) && (
-                        <Text className="text-background text-xs font-bold">✓</Text>
-                      )}
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}>
+        <View className="bg-surface rounded-2xl border border-border p-4 mb-4">
+          <Text className="text-base font-semibold text-foreground mb-3">Selected Staff</Text>
+          {selectedStaff.length === 0 ? (
+            <Text className="text-sm text-muted">No staff selected yet.</Text>
           ) : (
-            <View className="items-center py-8 bg-surface rounded-lg">
-              <Text className="text-muted text-center">
-                {filterOrgId || filterDeptId || filterTeamId
-                  ? "No staff members match the selected filters"
-                  : "Select filters to view staff members"}
-              </Text>
+            <View className="gap-2">
+              {selectedStaff.slice(0, 12).map((member: any) => (
+                <View key={member.id} className="px-3 py-2 bg-background rounded-xl border border-border">
+                  <Text className="text-sm font-semibold text-foreground">{member.name}</Text>
+                  <Text className="text-xs text-muted">{member.email || "No email"}</Text>
+                </View>
+              ))}
+              {selectedStaff.length > 12 && (
+                <Text className="text-xs text-muted">...and {selectedStaff.length - 12} more</Text>
+              )}
             </View>
           )}
         </View>
 
-        {/* Destination Selection */}
-        <View className="mb-6">
-          <Text className="text-lg font-bold text-foreground mb-3">Destination Team</Text>
-          
-          {/* Organization */}
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-foreground mb-2">Organization *</Text>
-            <View className="bg-surface border border-border rounded-lg">
-              <Picker
-                selectedValue={destOrgId}
-                onValueChange={(value) => {
-                  setDestOrgId(value);
-                  setDestDeptId(null);
-                  setDestTeamId(null);
-                }}
-                style={{ color: colors.foreground }}
-              >
-                <Picker.Item label="Select Organization" value={null} />
-                {organizations?.map((org: any) => (
-                  <Picker.Item key={org.id} label={org.name} value={org.id} />
-                ))}
-              </Picker>
-            </View>
+        <View className="bg-surface rounded-2xl border border-border p-4 mb-4 gap-3">
+          <Text className="text-base font-semibold text-foreground">Destination Team</Text>
+
+          <View>
+            <Text className="text-sm text-muted mb-2">Organization *</Text>
+            <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowDestOrgModal(true)}>
+              <Text className="text-sm font-medium text-foreground">{destOrgLabel}</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Department */}
-          {destOrgId && (
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2">Department *</Text>
-              <View className="bg-surface border border-border rounded-lg">
-                <Picker
-                  selectedValue={destDeptId}
-                  onValueChange={(value) => {
-                    setDestDeptId(value);
-                    setDestTeamId(null);
-                  }}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="Select Department" value={null} />
-                  {destDepartments?.map((dept: any) => (
-                    <Picker.Item key={dept.id} label={dept.name} value={dept.id} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-          )}
+          <View>
+            <Text className="text-sm text-muted mb-2">Department *</Text>
+            <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowDestDeptModal(true)}>
+              <Text className="text-sm font-medium text-foreground">{destDeptLabel}</Text>
+            </TouchableOpacity>
+          </View>
 
-          {/* Team */}
-          {destDeptId && (
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2">Team *</Text>
-              <View className="bg-surface border border-border rounded-lg">
-                <Picker
-                  selectedValue={destTeamId}
-                  onValueChange={setDestTeamId}
-                  style={{ color: colors.foreground }}
-                >
-                  <Picker.Item label="Select Team" value={null} />
-                  {destTeams?.filter((t: any) => t.staffDepartmentId === destDeptId).map((team: any) => (
-                    <Picker.Item key={team.id} label={team.name} value={team.id} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-          )}
+          <View>
+            <Text className="text-sm text-muted mb-2">Team *</Text>
+            <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowDestTeamModal(true)}>
+              <Text className="text-sm font-medium text-foreground">{destTeamLabel}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Action Buttons */}
-        <View className="gap-3 mt-4 mb-8">
-          <TouchableOpacity
-            onPress={handleBulkReassign}
-            disabled={bulkUpdateStaff.isPending || selectedStaffIds.length === 0 || !destTeamId}
-            className={`rounded-lg p-4 ${
-              bulkUpdateStaff.isPending || selectedStaffIds.length === 0 || !destTeamId
-                ? "bg-muted"
-                : "bg-primary"
-            }`}
-          >
-            {bulkUpdateStaff.isPending ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text className="text-background font-semibold text-center text-lg">
-                Reassign {selectedStaffIds.length} Staff Member{selectedStaffIds.length !== 1 ? "s" : ""}
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.back()}
-            disabled={bulkUpdateStaff.isPending}
-            className="bg-surface border border-border rounded-lg p-4"
-          >
-            <Text className="text-foreground font-semibold text-center text-lg">Cancel</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          className={`rounded-xl p-4 ${bulkUpdateStaff.isPending || selectedStaffIds.length === 0 || !destTeamId ? "bg-muted" : "bg-primary"}`}
+          disabled={bulkUpdateStaff.isPending || selectedStaffIds.length === 0 || !destTeamId}
+          onPress={handleBulkReassign}
+        >
+          {bulkUpdateStaff.isPending ? (
+            <ActivityIndicator color={colors.background} />
+          ) : (
+            <Text className="text-background font-semibold text-center text-lg">
+              Reassign {selectedStaffIds.length} Staff Member{selectedStaffIds.length !== 1 ? "s" : ""}
+            </Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
+
+      {renderSingleSelectModal(
+        showOrgModal,
+        () => setShowOrgModal(false),
+        "Source Organization",
+        orgSearch,
+        setOrgSearch,
+        "Search organizations...",
+        orgOptions,
+        (o) => o.name || "",
+        filterOrgId,
+        (id) => {
+          setFilterOrgId(id);
+          setFilterDeptId(0);
+          setFilterTeamId(0);
+          setShowOrgModal(false);
+        }
+      )}
+
+      {renderSingleSelectModal(
+        showDeptModal,
+        () => setShowDeptModal(false),
+        "Source Department",
+        deptSearch,
+        setDeptSearch,
+        "Search departments...",
+        deptOptions,
+        (d) => d.name || "",
+        filterDeptId,
+        (id) => {
+          setFilterDeptId(id);
+          setFilterTeamId(0);
+          setShowDeptModal(false);
+        }
+      )}
+
+      {renderSingleSelectModal(
+        showTeamModal,
+        () => setShowTeamModal(false),
+        "Source Team",
+        teamSearch,
+        setTeamSearch,
+        "Search teams...",
+        teamOptions,
+        (t) => t.name || "",
+        filterTeamId,
+        (id) => {
+          setFilterTeamId(id);
+          setShowTeamModal(false);
+        }
+      )}
+
+      {renderSingleSelectModal(
+        showDestOrgModal,
+        () => setShowDestOrgModal(false),
+        "Destination Organization",
+        destOrgSearch,
+        setDestOrgSearch,
+        "Search organizations...",
+        destOrgOptions,
+        (o) => o.name || "",
+        destOrgId,
+        (id) => {
+          setDestOrgId(id);
+          setDestDeptId(0);
+          setDestTeamId(0);
+          setShowDestOrgModal(false);
+        },
+        false
+      )}
+
+      {renderSingleSelectModal(
+        showDestDeptModal,
+        () => setShowDestDeptModal(false),
+        "Destination Department",
+        destDeptSearch,
+        setDestDeptSearch,
+        "Search departments...",
+        destDeptOptions,
+        (d) => d.name || "",
+        destDeptId,
+        (id) => {
+          setDestDeptId(id);
+          setDestTeamId(0);
+          setShowDestDeptModal(false);
+        },
+        false
+      )}
+
+      {renderSingleSelectModal(
+        showDestTeamModal,
+        () => setShowDestTeamModal(false),
+        "Destination Team",
+        destTeamSearch,
+        setDestTeamSearch,
+        "Search teams...",
+        destTeamOptions,
+        (t) => t.name || "",
+        destTeamId,
+        (id) => {
+          setDestTeamId(id);
+          setShowDestTeamModal(false);
+        },
+        false
+      )}
+
+      <Modal visible={showStaffModal} transparent animationType="fade" onRequestClose={() => setShowStaffModal(false)}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+            <View className="relative min-h-[44px] items-center justify-center mb-3">
+              <TouchableOpacity onPress={() => setShowStaffModal(false)} className="absolute left-0">
+                <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-foreground text-center">Select Staff</Text>
+            </View>
+
+            <TextInput
+              className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
+              placeholder="Search staff..."
+              placeholderTextColor={colors.muted}
+              value={staffSearch}
+              onChangeText={setStaffSearch}
+            />
+
+            <View className="rounded-xl overflow-hidden" style={{ backgroundColor: "#f5f8fa", maxHeight: pickerMaxHeight }}>
+              <ScrollView>
+                {filteredStaffOptions.length === 0 ? (
+                  <View className="px-3 py-3">
+                    <Text className="text-sm" style={{ color: colors.muted }}>No staff found.</Text>
+                  </View>
+                ) : (
+                  filteredStaffOptions.map((item: any) => {
+                    const checked = selectedStaffIds.includes(Number(item.id));
+                    return (
+                      <TouchableOpacity
+                        key={String(item.id)}
+                        className="px-3 flex-row items-center"
+                        style={{ minHeight: PICKER_ROW_HEIGHT }}
+                        onPress={() => toggleStaffSelection(Number(item.id))}
+                      >
+                        <View
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 6,
+                            borderWidth: 2,
+                            borderColor: checked ? colors.primary : "#ccc",
+                            backgroundColor: checked ? colors.primary : "#fff",
+                            marginRight: 10,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          {checked ? <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}>✓</Text> : null}
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-sm text-foreground" numberOfLines={1}>{item.name}</Text>
+                          <Text className="text-xs text-muted" numberOfLines={1}>{item.email || "No email"}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
