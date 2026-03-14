@@ -13,9 +13,9 @@ export default function AdminStaffBulkReassignScreen() {
 
   const [showFilters, setShowFilters] = useState(true);
 
-  const [filterOrgId, setFilterOrgId] = useState<number>(0);
-  const [filterDeptId, setFilterDeptId] = useState<number>(0);
-  const [filterTeamId, setFilterTeamId] = useState<number>(0);
+  const [filterOrgIds, setFilterOrgIds] = useState<number[]>([]);
+  const [filterDeptIds, setFilterDeptIds] = useState<number[]>([]);
+  const [filterTeamIds, setFilterTeamIds] = useState<number[]>([]);
 
   const [destOrgId, setDestOrgId] = useState<number>(0);
   const [destDeptId, setDestDeptId] = useState<number>(0);
@@ -47,19 +47,130 @@ export default function AdminStaffBulkReassignScreen() {
   const { data: allTeams } = trpc.teams.list.useQuery({ organizationId: 0 });
   const { data: allStaff, isLoading } = trpc.staff.listAll.useQuery();
 
+  const departmentById = useMemo(() => {
+    const map = new Map<number, any>();
+    (allDepartments || []).forEach((dept: any) => {
+      map.set(Number(dept.id), dept);
+    });
+    return map;
+  }, [allDepartments]);
+
   const filteredDepartments = useMemo(() => {
     const source = allDepartments || [];
-    return filterOrgId > 0 ? source.filter((d: any) => Number(d.organizationId) === Number(filterOrgId)) : source;
-  }, [allDepartments, filterOrgId]);
+    if (filterOrgIds.length === 0) return source;
+    return source.filter((d: any) => filterOrgIds.includes(Number(d.organizationId)));
+  }, [allDepartments, filterOrgIds]);
+
+  const sourceDepartmentOptions = useMemo(() => {
+    if (filterOrgIds.length > 0) return filteredDepartments;
+
+    const byName = new Map<string, any>();
+    filteredDepartments.forEach((dept: any) => {
+      const key = String(dept.name || "").trim().toLowerCase();
+      if (!byName.has(key)) {
+        byName.set(key, dept);
+      }
+    });
+    return Array.from(byName.values());
+  }, [filteredDepartments, filterOrgIds]);
 
   const filteredTeams = useMemo(() => {
     const source = allTeams || [];
+    if (filterDeptIds.length > 0) {
+      return source.filter((t: any) => filterDeptIds.includes(Number(t.staffDepartmentId)));
+    }
+
     return source.filter((t: any) => {
-      if (filterOrgId > 0 && Number(t.groupId) !== Number(filterOrgId)) return false;
-      if (filterDeptId > 0 && Number(t.staffDepartmentId) !== Number(filterDeptId)) return false;
+      if (filterOrgIds.length > 0) {
+        const dept = departmentById.get(Number(t.staffDepartmentId));
+        if (!dept || !filterOrgIds.includes(Number(dept.organizationId))) return false;
+      }
       return true;
     });
-  }, [allTeams, filterOrgId, filterDeptId]);
+  }, [allTeams, filterOrgIds, filterDeptIds, departmentById]);
+
+  const sourceTeamOptions = useMemo(() => {
+    if (filterOrgIds.length > 0 && filterDeptIds.length > 0) return filteredTeams;
+
+    const byName = new Map<string, any>();
+    filteredTeams.forEach((team: any) => {
+      const key = String(team.name || "").trim().toLowerCase();
+      if (!byName.has(key)) {
+        byName.set(key, team);
+      }
+    });
+    return Array.from(byName.values());
+  }, [filteredTeams, filterDeptIds, filterOrgIds]);
+
+  const sourceDepartmentGroupByOptionId = useMemo(() => {
+    const groups = new Map<number, number[]>();
+    const scope = filteredDepartments || [];
+
+    if (filterOrgIds.length > 0) {
+      scope.forEach((dept: any) => {
+        groups.set(Number(dept.id), [Number(dept.id)]);
+      });
+      return groups;
+    }
+
+    sourceDepartmentOptions.forEach((option: any) => {
+      const key = String(option.name || "").trim().toLowerCase();
+      const ids = scope
+        .filter((dept: any) => String(dept.name || "").trim().toLowerCase() === key)
+        .map((dept: any) => Number(dept.id));
+      groups.set(Number(option.id), ids.length > 0 ? ids : [Number(option.id)]);
+    });
+
+    return groups;
+  }, [filteredDepartments, sourceDepartmentOptions, filterOrgIds]);
+
+  const selectedDepartmentDisplayCount = useMemo(() => {
+    if (filterOrgIds.length > 0) return filterDeptIds.length;
+
+    const selected = new Set<number>(filterDeptIds);
+    const names = new Set<string>();
+    (filteredDepartments || []).forEach((dept: any) => {
+      if (selected.has(Number(dept.id))) {
+        names.add(String(dept.name || "").trim().toLowerCase());
+      }
+    });
+    return names.size;
+  }, [filterOrgIds, filterDeptIds, filteredDepartments]);
+
+  const sourceTeamGroupByOptionId = useMemo(() => {
+    const groups = new Map<number, number[]>();
+    const scope = filteredTeams || [];
+
+    if (filterOrgIds.length > 0 && filterDeptIds.length > 0) {
+      scope.forEach((team: any) => {
+        groups.set(Number(team.id), [Number(team.id)]);
+      });
+      return groups;
+    }
+
+    sourceTeamOptions.forEach((option: any) => {
+      const key = String(option.name || "").trim().toLowerCase();
+      const ids = scope
+        .filter((team: any) => String(team.name || "").trim().toLowerCase() === key)
+        .map((team: any) => Number(team.id));
+      groups.set(Number(option.id), ids.length > 0 ? ids : [Number(option.id)]);
+    });
+
+    return groups;
+  }, [filteredTeams, sourceTeamOptions, filterDeptIds, filterOrgIds]);
+
+  const selectedTeamDisplayCount = useMemo(() => {
+    if (filterOrgIds.length > 0 && filterDeptIds.length > 0) return filterTeamIds.length;
+
+    const selected = new Set<number>(filterTeamIds);
+    const names = new Set<string>();
+    (filteredTeams || []).forEach((team: any) => {
+      if (selected.has(Number(team.id))) {
+        names.add(String(team.name || "").trim().toLowerCase());
+      }
+    });
+    return names.size;
+  }, [filterOrgIds, filterDeptIds, filterTeamIds, filteredTeams]);
 
   const destDepartments = useMemo(() => {
     const source = allDepartments || [];
@@ -69,28 +180,34 @@ export default function AdminStaffBulkReassignScreen() {
   const destTeams = useMemo(() => {
     const source = allTeams || [];
     return source.filter((t: any) => {
-      if (destOrgId > 0 && Number(t.groupId) !== Number(destOrgId)) return false;
+      if (destOrgId > 0) {
+        const dept = departmentById.get(Number(t.staffDepartmentId));
+        if (!dept || Number(dept.organizationId) !== Number(destOrgId)) return false;
+      }
       if (destDeptId > 0 && Number(t.staffDepartmentId) !== Number(destDeptId)) return false;
       return true;
     });
-  }, [allTeams, destOrgId, destDeptId]);
+  }, [allTeams, destOrgId, destDeptId, departmentById]);
 
   const sourceStaff = useMemo(() => {
     const source = allStaff || [];
     return source.filter((s: any) => {
-      if (filterTeamId > 0) {
-        return Number(s.teamId) === Number(filterTeamId);
+      if (filterTeamIds.length > 0) {
+        return filterTeamIds.includes(Number(s.teamId));
       }
-      if (filterOrgId === 0 && filterDeptId === 0) {
+      if (filterOrgIds.length === 0 && filterDeptIds.length === 0) {
         return true;
       }
       const team = (allTeams || []).find((t: any) => Number(t.id) === Number(s.teamId));
       if (!team) return false;
-      if (filterOrgId > 0 && Number(team.groupId) !== Number(filterOrgId)) return false;
-      if (filterDeptId > 0 && Number(team.staffDepartmentId) !== Number(filterDeptId)) return false;
+      if (filterOrgIds.length > 0) {
+        const dept = departmentById.get(Number(team.staffDepartmentId));
+        if (!dept || !filterOrgIds.includes(Number(dept.organizationId))) return false;
+      }
+      if (filterDeptIds.length > 0 && !filterDeptIds.includes(Number(team.staffDepartmentId))) return false;
       return true;
     });
-  }, [allStaff, allTeams, filterOrgId, filterDeptId, filterTeamId]);
+  }, [allStaff, allTeams, filterOrgIds, filterDeptIds, filterTeamIds, departmentById]);
 
   const filteredStaffOptions = useMemo(() => {
     const q = staffSearch.trim().toLowerCase();
@@ -110,26 +227,50 @@ export default function AdminStaffBulkReassignScreen() {
   };
 
   const orgOptions = searchList(organizations as any[], orgSearch, (v) => v.name || "");
-  const deptOptions = searchList(filteredDepartments as any[], deptSearch, (v) => v.name || "");
-  const teamOptions = searchList(filteredTeams as any[], teamSearch, (v) => v.name || "");
+  const deptOptions = searchList(sourceDepartmentOptions as any[], deptSearch, (v) => v.name || "");
+  const teamOptions = searchList(sourceTeamOptions as any[], teamSearch, (v) => v.name || "");
   const destOrgOptions = searchList(organizations as any[], destOrgSearch, (v) => v.name || "");
   const destDeptOptions = searchList(destDepartments as any[], destDeptSearch, (v) => v.name || "");
   const destTeamOptions = searchList(destTeams as any[], destTeamSearch, (v) => v.name || "");
 
-  const orgLabel = organizations?.find((o: any) => Number(o.id) === Number(filterOrgId))?.name || "All Organizations";
-  const deptLabel = (allDepartments || []).find((d: any) => Number(d.id) === Number(filterDeptId))?.name || "All Departments";
-  const teamLabel = (allTeams || []).find((t: any) => Number(t.id) === Number(filterTeamId))?.name || "All Teams";
+  const orgLabel = filterOrgIds.length > 0 ? `${filterOrgIds.length} organization(s) selected` : "All Organizations";
+  const deptLabel = selectedDepartmentDisplayCount > 0 ? `${selectedDepartmentDisplayCount} department(s) selected` : "All Departments";
+  const teamLabel = selectedTeamDisplayCount > 0 ? `${selectedTeamDisplayCount} team(s) selected` : "All Teams";
 
   const destOrgLabel = organizations?.find((o: any) => Number(o.id) === Number(destOrgId))?.name || "Select Organization";
   const destDeptLabel = (allDepartments || []).find((d: any) => Number(d.id) === Number(destDeptId))?.name || "Select Department";
   const destTeamLabel = (allTeams || []).find((t: any) => Number(t.id) === Number(destTeamId))?.name || "Select Team";
+
+  const organizationById = useMemo(() => {
+    const map = new Map<number, string>();
+    (organizations || []).forEach((org: any) => {
+      map.set(Number(org.id), org.name || "");
+    });
+    return map;
+  }, [organizations]);
+
+  const teamById = useMemo(() => {
+    const map = new Map<number, any>();
+    (allTeams || []).forEach((team: any) => {
+      map.set(Number(team.id), team);
+    });
+    return map;
+  }, [allTeams]);
+
+  const getStaffOrganizationName = (staff: any) => {
+    const team = teamById.get(Number(staff?.teamId));
+    if (!team) return "No organization";
+    const dept = departmentById.get(Number(team.staffDepartmentId));
+    if (!dept) return "No organization";
+    return organizationById.get(Number(dept.organizationId)) || "No organization";
+  };
 
   const selectedStaff = useMemo(() => {
     const selected = new Set(selectedStaffIds);
     return (allStaff || []).filter((s: any) => selected.has(Number(s.id)));
   }, [allStaff, selectedStaffIds]);
 
-  const hasAnyFilter = filterOrgId > 0 || filterDeptId > 0 || filterTeamId > 0 || selectedStaffIds.length > 0;
+  const hasAnyFilter = filterOrgIds.length > 0 || filterDeptIds.length > 0 || filterTeamIds.length > 0 || selectedStaffIds.length > 0;
 
   const bulkUpdateStaff = trpc.staff.bulkUpdate.useMutation({
     onSuccess: (res: any) => {
@@ -143,16 +284,56 @@ export default function AdminStaffBulkReassignScreen() {
     },
   });
 
+  const createDestinationDepartment = trpc.staffDepartments.create.useMutation({
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to create department");
+    },
+  });
+
+  const createDestinationTeam = trpc.teams.create.useMutation({
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to create team");
+    },
+  });
+
   const toggleStaffSelection = (id: number) => {
     setSelectedStaffIds((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
   };
 
   const clearAllFilters = () => {
-    setFilterOrgId(0);
-    setFilterDeptId(0);
-    setFilterTeamId(0);
+    setFilterOrgIds([]);
+    setFilterDeptIds([]);
+    setFilterTeamIds([]);
     setSelectedStaffIds([]);
     setStaffSearch("");
+  };
+
+  const toggleMulti = (id: number, setter: (updater: (prev: number[]) => number[]) => void) => {
+    setter((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
+  };
+
+  const toggleGroupMulti = (
+    optionId: number,
+    groupByOptionId: Map<number, number[]>,
+    setter: (updater: (prev: number[]) => number[]) => void
+  ) => {
+    const group = groupByOptionId.get(optionId) || [optionId];
+    setter((prev) => {
+      const allSelected = group.every((id) => prev.includes(id));
+      if (allSelected) {
+        return prev.filter((id) => !group.includes(id));
+      }
+      const merged = new Set(prev);
+      group.forEach((id) => merged.add(id));
+      return Array.from(merged);
+    });
+  };
+
+  const getCreatedId = (result: any) => {
+    if (typeof result === "number") return Number(result);
+    if (result && typeof result.insertId === "number") return Number(result.insertId);
+    if (result && typeof result.id === "number") return Number(result.id);
+    return 0;
   };
 
   const handleBulkReassign = () => {
@@ -199,7 +380,10 @@ export default function AdminStaffBulkReassignScreen() {
     getLabel: (item: any) => string,
     selectedId: number,
     onPick: (id: number) => void,
-    allowClear = true
+    allowClear = true,
+    emptyLabel?: string,
+    onCreate?: (name: string) => void,
+    isCreating = false
   ) => (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
@@ -231,6 +415,96 @@ export default function AdminStaffBulkReassignScreen() {
                 const checked = selectedId > 0 && selectedId === id;
                 return (
                   <TouchableOpacity key={String(id)} className="px-3 flex-row items-center" style={{ minHeight: PICKER_ROW_HEIGHT }} onPress={() => onPick(id)}>
+                    <View
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 6,
+                        borderWidth: 2,
+                        borderColor: checked ? colors.primary : "#ccc",
+                        backgroundColor: checked ? colors.primary : "#fff",
+                        marginRight: 10,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      {checked ? <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}>✓</Text> : null}
+                    </View>
+                    <Text className="text-sm text-foreground" numberOfLines={1}>{getLabel(item)}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+              {options.length === 0 && search.trim().length > 0 && (
+                <View className="px-3 py-3">
+                  <Text className="text-sm" style={{ color: colors.muted }}>{emptyLabel || "No matching results."}</Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+
+          {onCreate && search.trim().length > 0 && !options.some((item: any) => getLabel(item).trim().toLowerCase() === search.trim().toLowerCase()) && (
+            <TouchableOpacity
+              disabled={isCreating}
+              className="rounded-lg px-4 py-3 mt-3"
+              style={{ backgroundColor: isCreating ? colors.muted : colors.primary }}
+              onPress={() => onCreate(search.trim())}
+            >
+              <Text className="text-base font-semibold text-center" style={{ color: "#fff" }}>
+                {isCreating ? "Creating..." : `Create "${search.trim()}"`}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderMultiSelectModal = (
+    visible: boolean,
+    onClose: () => void,
+    title: string,
+    search: string,
+    setSearch: (v: string) => void,
+    placeholder: string,
+    options: any[],
+    getLabel: (item: any) => string,
+    selectedIds: number[],
+    onToggle: (id: number) => void,
+    onClear?: () => void
+  ) => (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+        <View className="w-[92%] rounded-2xl p-5" style={{ backgroundColor: colors.background, maxHeight: "82%" }}>
+          <View className="relative min-h-[44px] items-center justify-center mb-3">
+            <TouchableOpacity onPress={onClose} className="absolute left-0">
+              <Text className="text-3xl font-bold text-foreground">&lt;</Text>
+            </TouchableOpacity>
+            <Text className="text-xl font-bold text-foreground text-center">{title}</Text>
+          </View>
+
+          <TextInput
+            className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground mb-3"
+            placeholder={placeholder}
+            placeholderTextColor={colors.muted}
+            value={search}
+            onChangeText={setSearch}
+          />
+
+          {onClear && selectedIds.length > 0 && (
+            <View className="flex-row justify-end mb-2">
+              <TouchableOpacity className="px-3 py-1 rounded-full border border-border bg-background" onPress={onClear}>
+                <Text className="text-xs font-semibold text-foreground">Clear</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View className="rounded-xl overflow-hidden" style={{ backgroundColor: "#f5f8fa", maxHeight: pickerMaxHeight }}>
+            <ScrollView>
+              {options.map((item: any) => {
+                const id = Number(item.id);
+                const checked = selectedIds.includes(id);
+                return (
+                  <TouchableOpacity key={String(id)} className="px-3 flex-row items-center" style={{ minHeight: PICKER_ROW_HEIGHT }} onPress={() => onToggle(id)}>
                     <View
                       style={{
                         width: 22,
@@ -342,7 +616,7 @@ export default function AdminStaffBulkReassignScreen() {
               {selectedStaff.slice(0, 12).map((member: any) => (
                 <View key={member.id} className="px-3 py-2 bg-background rounded-xl border border-border">
                   <Text className="text-sm font-semibold text-foreground">{member.name}</Text>
-                  <Text className="text-xs text-muted">{member.email || "No email"}</Text>
+                  <Text className="text-xs text-muted">{getStaffOrganizationName(member)}</Text>
                 </View>
               ))}
               {selectedStaff.length > 12 && (
@@ -392,7 +666,7 @@ export default function AdminStaffBulkReassignScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {renderSingleSelectModal(
+      {renderMultiSelectModal(
         showOrgModal,
         () => setShowOrgModal(false),
         "Source Organization",
@@ -401,16 +675,18 @@ export default function AdminStaffBulkReassignScreen() {
         "Search organizations...",
         orgOptions,
         (o) => o.name || "",
-        filterOrgId,
+        filterOrgIds,
         (id) => {
-          setFilterOrgId(id);
-          setFilterDeptId(0);
-          setFilterTeamId(0);
-          setShowOrgModal(false);
+          toggleMulti(id, setFilterOrgIds);
+        },
+        () => {
+          setFilterOrgIds([]);
+          setFilterDeptIds([]);
+          setFilterTeamIds([]);
         }
       )}
 
-      {renderSingleSelectModal(
+      {renderMultiSelectModal(
         showDeptModal,
         () => setShowDeptModal(false),
         "Source Department",
@@ -419,15 +695,17 @@ export default function AdminStaffBulkReassignScreen() {
         "Search departments...",
         deptOptions,
         (d) => d.name || "",
-        filterDeptId,
+        filterDeptIds,
         (id) => {
-          setFilterDeptId(id);
-          setFilterTeamId(0);
-          setShowDeptModal(false);
+          toggleGroupMulti(id, sourceDepartmentGroupByOptionId, setFilterDeptIds);
+        },
+        () => {
+          setFilterDeptIds([]);
+          setFilterTeamIds([]);
         }
       )}
 
-      {renderSingleSelectModal(
+      {renderMultiSelectModal(
         showTeamModal,
         () => setShowTeamModal(false),
         "Source Team",
@@ -436,10 +714,12 @@ export default function AdminStaffBulkReassignScreen() {
         "Search teams...",
         teamOptions,
         (t) => t.name || "",
-        filterTeamId,
+        filterTeamIds,
         (id) => {
-          setFilterTeamId(id);
-          setShowTeamModal(false);
+          toggleGroupMulti(id, sourceTeamGroupByOptionId, setFilterTeamIds);
+        },
+        () => {
+          setFilterTeamIds([]);
         }
       )}
 
@@ -477,7 +757,35 @@ export default function AdminStaffBulkReassignScreen() {
           setDestTeamId(0);
           setShowDestDeptModal(false);
         },
-        false
+        false,
+        "No matching departments.",
+        async (name) => {
+          if (!destOrgId) {
+            Alert.alert("Validation Error", "Please select destination organization first");
+            return;
+          }
+          if (!me?.id) {
+            Alert.alert("Error", "Unable to determine current admin user");
+            return;
+          }
+
+          const created = await createDestinationDepartment.mutateAsync({
+            organizationId: Number(destOrgId),
+            name,
+            createdBy: Number(me.id),
+            updatedBy: Number(me.id),
+          });
+
+          await utils.staffDepartments.invalidate();
+          const createdId = getCreatedId(created);
+          if (createdId > 0) {
+            setDestDeptId(createdId);
+            setDestTeamId(0);
+          }
+          setDestDeptSearch("");
+          setShowDestDeptModal(false);
+        },
+        createDestinationDepartment.isPending
       )}
 
       {renderSingleSelectModal(
@@ -494,7 +802,39 @@ export default function AdminStaffBulkReassignScreen() {
           setDestTeamId(id);
           setShowDestTeamModal(false);
         },
-        false
+        false,
+        "No matching teams.",
+        async (name) => {
+          if (!destOrgId) {
+            Alert.alert("Validation Error", "Please select destination organization first");
+            return;
+          }
+          if (!destDeptId) {
+            Alert.alert("Validation Error", "Please select destination department first");
+            return;
+          }
+          if (!me?.id) {
+            Alert.alert("Error", "Unable to determine current admin user");
+            return;
+          }
+
+          const created = await createDestinationTeam.mutateAsync({
+            organizationId: Number(destOrgId),
+            staffDepartmentId: Number(destDeptId),
+            name,
+            createdBy: Number(me.id),
+            updatedBy: Number(me.id),
+          });
+
+          await utils.teams.invalidate();
+          const createdId = getCreatedId(created);
+          if (createdId > 0) {
+            setDestTeamId(createdId);
+          }
+          setDestTeamSearch("");
+          setShowDestTeamModal(false);
+        },
+        createDestinationTeam.isPending
       )}
 
       <Modal visible={showStaffModal} transparent animationType="fade" onRequestClose={() => setShowStaffModal(false)}>
@@ -548,7 +888,7 @@ export default function AdminStaffBulkReassignScreen() {
                         </View>
                         <View className="flex-1">
                           <Text className="text-sm text-foreground" numberOfLines={1}>{item.name}</Text>
-                          <Text className="text-xs text-muted" numberOfLines={1}>{item.email || "No email"}</Text>
+                          <Text className="text-xs text-muted" numberOfLines={1}>{getStaffOrganizationName(item)}</Text>
                         </View>
                       </TouchableOpacity>
                     );
