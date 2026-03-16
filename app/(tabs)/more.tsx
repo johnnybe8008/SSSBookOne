@@ -185,7 +185,7 @@ export default function MoreScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="person.2.fill" size={20} color={colors.foreground} />
-                <Text className="text-base text-foreground">Manage Client Organizations</Text>
+                <Text className="text-base text-foreground">Manage Client Companies</Text>
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>
@@ -249,22 +249,11 @@ export default function MoreScreen() {
 
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-              onPress={() => router.push("/admin-templates" as any)}
-            >
-              <View className="flex-row items-center gap-3">
-                <IconSymbol name="doc.fill" size={20} color={colors.primary} />
-                <Text className="text-base text-foreground">Company Templates</Text>
-              </View>
-              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
               onPress={() => router.push("/admin-csv-import" as any)}
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="doc.fill" size={20} color={colors.success} />
-                <Text className="text-base text-foreground">CSV Import (Organizational)</Text>
+                <Text className="text-base text-foreground">CSV Import (Staff)</Text>
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>
@@ -280,25 +269,7 @@ export default function MoreScreen() {
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>
 
-            {/* Staff CSV Import/Export Links */}
-            <TouchableOpacity
-              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-              onPress={() => {
-                // Use the same handler as in admin-staff.tsx
-                // Import handler logic
-                Alert.alert(
-                  "Import Staff",
-                  "CSV import functionality coming soon. Expected format:\nName,Email,Phone,Role,VIP Rated,Organization,Department,Team",
-                  [{ text: "OK" }]
-                );
-              }}
-            >
-              <View className="flex-row items-center gap-3">
-                <IconSymbol name="arrow.down.doc" size={20} color={colors.warning} />
-                <Text className="text-base text-foreground">Import Staff CSV</Text>
-              </View>
-              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
-            </TouchableOpacity>
+            {/* Staff CSV Export Link */}
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
               onPress={() => {

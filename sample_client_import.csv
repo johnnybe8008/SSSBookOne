@@ -1,5 +1,5 @@
-Name,Email,HomePhone,MobilePhone,WorkPhone,Address,Occupation,Title,Age,Company,Division,Department,ReferralSourceType,ReferralSourceId
-John Smith,john.smith@example.com,555-0100,555-0101,555-0102,123 Main St,Engineer,Senior Engineer,35,ABC Corporation,Sales Division,Enterprise Sales,fsm,1
-Jane Doe,jane.doe@example.com,555-0200,555-0201,,456 Oak Ave,Manager,Project Manager,42,ABC Corporation,Sales Division,Enterprise Sales,staff,2
-Mike Johnson,mike.j@example.com,,555-0301,555-0302,789 Pine Rd,Analyst,Data Analyst,28,XYZ Inc,Operations Division,Logistics,client,3
-Sarah Williams,sarah.w@example.com,555-0400,,,321 Elm St,Designer,UX Designer,31,ABC Corporation,Marketing Division,Digital Marketing,,
+Name,Email,HomePhone,MobilePhone,WorkPhone,Address,Occupation,Title,DateOfBirth,Company,Department,Team,ReferralSourceType,ReferralSourceId
+"John Smith","john.smith@example.com","555-0100","555-0101","555-0102","123 Main St","Engineer","Senior Engineer","1989-03-12","ABC Corporation","Enterprise Sales","Team Alpha","fsm","1"
+"Jane Doe","jane.doe@example.com","555-0200","555-0201","","456 Oak Ave","Manager","Project Manager","1982-11-04","ABC Corporation","Enterprise Sales","Team Beta","staff","2"
+"Mike Johnson","mike.j@example.com","","555-0301","555-0302","789 Pine Rd","Analyst","Data Analyst","1996-08-20","XYZ Inc","Logistics","Warehouse Team A","client","3"
+"Sarah Williams","sarah.w@example.com","555-0400","","","321 Elm St","Designer","UX Designer","1993-01-15","ABC Corporation","Digital Marketing","Content Team","",""

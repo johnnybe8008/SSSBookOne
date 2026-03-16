@@ -1,12 +1,6 @@
-Company,Division,Department,CompanyTeam
-ABC Corporation,Sales Division,Enterprise Sales,Team Alpha
-ABC Corporation,Sales Division,Enterprise Sales,Team Beta
-ABC Corporation,Sales Division,SMB Sales,Team Gamma
-ABC Corporation,Marketing Division,Digital Marketing,Content Team
-ABC Corporation,Marketing Division,Digital Marketing,Social Media Team
-ABC Corporation,Marketing Division,Brand Marketing,Creative Team
-XYZ Inc,Operations Division,Logistics,Warehouse Team A
-XYZ Inc,Operations Division,Logistics,Warehouse Team B
-XYZ Inc,Operations Division,Quality Control,QC Team 1
-XYZ Inc,HR Division,Recruitment,Talent Acquisition
-XYZ Inc,HR Division,Employee Relations,Support Team
+Name,Email,Phone,Address,Role,IsVipRated,Organization,StaffDepartment,Team
+Jack Black,jack.black@sss.org,555-0001,11 Main St,admin,1,Central Org,Clinical Services,Intake Team
+Mary Lane,mary.lane@sss.org,555-0002,22 Oak St,counselor,0,Central Org,Clinical Services,Crisis Team
+Jon Doe,jon.doe@sss.org,555-0003,33 Pine St,viewer,0,North Org,Operations,
+Sarah Kent,sarah.kent@sss.org,555-0004,44 Cedar Rd,counselor,1,North Org,Operations,Field Team
+Alex Hart,alex.hart@sss.org,555-0005,55 Elm Ave,counselor,0,Community Org,Outreach,Mobile Unit

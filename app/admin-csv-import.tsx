@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, Text, View, TouchableOpacity, TextInput, Alert, ActivityIndicator } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, TextInput, Alert, ActivityIndicator, Platform } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -8,12 +8,9 @@ import { useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 
 /**
- * Admin - CSV Import
- * 
- * Allows admin users to bulk import organizational structures from CSV files.
- * 
- * CSV Format:
- * companyName,companyAddress,companyPhone,companyEmail,divisionName,divisionDescription,departmentName,departmentDescription,teamName,teamDescription
+ * Admin - Staff CSV Import
+ *
+ * Allows admin users to bulk import staff records and optional org hierarchy.
  */
 export default function AdminCSVImportScreen() {
   const colors = useColors();
@@ -27,11 +24,11 @@ export default function AdminCSVImportScreen() {
     onSuccess: (result) => {
       setImportResult(result);
       if (result.success) {
-        // Invalidate all organizational queries to refresh data
-        utils.companies.invalidate();
-        utils.divisions.invalidate();
-        utils.departments.invalidate();
-        utils.companyTeams.invalidate();
+        // Invalidate staff/org queries to refresh data
+        utils.organizations.invalidate();
+        utils.staffDepartments.invalidate();
+        utils.teams.invalidate();
+        utils.staff.invalidate();
         
         Alert.alert(
           "Success",
@@ -51,6 +48,11 @@ export default function AdminCSVImportScreen() {
       }
     },
     onError: (error) => {
+      setImportResult({
+        success: false,
+        message: error.message || "Failed to import CSV",
+        errors: [error.message || "Failed to import CSV"],
+      });
       Alert.alert("Error", error.message || "Failed to import CSV");
     },
   });
@@ -61,19 +63,24 @@ export default function AdminCSVImportScreen() {
       return;
     }
 
-    Alert.alert(
-      "Confirm Import",
-      "This will create new companies, divisions, departments, and teams from the CSV data. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Import",
-          onPress: () => {
-            importMutation.mutate({ csvText });
-          },
-        },
-      ]
-    );
+    const runImport = () => {
+      setImportResult(null);
+      importMutation.mutate({ csvText });
+    };
+
+    const message = "This will import staff rows and create missing organizations/departments/teams as needed. Continue?";
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      if (window.confirm(message)) {
+        runImport();
+      }
+      return;
+    }
+
+    Alert.alert("Confirm Import", message, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Import", onPress: runImport },
+    ]);
   };
 
   const handlePickFile = async () => {
@@ -95,11 +102,10 @@ export default function AdminCSVImportScreen() {
     }
   };
 
-  const sampleCSV = `companyName,companyAddress,companyPhone,companyEmail,divisionName,divisionDescription,departmentName,departmentDescription,teamName,teamDescription
-"Acme Corp","123 Main St","555-1234","info@acme.com","Sales Division","Sales operations","Sales Dept","Main sales department","Team A","Sales team A"
-"Acme Corp","","","","Sales Division","","Sales Dept","","Team B","Sales team B"
-"Acme Corp","","","","Operations Division","Operations management","Ops Dept","Operations department","",""
-"Beta Inc","456 Oak Ave","555-5678","contact@beta.com","Engineering","Engineering division","Dev Team","Development","",""`;
+  const sampleCSV = `Name,Email,Phone,Address,Role,IsVipRated,Organization,StaffDepartment,Team
+"Jack Black","jack.black@sss.org","555-0001","11 Main St","admin","1","Central Org","Clinical Services","Intake Team"
+"Mary Lane","mary.lane@sss.org","555-0002","22 Oak St","counselor","0","Central Org","Clinical Services","Crisis Team"
+"Jon Doe","jon.doe@sss.org","555-0003","33 Pine St","viewer","0","North Org","Operations",""`;
 
   return (
     <ScreenContainer className="flex-1">
@@ -109,7 +115,7 @@ export default function AdminCSVImportScreen() {
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
             <Text className="text-3xl font-bold text-foreground">&lt;</Text>
           </TouchableOpacity>
-          <Text className="text-xl font-bold text-foreground">CSV Import</Text>
+          <Text className="text-xl font-bold text-foreground">Staff CSV Import</Text>
         </View>
       </View>
 
@@ -136,26 +142,26 @@ export default function AdminCSVImportScreen() {
                 <View>
                   <Text className="text-sm font-semibold text-foreground mb-2">📋 Required Columns</Text>
                   <View className="bg-background rounded-xl p-3">
-                    <Text className="text-xs font-mono text-foreground">Company,Division,Department,CompanyTeam</Text>
+                    <Text className="text-xs font-mono text-foreground">Name,Organization</Text>
                   </View>
                 </View>
 
                 <View>
                   <Text className="text-sm font-semibold text-foreground mb-2">✅ Key Points</Text>
-                  <Text className="text-sm text-muted leading-relaxed">• Use names, not IDs - the system creates entities automatically{"\n"}• Case-insensitive matching{"\n"}• Empty divisions/departments/teams are allowed{"\n"}• Duplicates are automatically skipped</Text>
+                  <Text className="text-sm text-muted leading-relaxed">• Uses staff schema: Organization → StaffDepartment → Team{"\n"}• No Division field{"\n"}• Missing org/dept/team are auto-created by name{"\n"}• Duplicate rows are skipped by email (or name + org path)</Text>
                 </View>
 
                 <View>
                   <Text className="text-sm font-semibold text-foreground mb-2">📝 Example Row</Text>
                   <View className="bg-background rounded-xl p-3">
-                    <Text className="text-xs font-mono text-foreground">ABC Corp,Sales,Enterprise,Team A</Text>
+                    <Text className="text-xs font-mono text-foreground">Jack Black,jack.black@sss.org,555-0001,,admin,1,Central Org,Clinical Services,Intake Team</Text>
                   </View>
-                  <Text className="text-xs text-muted mt-2">Creates: Company "ABC Corp" → Division "Sales" → Department "Enterprise" → Team "Team A"</Text>
+                  <Text className="text-xs text-muted mt-2">Creates staff and links to Central Org → Clinical Services → Intake Team.</Text>
                 </View>
 
                 <View>
                   <Text className="text-sm font-semibold text-foreground mb-2">💡 Tips</Text>
-                  <Text className="text-sm text-muted leading-relaxed">• Import organizational structure before importing clients{"\n"}• Use consistent naming across rows{"\n"}• Check the sample template below for reference</Text>
+                  <Text className="text-sm text-muted leading-relaxed">• Keep Role as admin/counselor/viewer{"\n"}• IsVipRated accepts 1/0/true/false/yes/no{"\n"}• Use consistent Organization/Department/Team names</Text>
                 </View>
               </View>
             )}
@@ -169,17 +175,15 @@ export default function AdminCSVImportScreen() {
             </Text>
             <View className="bg-background rounded-xl p-3 mb-3">
               <Text className="text-xs font-mono text-foreground">
-                companyName, companyAddress, companyPhone, companyEmail,{"\n"}
-                divisionName, divisionDescription,{"\n"}
-                departmentName, departmentDescription,{"\n"}
-                teamName, teamDescription
+                Name, Email, Phone, Address, Role,{"\n"}
+                IsVipRated, Organization, StaffDepartment, Team
               </Text>
             </View>
             <Text className="text-sm text-muted leading-relaxed">
-              • <Text className="font-semibold">companyName</Text> is required{"\n"}
-              • Other fields are optional{"\n"}
-              • Use empty strings ("") for optional fields{"\n"}
-              • Multiple rows with the same company name will add to that company
+              • <Text className="font-semibold">Name</Text> and <Text className="font-semibold">Organization</Text> are required{"\n"}
+              • <Text className="font-semibold">StaffDepartment</Text> is required if Team is provided{"\n"}
+              • Role defaults to counselor if omitted{"\n"}
+              • Use empty values for optional columns
             </Text>
           </View>
 
@@ -237,10 +241,11 @@ export default function AdminCSVImportScreen() {
               
               {importResult.stats && (
                 <View className="bg-background rounded-xl p-3 gap-2">
-                  <Text className="text-sm text-foreground">• Companies created: {importResult.stats.companiesCreated}</Text>
-                  <Text className="text-sm text-foreground">• Divisions created: {importResult.stats.divisionsCreated}</Text>
-                  <Text className="text-sm text-foreground">• Departments created: {importResult.stats.departmentsCreated}</Text>
+                  <Text className="text-sm text-foreground">• Organizations created: {importResult.stats.organizationsCreated}</Text>
+                  <Text className="text-sm text-foreground">• Staff departments created: {importResult.stats.departmentsCreated}</Text>
                   <Text className="text-sm text-foreground">• Teams created: {importResult.stats.teamsCreated}</Text>
+                  <Text className="text-sm text-foreground">• Staff created: {importResult.stats.staffCreated}</Text>
+                  <Text className="text-sm text-foreground">• Staff skipped: {importResult.stats.staffSkipped}</Text>
                 </View>
               )}
 

@@ -85,9 +85,9 @@ export default function AdminCSVImportClientsScreen() {
     importMutation.mutate({ csvText });
   };
 
-  const sampleCSV = `Name,Email,HomePhone,MobilePhone,WorkPhone,Address,Occupation,Title,Age,Company,Division,Department,ReferralSourceType,ReferralSourceId
-John Smith,john@example.com,555-0100,555-0101,,123 Main St,Engineer,Senior Engineer,35,ABC Corp,Sales,Enterprise Sales,fsm,1
-Jane Doe,jane@example.com,555-0200,,,555-0202,456 Oak Ave,Manager,Project Manager,42,ABC Corp,Sales,Enterprise Sales,staff,2`;
+  const sampleCSV = `Name,Email,HomePhone,MobilePhone,WorkPhone,Address,Occupation,Title,DateOfBirth,Company,Department,Team,ReferralSourceType,ReferralSourceId
+"John Smith","john@example.com","555-0100","555-0101","","123 Main St","Engineer","Senior Engineer","1989-03-12","ABC Corp","Enterprise Sales","Team A","fsm","1"
+"Jane Doe","jane@example.com","555-0200","","","456 Oak Ave","Manager","Project Manager","1982-11-04","ABC Corp","Enterprise Sales","Team B","staff","2"`;
 
   return (
     <ScreenContainer className="flex-1">
@@ -124,25 +124,25 @@ Jane Doe,jane@example.com,555-0200,,,555-0202,456 Oak Ave,Manager,Project Manage
                 <View>
                   <Text className="text-sm font-semibold text-foreground mb-2">📋 Required Columns</Text>
                   <View className="bg-background rounded-xl p-3">
-                    <Text className="text-xs font-mono text-foreground">Name,Department</Text>
+                    <Text className="text-xs font-mono text-foreground">Name,Company,Department</Text>
                   </View>
-                  <Text className="text-xs text-muted mt-2">Name and Department are required. All other fields are optional.</Text>
+                  <Text className="text-xs text-muted mt-2">Name, Company, and Department are required. Team is optional.</Text>
                 </View>
 
                 <View>
                   <Text className="text-sm font-semibold text-foreground mb-2">📝 Optional Columns</Text>
-                  <Text className="text-sm text-muted leading-relaxed">Email, HomePhone, MobilePhone, WorkPhone, Address, Occupation, Title, Age, Company, Division, ReferralSourceType, ReferralSourceId</Text>
+                  <Text className="text-sm text-muted leading-relaxed">Email, HomePhone, MobilePhone, WorkPhone, Address, Occupation, Title, DateOfBirth, Team, ReferralSourceType, ReferralSourceId</Text>
                 </View>
 
                 <View>
                   <Text className="text-sm font-semibold text-foreground mb-2">✅ Key Points</Text>
-                  <Text className="text-sm text-muted leading-relaxed">• Import organizational structure first{"\n"}• Department must exist in the system{"\n"}• Duplicates (same name + department) are skipped{"\n"}• ReferralSourceType: fsm, staff, or client</Text>
+                  <Text className="text-sm text-muted leading-relaxed">• Uses Company → Department → Team schema{"\n"}• No Division field{"\n"}• Missing company/department/team are auto-created{"\n"}• Duplicates (same name + company + department) are skipped{"\n"}• ReferralSourceType: fsm, staff, or client</Text>
                 </View>
 
                 <View>
                   <Text className="text-sm font-semibold text-foreground mb-2">💡 Example Row</Text>
                   <View className="bg-background rounded-xl p-3">
-                    <Text className="text-xs font-mono text-foreground">John Smith,john@example.com,,,555-0101,,,Engineer,,ABC Corp,Sales,Enterprise Sales,fsm,1</Text>
+                    <Text className="text-xs font-mono text-foreground">John Smith,john@example.com,,,555-0101,123 Main St,Engineer,Senior Engineer,1989-03-12,ABC Corp,Enterprise Sales,Team A,fsm,1</Text>
                   </View>
                 </View>
               </View>

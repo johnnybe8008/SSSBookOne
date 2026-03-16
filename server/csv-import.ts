@@ -1,48 +1,112 @@
 import { getDb } from "./db";
-import { 
-  companies, 
-  coDepartments, 
-  companyTeams,
-  type InsertCompany,
-  type InsertCoDepartment,
-  type InsertCompanyTeam
-} from "../drizzle/schema";
-import { sql } from "drizzle-orm";
+import { organizations, staffDepartments, teams, staff } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export interface CSVImportRow {
-  companyName: string;
-  companyAddress?: string;
-  companyPhone?: string;
-  companyEmail?: string;
-  departmentName?: string;
-  departmentDescription?: string;
-  departmentName?: string;
-  departmentDescription?: string;
-  teamName?: string;
-  teamDescription?: string;
+  Name: string;
+  Email?: string;
+  Phone?: string;
+  Address?: string;
+  Role?: string;
+  IsVipRated?: string;
+  Organization?: string;
+  StaffDepartment?: string;
+  Team?: string;
 }
 
 export interface ImportResult {
   success: boolean;
   message: string;
   stats?: {
-    companiesCreated: number;
+    organizationsCreated: number;
     departmentsCreated: number;
     teamsCreated: number;
+    staffCreated: number;
+    staffSkipped: number;
   };
   errors?: string[];
 }
 
+const normalize = (value: string | null | undefined) => String(value || "").trim();
+const normalizeKey = (value: string | null | undefined) => normalize(value).toLowerCase();
+
+const parseCSVLine = (line: string): string[] => {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+
+    if (ch === '"') {
+      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += ch;
+  }
+
+  result.push(current.trim());
+  return result;
+};
+
+const parseTruthy = (value: string | null | undefined) => {
+  const v = normalizeKey(value);
+  return v === "1" || v === "true" || v === "yes" || v === "y";
+};
+
+const parseRole = (value: string | null | undefined): "admin" | "counselor" | "viewer" => {
+  const v = normalizeKey(value);
+  if (v === "admin" || v === "viewer") return v;
+  return "counselor";
+};
+
 /**
- * Import organizational structure from CSV data
- * 
- * CSV Format:
- * companyName,companyAddress,companyPhone,companyEmail,divisionName,divisionDescription,departmentName,departmentDescription,teamName,teamDescription
- * 
- * Example:
- * "Acme Corp","123 Main St","555-1234","info@acme.com","Sales Division","Sales operations","Sales Dept","Main sales","Team A","Sales team A"
- * "Acme Corp","","","","Sales Division","","Sales Dept","","Team B","Sales team B"
- * "Acme Corp","","","","Operations Division","Operations management","","","",""
+ * Parse CSV text into structured staff import rows.
+ */
+export function parseCSV(csvText: string): CSVImportRow[] {
+  const lines = csvText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (lines.length < 2) {
+    throw new Error("CSV file must contain a header row and at least one data row");
+  }
+
+  const headers = parseCSVLine(lines[0]).map((h) => h.trim().replace(/^"|"$/g, ""));
+  const rows: CSVImportRow[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const rawLine = lines[i];
+    if (!rawLine) continue;
+
+    const values = parseCSVLine(rawLine).map((v) => v.trim().replace(/^"|"$/g, ""));
+    const row: any = {};
+    headers.forEach((header, idx) => {
+      row[header] = values[idx] || "";
+    });
+    rows.push(row as CSVImportRow);
+  }
+
+  return rows;
+}
+
+/**
+ * Import staff records from CSV data.
+ *
+ * CSV format:
+ * Name,Email,Phone,Address,Role,IsVipRated,Organization,StaffDepartment,Team
  */
 export async function importOrganizationalCSV(
   csvData: CSVImportRow[],
@@ -50,161 +114,175 @@ export async function importOrganizationalCSV(
 ): Promise<ImportResult> {
   const db = await getDb();
   if (!db) {
-    return {
-      success: false,
-      message: "Database not available"
-    };
+    return { success: false, message: "Database not available" };
   }
 
   const errors: string[] = [];
   const stats = {
-    companiesCreated: 0,
-    divisionsCreated: 0,
+    organizationsCreated: 0,
     departmentsCreated: 0,
-    teamsCreated: 0
+    teamsCreated: 0,
+    staffCreated: 0,
+    staffSkipped: 0,
   };
 
   try {
-    // Track created entities to avoid duplicates
-    const companyMap = new Map<string, number>(); // name -> id
-    const departmentMap = new Map<string, number>(); // companyName:departmentName -> id
+    const orgRows: any[] = await db.select().from(organizations);
+    const deptRows: any[] = await db.select().from(staffDepartments);
+    const teamRows: any[] = await db.select().from(teams);
 
-    // Pre-load existing companies to avoid duplicates
-    const existingCompanies: any = await db.select().from(companies);
-    for (const company of existingCompanies) {
-      companyMap.set(company.name, company.id);
-    }
+    const orgMap = new Map<string, number>();
+    const deptMap = new Map<string, number>();
+    const teamMap = new Map<string, number>();
 
-    // Pre-load existing departments
-    const existingDepartments: any = await db.select().from(coDepartments);
-    for (const department of existingDepartments) {
-      const company = existingCompanies.find((c: any) => c.id === department.companyId);
-      if (company) {
-        departmentMap.set(`${company.name}:${department.name}`, department.id);
-      }
-    }
+    orgRows.forEach((row) => orgMap.set(normalizeKey(row.name), Number(row.id)));
+    deptRows.forEach((row) => deptMap.set(`${Number(row.organizationId)}:${normalizeKey(row.name)}`, Number(row.id)));
+    teamRows.forEach((row) => teamMap.set(`${Number(row.staffDepartmentId || 0)}:${normalizeKey(row.name)}`, Number(row.id)));
 
     for (let i = 0; i < csvData.length; i++) {
       const row = csvData[i];
-      const rowNum = i + 2; // +2 for header and 1-indexed
+      const rowNum = i + 2;
 
-      // Validate required fields
-      if (!row.companyName || row.companyName.trim() === "") {
-        errors.push(`Row ${rowNum}: Company name is required`);
+      const name = normalize(row.Name);
+      const email = normalize(row.Email);
+      const phone = normalize(row.Phone);
+      const address = normalize(row.Address);
+      const orgName = normalize(row.Organization);
+      const deptName = normalize(row.StaffDepartment);
+      const teamName = normalize(row.Team);
+      const role = parseRole(row.Role);
+      const isVipRated = parseTruthy(row.IsVipRated) ? 1 : 0;
+      const isAdmin = role === "admin" ? 1 : 0;
+
+      if (!name) {
+        errors.push(`Row ${rowNum}: Name is required`);
+        stats.staffSkipped++;
         continue;
       }
 
-      // Create or get company
-      let companyId: number | undefined = companyMap.get(row.companyName);
-      if (!companyId) {
-        const result: any = await db.insert(companies).values({
-          name: row.companyName.trim(),
-          address: row.companyAddress?.trim() || null,
-          phone: row.companyPhone?.trim() || null,
-          email: row.companyEmail?.trim() || null,
-          createdBy: userId,
-          updatedBy: userId
-        });
-        companyId = result[0].insertId;
-        stats.companiesCreated++;
-        if (companyId) {
-          companyMap.set(row.companyName, companyId);
-        }
-      }
-
-      if (!companyId) {
-        errors.push(`Row ${rowNum}: Failed to create or find company`);
+      if ((deptName || teamName) && !orgName) {
+        errors.push(`Row ${rowNum}: Organization is required when StaffDepartment or Team is provided`);
+        stats.staffSkipped++;
         continue;
       }
 
-      // Create department if specified
-      if (row.departmentName && row.departmentName.trim() !== "") {
-        const departmentKey = `${row.companyName}:${row.departmentName}`;
-        let departmentId: number | undefined = departmentMap.get(departmentKey);
-        if (!departmentId) {
-          // Generate unique code
-          const codeResult: any = await db.execute(
-            sql`SELECT MAX(CAST(SUBSTRING(code, 6) AS UNSIGNED)) as maxNum FROM coDepartments WHERE code LIKE 'DEPT-%'`
-          );
-          const maxNum = codeResult[0]?.[0]?.maxNum || 0;
-          const code = `DEPT-${String(maxNum + 1).padStart(3, '0')}`;
-          const result: any = await db.insert(coDepartments).values({
-            companyId,
-            code,
-            name: row.departmentName.trim(),
-            description: row.departmentDescription?.trim() || '',
+      if (teamName && !deptName) {
+        errors.push(`Row ${rowNum}: StaffDepartment is required when Team is provided`);
+        stats.staffSkipped++;
+        continue;
+      }
+
+      let organizationId: number | null = null;
+      if (orgName) {
+        const orgKey = normalizeKey(orgName);
+        organizationId = orgMap.get(orgKey) || null;
+        if (!organizationId) {
+          const insertOrg: any = await db.insert(organizations).values({
+            name: orgName,
             createdBy: userId,
-            updatedBy: userId
+            updatedBy: userId,
           });
-          departmentId = result[0].insertId;
-          stats.departmentsCreated++;
-          if (departmentId) {
-            departmentMap.set(departmentKey, departmentId);
+          organizationId = Number(insertOrg?.[0]?.insertId || 0) || null;
+          if (organizationId) {
+            orgMap.set(orgKey, organizationId);
+            stats.organizationsCreated++;
           }
         }
-        if (!departmentId) {
-          errors.push(`Row ${rowNum}: Failed to create or find department`);
-          continue;
-        }
-        // Create company team if specified
-        if (row.teamName && row.teamName.trim() !== "") {
-          // Generate unique code
-          const codeResult: any = await db.execute(
-            sql`SELECT MAX(CAST(SUBSTRING(code, 7) AS UNSIGNED)) as maxNum FROM companyTeams WHERE code LIKE 'CTEAM-%'`
-          );
-          const maxNum = codeResult[0]?.[0]?.maxNum || 0;
-          const code = `CTEAM-${String(maxNum + 1).padStart(3, '0')}`;
-          await db.insert(companyTeams).values({
-            departmentId,
-            code,
-            name: row.teamName.trim(),
-            description: row.teamDescription?.trim() || '',
+      }
+
+      let staffDepartmentId: number | null = null;
+      if (organizationId && deptName) {
+        const deptKey = `${organizationId}:${normalizeKey(deptName)}`;
+        staffDepartmentId = deptMap.get(deptKey) || null;
+        if (!staffDepartmentId) {
+          const insertDept: any = await db.insert(staffDepartments).values({
+            organizationId,
+            name: deptName,
             createdBy: userId,
-            updatedBy: userId
+            updatedBy: userId,
           });
-          stats.teamsCreated++;
+          staffDepartmentId = Number(insertDept?.[0]?.insertId || 0) || null;
+          if (staffDepartmentId) {
+            deptMap.set(deptKey, staffDepartmentId);
+            stats.departmentsCreated++;
+          }
         }
       }
+
+      let teamId: number | null = null;
+      if (organizationId && staffDepartmentId && teamName) {
+        const teamKey = `${staffDepartmentId}:${normalizeKey(teamName)}`;
+        teamId = teamMap.get(teamKey) || null;
+        if (!teamId) {
+          const insertTeam: any = await db.insert(teams).values({
+            organizationId,
+            staffDepartmentId,
+            name: teamName,
+            createdBy: userId,
+            updatedBy: userId,
+          });
+          teamId = Number(insertTeam?.[0]?.insertId || 0) || null;
+          if (teamId) {
+            teamMap.set(teamKey, teamId);
+            stats.teamsCreated++;
+          }
+        }
+      }
+
+      let duplicate: any[] = [];
+      if (email) {
+        duplicate = await db.select({ id: staff.id }).from(staff).where(eq(staff.email, email.toLowerCase())).limit(1);
+      } else {
+        const sameNameRows: any[] = await db.select().from(staff).where(eq(staff.name, name));
+        duplicate = sameNameRows.filter(
+          (candidate: any) =>
+            Number(candidate.organizationId || 0) === Number(organizationId || 0) &&
+            Number(candidate.staffDepartmentId || 0) === Number(staffDepartmentId || 0) &&
+            Number(candidate.teamId || 0) === Number(teamId || 0)
+        );
+      }
+
+      if (duplicate.length > 0) {
+        errors.push(`Row ${rowNum}: Staff record already exists (${email || name})`);
+        stats.staffSkipped++;
+        continue;
+      }
+
+      await db.insert(staff).values({
+        organizationId,
+        staffDepartmentId,
+        teamId,
+        name,
+        address: address || null,
+        phone: phone || null,
+        email: email ? email.toLowerCase() : null,
+        role,
+        isVipRated,
+        isAdmin,
+        mustChangePassword: 1,
+        createdBy: userId,
+        updatedBy: userId,
+      });
+
+      stats.staffCreated++;
     }
 
     return {
-      success: true,
-      message: `Import completed successfully. Created ${stats.companiesCreated} companies, ${stats.departmentsCreated} departments, and ${stats.teamsCreated} teams.`,
+      success: stats.staffCreated > 0,
+      message:
+        stats.staffCreated > 0
+          ? `Imported ${stats.staffCreated} staff row(s). ${stats.staffSkipped} skipped.`
+          : "No staff rows were imported.",
       stats,
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error: any) {
-    console.error("CSV import error:", error);
+    console.error("Staff CSV import error:", error);
     return {
       success: false,
       message: `Import failed: ${error.message}`,
-      errors
+      stats,
+      errors: errors.length > 0 ? errors : undefined,
     };
   }
-}
-
-/**
- * Parse CSV text into structured data
- */
-export function parseCSV(csvText: string): CSVImportRow[] {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) {
-    throw new Error("CSV file must contain a header row and at least one data row");
-  }
-
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  const rows: CSVImportRow[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-    const row: any = {};
-    
-    headers.forEach((header, index) => {
-      row[header] = values[index] || '';
-    });
-
-    rows.push(row as CSVImportRow);
-  }
-
-  return rows;
 }
