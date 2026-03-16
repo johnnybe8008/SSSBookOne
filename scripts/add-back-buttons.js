@@ -8,7 +8,6 @@ const adminScreens = [
   'admin-departments.tsx',
   'admin-divisions.tsx',
   'admin-fsms.tsx',
-  'admin-hierarchy.tsx',
   'admin-lookup-org.tsx',
   'admin-lookup-tables.tsx',
   'admin-organizations.tsx',

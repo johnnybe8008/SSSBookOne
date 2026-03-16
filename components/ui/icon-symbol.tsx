@@ -24,6 +24,7 @@ const MAPPING = {
   "person.fill.xmark": "person-off",
   "calendar": "calendar-today",
   "chart.bar.fill": "bar-chart",
+  "chart.bar": "bar-chart",
   "ellipsis.circle.fill": "more-horiz",
   "plus.circle.fill": "add-circle",
   "magnifyingglass": "search",
@@ -39,6 +40,11 @@ const MAPPING = {
   "exclamationmark.triangle.fill": "warning",
   "wrench.fill": "build",
   "mappin.circle.fill": "place",
+  "building.2.fill": "business",
+  "doc.fill": "description",
+  "arrow.down.doc": "file-download",
+  "arrow.up.doc": "file-upload",
+  "trash": "delete",
 } as IconMapping;
 
 /**
