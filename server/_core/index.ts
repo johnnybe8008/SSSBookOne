@@ -1,7 +1,9 @@
 import "dotenv/config";
 import express from "express";
+import fs from "fs";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
 import cookieParser from "cookie-parser";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
@@ -31,6 +33,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 
 async function startServer() {
     const app = express();
+    const webBuildDir = path.resolve(process.cwd(), "dist-web");
+    const webEntryPath = path.join(webBuildDir, "index.html");
+    const hasWebBuild = fs.existsSync(webEntryPath);
     // Enable CORS for all routes - reflect the request origin to support credentials
     app.use((req, res, next) => {
       const origin = req.headers.origin;
@@ -72,6 +77,19 @@ async function startServer() {
       },
     }),
   );
+
+  if (hasWebBuild) {
+    app.use(express.static(webBuildDir, { index: false }));
+    app.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => {
+      res.sendFile(webEntryPath);
+    });
+  } else {
+    app.get("/", (_req, res) => {
+      res
+        .status(503)
+        .send("Web frontend is not built yet. Run `npm run build:web` or `npm run build:prod`.");
+    });
+  }
 
   // Global error handler to log stack traces for all unhandled errors
   app.use((err, req, res, next) => {
