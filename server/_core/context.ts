@@ -20,19 +20,13 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
     try {
       // First try Manus OAuth authentication (for OAuth users)
       user = await sdk.authenticateRequest(opts.req);
-      console.log('[DEBUG] Authenticated via OAuth (sdk.authenticateRequest)');
-    } catch (error) {
-      console.log('[DEBUG] OAuth authentication failed, falling back to custom session token:', error);
-      // Print all cookies received for every request
-      console.log('[DEBUG][CONTEXT] All cookies received:', opts.req.cookies);
+    } catch (_error) {
       // If OAuth fails, try custom session token (for email/password users)
       // Check Authorization header first (for native apps)
       const authHeader = opts.req.headers.authorization;
       if (authHeader && authHeader.startsWith("Bearer ")) {
         const token = authHeader.substring(7);
-        console.log('[DEBUG] Trying validateSessionToken with Authorization header:', token);
         user = await validateSessionToken(token);
-        console.log('[DEBUG] validateSessionToken (Authorization header):', token, user);
       }
       // Debug log: print cookies and session token
       if (!user && opts.req.cookies) {
@@ -40,10 +34,8 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
           opts.req.cookies["session_token"] ||
           opts.req.cookies[COOKIE_NAME] ||
           opts.req.cookies["app_session_id"];
-        console.log('[DEBUG][CONTEXT] Session token from cookie:', sessionToken);
         if (sessionToken) {
           user = await validateSessionToken(sessionToken);
-          console.log('[DEBUG][CONTEXT] validateSessionToken (cookie):', sessionToken, user);
         }
       }
       // If no user is found, return unauthenticated context and let protectedProcedure handle it.
@@ -57,11 +49,8 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
       const { getStaffById } = await import("../db");
       const staff = await getStaffById(user.id);
       staffRole = (staff as any)?.role || null;
-      console.log('[DEBUG] Staff record:', staff);
-      console.log('[DEBUG] Staff role:', staffRole);
-    } catch (error) {
+    } catch (_error) {
       // Staff record not found, leave role as null
-      console.log('[DEBUG] Staff record not found for user:', user);
     }
   }
 

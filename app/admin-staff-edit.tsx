@@ -202,7 +202,6 @@ export default function AdminStaffEditScreen() {
       teamId: teamId || undefined,
       updatedBy: 1, // Admin user
     };
-    console.log("[admin-staff-edit] update payload", payload);
     updateStaff.mutate(payload);
   };
 

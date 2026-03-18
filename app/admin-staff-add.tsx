@@ -62,43 +62,18 @@ export default function AdminStaffAddScreen() {
   });
 
   const handleSave = () => {
-    console.log('handleSave called');
-    console.log('name:', name, '| email:', email, '| password:', password);
     if (!name.trim()) {
-      console.log('Name missing or empty');
       Alert.alert("Error", "Please enter a name");
       return;
     }
     if (!email.trim()) {
-      console.log('Email missing or empty');
       Alert.alert("Error", "Please enter an email");
       return;
     }
     if (!password.trim()) {
-      console.log('Password missing or empty');
       Alert.alert("Error", "Please enter a password");
       return;
     }
-    console.log('Calling createStaff.mutate with:', {
-      name: name.trim(),
-       email: email.trim().toLowerCase(),
-       phone: mobilePhone.trim(),
-       mobilePhone: mobilePhone.trim(),
-       homePhone: homePhone.trim(),
-       workPhone: workPhone.trim(),
-       addressLine1: addressLine1.trim(),
-       city: city.trim(),
-       stateProvince: stateProvince.trim(),
-       postalCode: postalCode.trim(),
-       role: role,
-       isVipRated: isVipRated ? 1 : 0,
-      isAdmin: role === "admin" ? 1 : 0,
-      teamId: teamId || 1,
-      createdBy: 1,
-      updatedBy: 1,
-      organizationId: groupId,
-      staffDepartmentId: staffDepartmentId
-    });
     createStaff.mutate({
       name: name.trim(),
       email: email.trim().toLowerCase(),

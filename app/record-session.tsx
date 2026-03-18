@@ -578,7 +578,6 @@ export default function RecordSessionScreen() {
       return;
     }
 
-    console.log("Creating session with data:", sessionData);
     createSession.mutate({ ...sessionData, createdBy: user.id });
   };
 

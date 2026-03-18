@@ -50,39 +50,11 @@ async function startServer() {
       }
       next();
     });
-
-  // Log the database URL at startup for debugging
-  console.log('[DEBUG] DATABASE_URL:', process.env.DATABASE_URL);
-
   const server = createServer(app);
-
-  // Early log before JSON parsing.
-  app.use('/api/trpc', (req, res, next) => {
-    console.log('[tRPC][INCOMING][raw]', req.method, req.originalUrl, {
-      contentType: req.headers["content-type"],
-      contentLength: req.headers["content-length"],
-      body: req.body,
-    });
-    res.on('finish', () => {
-      if (res.statusCode >= 400) {
-        console.error('[tRPC][ERROR]', req.method, req.originalUrl, res.statusCode);
-      }
-    });
-    next();
-  });
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   app.use(cookieParser()); // Parse cookies from requests
-
-  // Parsed log after JSON/body parsers.
-  app.use('/api/trpc', (req, _res, next) => {
-    console.log('[tRPC][INCOMING][parsed]', req.method, req.originalUrl, {
-      contentType: req.headers["content-type"],
-      body: req.body,
-    });
-    next();
-  });
 
   registerOAuthRoutes(app);
 

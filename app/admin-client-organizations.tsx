@@ -449,7 +449,6 @@ export default function AdmincompaniesScreen() {
           contactPerson: formData.contactPerson,
           updatedBy: staff.id
         };
-        console.log('[DEBUG] companies.update payload:', payload);
         await updateOrgMutation.mutateAsync(payload);
 
         // 2. Departments: add new, update existing, delete missing

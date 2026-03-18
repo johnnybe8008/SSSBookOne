@@ -36,12 +36,6 @@ export default function SessionsScreen() {
   const [folderSearch, setFolderSearch] = useState("");
   const [staffSearch, setStaffSearch] = useState("");
 
-  // Debug: log staffRecord and staffId
-  if (!isAdmin) {
-    // eslint-disable-next-line no-console
-    console.log('Staff user:', staff, 'staffId used:', staff?.id);
-  }
-
   // Get sessions: all for admin, only own for staff
   const { data: sessions, isLoading: sessionsLoading } = isAdmin
     ? trpc.sessions.listAll.useQuery()

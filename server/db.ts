@@ -71,7 +71,6 @@ export async function createCompanyTeam(input) {
   const db = await getDb();
   // Remove id if present, as it should be auto-incremented
   const { id, ...data } = input;
-  console.log('[DEBUG createCompanyTeam] mutation payload:', data);
   const [result] = await db.insert(companyTeams).values(data);
   return result;
 }
@@ -158,12 +157,9 @@ export async function updateStaff(id, data) {
   const db = await getDb();
   // Remove id if present in data
   const { id: _id, ...updateData } = data;
-  console.log("[db.updateStaff] id:", id, "updateData:", updateData);
   await db.update(staff)
     .set(updateData)
     .where(eq(staff.id, id));
-  const [updated] = await db.select().from(staff).where(eq(staff.id, id)).limit(1);
-  console.log("[db.updateStaff] updated row:", updated);
   return { success: true };
 }
 
@@ -426,7 +422,6 @@ export async function getCoDepartmentById(id: number) {
 export async function createCoDepartment(input) {
   const db = await getDb();
   const { id, ...data } = input;
-  console.log('[DEBUG createCoDepartment] mutation payload:', data);
   const [result] = await db.insert(coDepartments).values(data);
   return result;
 }

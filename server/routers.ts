@@ -32,8 +32,6 @@ async function syncSessionNotifications(session: {
 
   const staffRecord = await db.getStaffById(session.staffId);
   const clientRecord = await db.getClientById(session.clientId);
-  console.log("[Notification][Sync] staffRecord:", staffRecord);
-  console.log("[Notification][Sync] clientRecord:", clientRecord);
 
   if (staffRecord && !staffRecord.notificationOptOut && staffRecord.notificationPreference && staffRecord.mobilePhone) {
     await db.createNotification({
@@ -282,14 +280,6 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
-        // Debug: Log session_token from cookie
-        const sessionToken = ctx.req?.cookies?.session_token;
-        console.log('[organizations.create][DEBUG] session_token from cookie:', sessionToken);
-        // Validate session token
-        const { validateSessionToken } = await import('./session-manager');
-        const staff = sessionToken ? await validateSessionToken(sessionToken) : null;
-        console.log('[organizations.create][DEBUG] validateSessionToken result:', staff);
-        // Proceed with org creation
         return db.createOrganization(input);
       }),
     update: adminOnlyProcedure
@@ -353,23 +343,14 @@ export const appRouter = router({
       }),
     delete: adminOnlyProcedure
       .input(z.object({ id: z.number(), organizationId: z.number().optional() }))
-      .mutation(async ({ input }) => {
-        console.log('[tRPC][staffDepartments.delete] called with', input);
-        return db.deleteStaffDepartment(input.id, input.organizationId);
-      }),
+      .mutation(async ({ input }) => db.deleteStaffDepartment(input.id, input.organizationId)),
       // Duplicate keys removed: publicAll, all
     // Temporary public endpoint for debugging
     publicAll: publicProcedure.query(async () => {
-      const all = await db.getStaffDepartmentsByOrganizationId(0);
-      console.log('[tRPC][staffDepartments.publicAll] returning', all.length, 'departments:', all);
-      return all;
+      return db.getStaffDepartmentsByOrganizationId(0);
     }),
     // Return all departments across all orgs
-    all: protectedProcedure.query(async () => {
-      const all = await db.getStaffDepartmentsByOrganizationId(0);
-      console.log('[tRPC][staffDepartments.all] returning', all.length, 'departments:', all);
-      return all;
-    }),
+    all: protectedProcedure.query(async () => db.getStaffDepartmentsByOrganizationId(0)),
   }),
 
   teams: router({

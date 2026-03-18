@@ -45,12 +45,7 @@ export async function getSessionToken(): Promise<string | null> {
       return null;
     }
     // Use SecureStore for native
-    const token = await SecureStore.getItemAsync(SESSION_TOKEN_KEY);
-    console.log(
-      "[Auth] Session token retrieved from SecureStore:",
-      token ? `present (${token.substring(0, 20)}...)` : "missing",
-    );
-    return token;
+    return await SecureStore.getItemAsync(SESSION_TOKEN_KEY);
   } catch (error) {
     console.error("[Auth] Failed to get session token:", error);
     return null;
@@ -66,9 +61,7 @@ export async function setSessionToken(token: string): Promise<void> {
     }
 
     // Use SecureStore for native
-    console.log("[Auth] Setting session token...", token.substring(0, 20) + "...");
     await SecureStore.setItemAsync(SESSION_TOKEN_KEY, token);
-    console.log("[Auth] Session token stored in SecureStore successfully");
   } catch (error) {
     console.error("[Auth] Failed to set session token:", error);
     throw error;
@@ -83,9 +76,7 @@ export async function removeSessionToken(): Promise<void> {
     }
 
     // Use SecureStore for native
-    console.log("[Auth] Removing session token...");
     await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
-    console.log("[Auth] Session token removed from SecureStore successfully");
   } catch (error) {
     console.error("[Auth] Failed to remove session token:", error);
   }

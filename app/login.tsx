@@ -24,12 +24,10 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const result = await loginMutation.mutateAsync({ email, password });
-      console.log('[Login] Mutation result:', result);
       if (result.success && result.staff) {
         // Store the real session token from backend
         if (result.sessionToken) {
           await setSessionToken(result.sessionToken);
-          console.log('[Login] Session token set:', result.sessionToken);
         }
         // Always fetch staff info from backend after login
         try {
@@ -45,7 +43,6 @@ export default function LoginScreen() {
           const backendStaff = data?.result?.data?.json?.staff || data?.result?.data?.json || data?.result?.data || data?.result;
           if (backendStaff && backendStaff.id) {
             await setStaffInfo(backendStaff);
-            console.log('[Login] Staff info set from backend:', backendStaff);
           }
         } catch (err) {
           console.error('[Login] Failed to fetch staff info from backend:', err);

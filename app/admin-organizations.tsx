@@ -70,7 +70,6 @@ export default function AdminOrganizationsScreen() {
     if (typeof window !== 'undefined' && window.confirm) {
       if (window.confirm(msg)) {
         try {
-          console.log('Calling removeTeamMutation.mutate', { id: teamId });
           removeTeamMutation.mutate({ id: teamId });
         } catch (err) {
           console.error("Mutation error", err);
@@ -86,7 +85,6 @@ export default function AdminOrganizationsScreen() {
             text: "Remove",
             style: "destructive",
             onPress: () => {
-              console.log("Triggering team delete mutation", teamId);
               Alert.alert("Debug", `Deleting team ${teamId}`);
               removeTeamMutation.mutate({ id: teamId });
             },
@@ -199,7 +197,6 @@ export default function AdminOrganizationsScreen() {
 
   // Save department to local state (staging)
   const handleDeptSave = () => {
-    console.log('[DEBUG] handleDeptSave called', { newDeptName, pendingDepartments });
     if (!newDeptName.trim()) {
       setAddDeptError("Department name is required");
       return;
@@ -207,9 +204,7 @@ export default function AdminOrganizationsScreen() {
     // Only add to local state in create mode
     if (isCreateMode) {
       setPendingDepartments((prev) => {
-        const next = [...prev, { name: newDeptName, teams: [] }];
-        console.log('[DEBUG] pendingDepartments after add', next);
-        return next;
+        return [...prev, { name: newDeptName, teams: [] }];
       });
       setTimeout(() => {
         setAddDeptModalVisible(false);
@@ -233,7 +228,6 @@ export default function AdminOrganizationsScreen() {
         updatedBy: staff.id,
       }, {
         onSuccess: () => {
-          console.log('[DEBUG] Department added successfully');
           utils?.staffDepartments?.list?.invalidate?.();
           utils?.staffDepartments?.all?.invalidate?.();
         },
@@ -263,7 +257,6 @@ export default function AdminOrganizationsScreen() {
       if (typeof window !== 'undefined' && window.confirm) {
         if (window.confirm(warningMsg)) {
           try {
-            console.log('Calling removeDepartmentMutation.mutate', { id: deptIdOrName, organizationId: editingOrg?.id });
             removeDepartmentMutation.mutate({ id: deptIdOrName, organizationId: editingOrg?.id });
           } catch (err) {
             console.error("Mutation error", err);
@@ -279,10 +272,8 @@ export default function AdminOrganizationsScreen() {
               text: "Remove",
               style: "destructive",
               onPress: () => {
-                console.log("Triggering department delete mutation", deptIdOrName);
                 Alert.alert("Debug", `Deleting department ${deptIdOrName}`);
                 try {
-                  console.log('Calling removeDepartmentMutation.mutate', { id: deptIdOrName, organizationId: editingOrg?.id });
                   removeDepartmentMutation.mutate({ id: deptIdOrName, organizationId: editingOrg?.id });
                 } catch (err) {
                   console.error("Mutation error", err);
@@ -331,13 +322,8 @@ export default function AdminOrganizationsScreen() {
 
   // Add debug logging and visible error/status output
   const createOrgMutation = trpc.organizations.create.useMutation({
-    onSuccess: (data) => {
-      console.log('[CREATE ORG SUCCESS]', data);
+    onSuccess: () => {
       setModalVisible(false);
-      setTimeout(() => {
-        console.log('[DEBUG] After setModalVisible(false), modalVisible =', modalVisible);
-      }, 100);
-      console.log('[DEBUG] setModalVisible(false) called after org create');
       setEditingOrg(null);
       setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '' });
       setFormError('');
@@ -359,8 +345,7 @@ export default function AdminOrganizationsScreen() {
       onError: (err) => setAddDeptError(err.message || 'Failed to delete department'),
     });
   const updateOrgMutation = trpc.organizations.update.useMutation({
-    onSuccess: (data) => {
-      console.log('[UPDATE ORG SUCCESS]', data);
+    onSuccess: () => {
       setModalVisible(false);
       setEditingOrg(null);
       setFormData({ name: '', addressLine1: '', city: '', stateProvince: '', postalCode: '', email: '', phone: '' });
@@ -387,12 +372,6 @@ export default function AdminOrganizationsScreen() {
     onError: (err) => setNewTeamError(err.message || 'Failed to update team'),
   });
   const handleFormSubmit = async () => {
-    // Debug: Show department arrays before saving
-    console.log('[DEBUG] formData:', formData);
-    console.log('[DEBUG] pendingDepartments:', pendingDepartments);
-    console.log('[DEBUG] allDepartments:', allDepartments);
-    console.log('[DEBUG] allDepartmentsGlobal:', allDepartmentsGlobal);
-    console.log('[DEBUG] pendingTeams:', pendingTeams);
     if (!formData.name.trim()) {
       setFormError("Name is required");
       return;
@@ -519,7 +498,6 @@ export default function AdminOrganizationsScreen() {
           }
           for (const dept of pendingDepartments) {
             if (!staff?.id) throw new Error('Session expired during department creation.');
-            console.log('[DEBUG] Creating department:', dept);
             try {
               const deptResult = await addDepartmentMutation.mutateAsync({
                 name: dept.name,
@@ -530,7 +508,6 @@ export default function AdminOrganizationsScreen() {
               const deptId = deptResult?.insertId || deptResult?.id;
               for (const team of dept.teams || []) {
                 if (!staff?.id) throw new Error('Session expired during team creation.');
-                console.log('[DEBUG] Creating team:', team);
                 try {
                   await addTeamMutation.mutateAsync({
                     name: team.name,
@@ -712,13 +689,9 @@ export default function AdminOrganizationsScreen() {
         animationType="slide"
         transparent={false}
         visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(false);
-          setTimeout(() => {
-            console.log('[DEBUG] After setModalVisible(false) (onRequestClose), modalVisible =', modalVisible);
-          }, 100);
-          console.log('[DEBUG] Modal onRequestClose triggered');
-        }}
+          onRequestClose={() => {
+            setModalVisible(false);
+          }}
       >
         <ScrollView contentContainerStyle={{ padding: 24 }}>
           {/* Modal Header Row */}
@@ -873,14 +846,6 @@ export default function AdminOrganizationsScreen() {
             onRequestClose={() => setAddDeptModalVisible(false)}
           >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-                                          {/* DEBUG: Only show in Add Team modal */}
-                                          {addTeamModalVisible && (
-                                            <View style={{ marginBottom: 12 }}>
-                                              <Text style={{ fontSize: 12, color: '#d32f2f' }}>[DEBUG] pendingDepartments: {JSON.stringify(pendingDepartments)}</Text>
-                                              <Text style={{ fontSize: 12, color: '#d32f2f' }}>[DEBUG] allTeams: {JSON.stringify(allTeams)}</Text>
-                                              <Text style={{ fontSize: 12, color: '#d32f2f' }}>[DEBUG] allTeamsGlobal: {JSON.stringify(allTeamsGlobal)}</Text>
-                                            </View>
-                                          )}
               <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxHeight: '80%' }}>
                 <View style={{ position: 'relative', minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
                   <TouchableOpacity
@@ -985,27 +950,6 @@ export default function AdminOrganizationsScreen() {
             onRequestClose={() => setAddTeamModalVisible(false)}
           >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-              {/* DEBUG: Only log in Add Team modal to avoid UI lockup */}
-              {(() => {
-                if (addTeamModalVisible) {
-                  console.log('[DEBUG] pendingDepartments:', pendingDepartments);
-                  console.log('[DEBUG] allTeams:', allTeams);
-                  // Debug for dept.teams of selected department
-                  let dept;
-                  if (isCreateMode && typeof selectedDeptName === 'number') {
-                    dept = pendingDepartments[selectedDeptName];
-                  } else if (selectedDeptName != null) {
-                    dept = (allDepartments ?? []).find((d: any) => d.id === selectedDeptName);
-                  }
-                  if (!dept) {
-                    console.log('[DEBUG] No department found for selectedDeptName:', selectedDeptName);
-                  } else {
-                    console.log('[DEBUG] dept object for selected department:', dept);
-                    console.log('[DEBUG] dept.teams for selected department:', dept.teams);
-                  }
-                }
-                return null;
-              })()}
               <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '90%', maxHeight: '80%' }}>
                 <View style={{ position: 'relative', minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
                   <TouchableOpacity
