@@ -544,14 +544,13 @@ export default function AddClientScreen() {
                 <DateTimePicker
                   value={dateOfBirth || new Date()}
                   mode="date"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={(_event, selectedDate) => {
+                  onChange={(value) => {
                     setShowDatePicker(Platform.OS === "ios");
-                    if (selectedDate) {
+                    const selectedDate = value instanceof Date ? value : new Date(value);
+                    if (!Number.isNaN(selectedDate.getTime())) {
                       setDateOfBirth(selectedDate);
                     }
                   }}
-                  maximumDate={new Date()}
                 />
               )}
             </View>

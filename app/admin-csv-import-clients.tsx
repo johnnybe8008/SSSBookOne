@@ -85,10 +85,6 @@ export default function AdminCSVImportClientsScreen() {
     importMutation.mutate({ csvText });
   };
 
-  const sampleCSV = `Name,Email,HomePhone,MobilePhone,WorkPhone,Address,Occupation,Title,DateOfBirth,Company,Department,Team,ReferralSourceType,ReferralSourceId
-"John Smith","john@example.com","555-0100","555-0101","","123 Main St","Engineer","Senior Engineer","1989-03-12","ABC Corp","Enterprise Sales","Team A","fsm","1"
-"Jane Doe","jane@example.com","555-0200","","","456 Oak Ave","Manager","Project Manager","1982-11-04","ABC Corp","Enterprise Sales","Team B","staff","2"`;
-
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
@@ -148,22 +144,6 @@ export default function AdminCSVImportClientsScreen() {
               </View>
             )}
           </TouchableOpacity>
-
-          {/* Sample CSV */}
-          <View className="bg-surface border border-border rounded-2xl p-5">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-lg font-semibold text-foreground">Sample CSV</Text>
-              <TouchableOpacity
-                onPress={() => setCsvText(sampleCSV)}
-                className="bg-success px-3 py-1 rounded-full"
-              >
-                <Text className="text-xs font-semibold text-background">Use Sample</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={true} className="bg-background rounded-xl p-3">
-              <Text className="text-xs font-mono text-foreground">{sampleCSV}</Text>
-            </ScrollView>
-          </View>
 
           {/* File Upload */}
           <View className="gap-3">

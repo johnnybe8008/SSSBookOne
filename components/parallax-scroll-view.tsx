@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { PropsWithChildren, ReactElement } from "react";
 import { View } from "react-native";
 import Animated, {

@@ -18,6 +18,11 @@ export default function AdminResetDatabaseScreen() {
   const colors = useColors();
   const router = useRouter();
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const previewQuery = trpc.auth.previewResetDatabase.useQuery(undefined, {
+    enabled: showPreview,
+  });
 
   const resetMutation = trpc.auth.resetDatabase.useMutation({
     onSuccess: (result) => {
@@ -44,15 +49,18 @@ export default function AdminResetDatabaseScreen() {
   });
 
   const handleResetRequest = () => {
-    setShowConfirmation(true);
+    setShowPreview(true);
   };
 
   const handleConfirmReset = () => {
     resetMutation.mutate();
+    setShowPreview(false);
+    setShowConfirmation(false);
   };
 
   const handleCancelReset = () => {
     setShowConfirmation(false);
+    setShowPreview(false);
   };
 
   return (
@@ -81,7 +89,7 @@ export default function AdminResetDatabaseScreen() {
               This action will permanently delete <Text className="font-bold">ALL DATA</Text> from the database, including:
             </Text>
             <View className="mt-3 gap-2">
-              <Text className="text-sm text-foreground">• All companies, divisions, departments, and teams</Text>
+              <Text className="text-sm text-foreground">• All companies, departments, and teams</Text>
               <Text className="text-sm text-foreground">• All clients and their records</Text>
               <Text className="text-sm text-foreground">• All FSMs (Field Service Managers)</Text>
               <Text className="text-sm text-foreground">• All counseling sessions and folders</Text>
@@ -112,7 +120,7 @@ export default function AdminResetDatabaseScreen() {
             </Text>
           </View>
 
-          {!showConfirmation ? (
+          {!showPreview && !showConfirmation ? (
             /* Reset Button */
             <TouchableOpacity
               className="bg-error py-4 rounded-full items-center"
@@ -125,7 +133,52 @@ export default function AdminResetDatabaseScreen() {
                 <Text className="text-background text-lg font-bold">Reset Database</Text>
               )}
             </TouchableOpacity>
-          ) : (
+          ) : showPreview ? (
+            /* Preview Modal */
+            <View className="bg-warning/10 border-2 border-warning rounded-2xl p-5 gap-4">
+              <Text className="text-xl font-bold text-foreground text-center">Reset Preview</Text>
+              {previewQuery.isLoading ? (
+                <ActivityIndicator size="small" color={colors.background} />
+              ) : previewQuery.isError ? (
+                <Text className="text-error text-center">Failed to load preview: {previewQuery.error?.message}</Text>
+              ) : previewQuery.data ? (
+                <View className="gap-2">
+                  <Text className="text-base text-foreground text-center">Preserved:</Text>
+                  <Text className="text-sm text-success">• Admin staff: {previewQuery.data.adminCount}</Text>
+                  <Text className="text-sm text-success">• Co-departments: {previewQuery.data.coDepartmentUniqueCount} unique</Text>
+                  <Text className="text-xs text-muted">(Total: {previewQuery.data.coDepartmentCount})</Text>
+                  <Text className="text-sm text-success">• Staff departments: {previewQuery.data.staffDepartmentUniqueCount} unique</Text>
+                  <Text className="text-xs text-muted">(Total: {previewQuery.data.staffDepartmentCount})</Text>
+                  <Text className="text-sm text-success">• Company teams: {previewQuery.data.companyTeamUniqueCount} unique</Text>
+                  <Text className="text-xs text-muted">(Total: {previewQuery.data.companyTeamCount})</Text>
+                  <Text className="text-sm text-success">• Staff teams: {previewQuery.data.staffTeamUniqueCount} unique</Text>
+                  <Text className="text-xs text-muted">(Total: {previewQuery.data.staffTeamCount})</Text>
+                  <Text className="text-base text-foreground text-center mt-2">Will be deleted:</Text>
+                  <Text className="text-sm text-error">• Clients: {previewQuery.data.clientCount}</Text>
+                  <Text className="text-sm text-error">• Staff: {previewQuery.data.staffCount}</Text>
+                  <Text className="text-sm text-error">• Companies: {previewQuery.data.companyCount}</Text>
+                  <Text className="text-sm text-error">• Organizations: {previewQuery.data.organizationCount}</Text>
+                  <Text className="text-sm text-error">• Sessions: {previewQuery.data.sessionCount}</Text>
+                </View>
+              ) : null}
+              <View className="flex-row gap-3 mt-2">
+                <TouchableOpacity
+                  className="flex-1 bg-background border border-border py-3 rounded-full items-center"
+                  onPress={handleCancelReset}
+                  disabled={resetMutation.isPending}
+                >
+                  <Text className="text-foreground font-semibold">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-1 bg-error py-3 rounded-full items-center"
+                  onPress={() => { setShowPreview(false); setShowConfirmation(true); }}
+                  disabled={resetMutation.isPending}
+                >
+                  <Text className="text-background font-bold">Continue</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : showConfirmation ? (
             /* Confirmation Section */
             <View className="bg-warning/10 border-2 border-warning rounded-2xl p-5 gap-4">
               <Text className="text-xl font-bold text-foreground text-center">
@@ -155,7 +208,7 @@ export default function AdminResetDatabaseScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </ScreenContainer>

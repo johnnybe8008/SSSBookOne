@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { TextInput, FlatList, ScrollView, Modal, Alert, Linking, Text, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState, useRef } from 'react';

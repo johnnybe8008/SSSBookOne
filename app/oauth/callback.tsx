@@ -44,15 +44,14 @@ export default function OAuthCallback() {
                   ? atob(params.user)
                   : Buffer.from(params.user, "base64").toString("utf-8");
               const userData = JSON.parse(userJson);
-              const userInfo: Auth.User = {
+              const userInfo: Auth.Staff = {
                 id: userData.id,
-                openId: userData.openId,
                 name: userData.name,
                 email: userData.email,
-                loginMethod: userData.loginMethod,
                 lastSignedIn: new Date(userData.lastSignedIn || Date.now()),
+                role: userData.role ?? null,
               };
-              await Auth.setUserInfo(userInfo);
+              await Auth.setStaffInfo(userInfo);
               console.log("[OAuth] User info stored:", userInfo);
             } catch (err) {
               console.error("[OAuth] Failed to parse user data:", err);
@@ -183,7 +182,7 @@ export default function OAuthCallback() {
         const result = await Api.exchangeOAuthCode(code, state);
         console.log("[OAuth] Exchange result:", {
           hasSessionToken: !!result.sessionToken,
-          hasUser: !!result.user,
+          hasStaff: !!result.staff,
         });
 
         if (result.sessionToken) {
@@ -193,17 +192,16 @@ export default function OAuthCallback() {
           console.log("[OAuth] Session token stored successfully");
 
           // Store user info if available
-          if (result.user) {
-            console.log("[OAuth] User data received:", result.user);
-            const userInfo: Auth.User = {
-              id: result.user.id,
-              openId: result.user.openId,
-              name: result.user.name,
-              email: result.user.email,
-              loginMethod: result.user.loginMethod,
-              lastSignedIn: new Date(result.user.lastSignedIn || Date.now()),
+          if (result.staff) {
+            console.log("[OAuth] User data received:", result.staff);
+            const userInfo: Auth.Staff = {
+              id: result.staff.id,
+              name: result.staff.name,
+              email: result.staff.email,
+              role: result.staff.role ?? null,
+              lastSignedIn: new Date(result.staff.lastSignedIn || Date.now()),
             };
-            await Auth.setUserInfo(userInfo);
+            await Auth.setStaffInfo(userInfo);
             console.log("[OAuth] User info stored:", userInfo);
           } else {
             console.log("[OAuth] No user data in result");

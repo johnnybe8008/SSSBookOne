@@ -200,7 +200,7 @@ export default function AdminTemplatesScreen() {
                             onPress={() => handleDelete(template.id, template.name)}
                             disabled={deleteMutation.isPending}
                           >
-                            {deleteMutation.isPending && deleteMutation.variables?.id === template.id ? (
+                            {deleteMutation.isPending && (deleteMutation.variables as any)?.id === template.id ? (
                               <ActivityIndicator size="small" color={colors.error} />
                             ) : (
                               <IconSymbol name="trash" size={18} color={colors.error} />

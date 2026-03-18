@@ -116,7 +116,9 @@ export const staff = mysqlTable("staff", {
   mustChangePassword: int("mustChangePassword").notNull().default(0),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   role: mysqlEnum("role", ["admin", "counselor", "viewer"]).notNull().default("counselor"),
-  isVipRated: int("isVipRated").notNull().default(0),
+    notificationPreference: mysqlEnum("notificationPreference", ["sms", "whatsapp"]).default("sms").notNull(),
+    notificationOptOut: int("notificationOptOut").notNull().default(0), // 0 = false, 1 = true
+    isVipRated: int("isVipRated").notNull().default(0),
   isAdmin: int("isAdmin").notNull().default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),
@@ -353,6 +355,8 @@ export type InsertCompany = typeof companies.$inferInsert;
 
 export type CoDepartment = typeof coDepartments.$inferSelect;
 export type InsertCoDepartment = typeof coDepartments.$inferInsert;
+export type coDepartment = CoDepartment;
+export const coDepartment = coDepartments;
 
 export type FSM = typeof fsms.$inferSelect;
 export type InsertFSM = typeof fsms.$inferInsert;

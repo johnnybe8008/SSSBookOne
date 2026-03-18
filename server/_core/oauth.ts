@@ -86,7 +86,7 @@ export function registerOAuthRoutes(app: Express) {
       const isLocal = host && (host === 'localhost' || host.startsWith('192.168.') || host.startsWith('127.'));
       const cookieOptions = {
         path: '/',
-        sameSite: 'lax',
+        sameSite: 'lax' as const,
         secure: !isLocal,
         httpOnly: true,
         domain: isLocal ? undefined : host

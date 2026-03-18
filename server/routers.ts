@@ -6,10 +6,59 @@ import { publicProcedure, protectedProcedure, router, writeAccessProcedure, admi
 import * as db from "./db";
 import { authenticateStaff, changePassword } from "./auth";
 import { createSession } from "./session-manager";
+import { processPendingNotifications } from "./notification-dispatcher";
 import { resetDatabase } from "./reset-database";
-import { importOrganizationalCSV, parseCSV, type CSVImportRow } from "./csv-import";
-import { importClientsFromCSV, parseClientCSV, type ClientCSVRow } from "./csv-import-clients";
+import { previewResetDatabase } from "./reset-database";
+// import { importOrganizationalCSV, parseCSV } from "./csv-import";
+// import { importClientsFromCSV, parseClientCSV } from "./csv-import-clients";
 import { saveCompanyAsTemplate, applyTemplateToCompany, getAllTemplates, deleteTemplate, renameTemplate } from "./templates";
+
+async function syncSessionNotifications(session: {
+  id: number;
+  staffId: number;
+  clientId: number;
+  scheduledDate?: Date | string | null;
+}) {
+  await db.deletePendingNotificationsBySessionId(session.id);
+
+  if (!session.scheduledDate) {
+    return;
+  }
+
+  const scheduledAt = new Date(session.scheduledDate);
+  if (Number.isNaN(scheduledAt.getTime()) || scheduledAt.getTime() <= Date.now()) {
+    return;
+  }
+
+  const staffRecord = await db.getStaffById(session.staffId);
+  const clientRecord = await db.getClientById(session.clientId);
+  console.log("[Notification][Sync] staffRecord:", staffRecord);
+  console.log("[Notification][Sync] clientRecord:", clientRecord);
+
+  if (staffRecord && !staffRecord.notificationOptOut) {
+    await db.createNotification({
+      sessionId: session.id,
+      recipientType: "staff",
+      recipientId: staffRecord.id,
+      notificationType: staffRecord.notificationPreference,
+      notificationTime: "1_hour",
+      status: "pending",
+    });
+  }
+
+  if (clientRecord && !clientRecord.notificationOptOut) {
+    await db.createNotification({
+      sessionId: session.id,
+      recipientType: "client",
+      recipientId: clientRecord.id,
+      notificationType: clientRecord.notificationPreference,
+      notificationTime: "1_hour",
+      status: "pending",
+    });
+  }
+
+  await processPendingNotifications();
+}
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -27,7 +76,7 @@ export const appRouter = router({
       try{
         const staffRecord = await authenticateStaff(input.email, input.password);
         if (!staffRecord) {
-          console.error("Login failed: Invalid email or password for", input.email);
+          // console.error("Login failed: Invalid email or password for", input.email);
           throw new Error("Invalid email or password");
         }
         // Create custom session token for email/password staff
@@ -42,7 +91,7 @@ export const appRouter = router({
         });
         return { staff: staffRecord, sessionToken, success: true };
       } catch (err) {
-    console.error("Login error:", err);
+    // console.error("Login error:", err);
     throw err;
   }}
 ),
@@ -57,7 +106,7 @@ export const appRouter = router({
         if (!ctx.user) {
           throw new Error("Not authenticated");
         }
-        await changePassword(ctx.user.id, input.currentPassword, input.newPassword);
+        await changePassword(ctx.user.id, input.newPassword);
         return { success: true };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -73,7 +122,7 @@ export const appRouter = router({
       if (!ctx.user) {
         throw new Error("Not authenticated");
       }
-      return result;
+      return { success: true };
     }),
     resetDatabase: protectedProcedure.mutation(async ({ ctx }) => {
       if (!ctx.user) {
@@ -93,47 +142,35 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
-        if (!ctx.user) {
-          throw new Error("Not authenticated");
-        }
-        // Only allow admin users to import CSV
-        if (ctx.user.role !== 'admin') {
-          throw new Error("Only admin users can import CSV data");
-        }
-        
-        try {
-          const csvData = parseCSV(input.csvText);
-          const result = await importOrganizationalCSV(csvData, ctx.user.id);
-          return result;
-        } catch (error: any) {
-          return {
-            success: false,
-            message: error.message || "Failed to parse CSV"
-          };
-        }
+        // CSV import disabled: missing module
+        return {
+          success: false,
+          message: "CSV import temporarily disabled."
+        };
       }),
     importClients: protectedProcedure
       .input(z.object({ csvText: z.string() }))
       .mutation(async ({ input, ctx }) => {
-        if (!ctx.user) {
-          throw new Error("Not authenticated");
-        }
-        if (ctx.user.role !== 'admin') {
-          throw new Error("Only admin users can import clients");
-        }
-        try {
-          const rows = parseClientCSV(input.csvText);
-          return await importClientsFromCSV(rows, ctx.user.id);
-        } catch (error: any) {
-          return {
-            success: false,
-            message: error.message || "Failed to parse CSV",
-            clientsCreated: 0,
-            clientsSkipped: 0,
-            errors: [error.message || "Unknown error"]
-          };
-        }
+        // Client CSV import disabled: missing module
+        return {
+          success: false,
+          message: "Client CSV import temporarily disabled.",
+          clientsCreated: 0,
+          clientsSkipped: 0,
+          errors: ["CSV import module missing"]
+        };
       }),
+
+    previewResetDatabase: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) {
+        throw new Error("Not authenticated");
+      }
+      // Only allow admin users to preview reset
+      if (ctx.user.role !== 'admin') {
+        throw new Error("Only admin staff can preview the database reset");
+      }
+      return await previewResetDatabase();
+    }),
   }),
 
   // Company Templates
@@ -287,6 +324,7 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          organizationId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
           address: z.string().optional(),
@@ -295,13 +333,13 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
-        const { id, ...data } = input;
+      .mutation(async ({ input }) => {
+        const { id, organizationId, ...data } = input;
         return db.updateStaffDepartment(id, data);
       }),
     delete: adminOnlyProcedure
       .input(z.object({ id: z.number(), organizationId: z.number().optional() }))
-      .mutation(({ input }) => {
+      .mutation(async ({ input }) => {
         console.log('[tRPC][staffDepartments.delete] called with', input);
         return db.deleteStaffDepartment(input.id, input.organizationId);
       }),
@@ -321,10 +359,9 @@ export const appRouter = router({
   }),
 
   teams: router({
-    list: protectedProcedure.input(z.object({ organizationId: z.number() })).query(({ input }) => db.getTeamsByOrganizationId(input.organizationId)),
-      list: protectedProcedure
-        .input(z.object({ organizationId: z.number().optional() }).optional())
-        .query(({ input }) => db.getTeamsByOrganizationId(input?.organizationId ?? 0)),
+    list: protectedProcedure
+      .input(z.object({ organizationId: z.number().optional() }).optional())
+      .query(({ input }) => db.getTeamsByOrganizationId(input?.organizationId ?? 0)),
     get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getTeamById(input.id)),
     create: adminOnlyProcedure
       .input(
@@ -342,6 +379,7 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          companyId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
           address: z.string().optional(),
@@ -350,7 +388,7 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
+      .mutation(async ({ input }) => {
         const { id, ...data } = input;
         return db.updateTeam(id, data);
       }),
@@ -373,6 +411,7 @@ export const appRouter = router({
       .input(
         z.object({
           groupId: z.number().optional(),
+          organizationId: z.number().optional(),
           staffDepartmentId: z.number().optional(),
           teamId: z.number().optional(),
           userId: z.number().optional(),
@@ -381,18 +420,27 @@ export const appRouter = router({
           phone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           role: z.enum(["admin", "counselor", "viewer"]).default("counselor"),
+          notificationPreference: z.enum(["sms", "whatsapp"]).optional(),
+          notificationOptOut: z.number().optional(),
           isVipRated: z.number().default(0),
           isAdmin: z.number().default(0), // DEPRECATED: kept for backward compatibility
           createdBy: z.number(),
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => db.createStaff(input)),
+      .mutation(({ input }) => {
+        const { groupId, organizationId, ...data } = input;
+        return db.createStaff({
+          ...data,
+          organizationId: organizationId ?? groupId,
+        });
+      }),
     update: adminOnlyProcedure
       .input(
         z.object({
           id: z.number(),
           groupId: z.number().optional(),
+          organizationId: z.number().optional(),
           staffDepartmentId: z.number().optional(),
           teamId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
@@ -401,14 +449,19 @@ export const appRouter = router({
           email: z.string().email().optional(),
           password: z.string().min(1).optional(),
           role: z.enum(["admin", "counselor", "viewer"]).optional(),
+          notificationPreference: z.enum(["sms", "whatsapp"]).optional(),
+          notificationOptOut: z.number().optional(),
           isVipRated: z.number().optional(),
           isAdmin: z.number().optional(), // DEPRECATED: kept for backward compatibility
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
-        const { id, ...data } = input;
-        return db.updateStaff(id, data);
+      .mutation(async ({ input }) => {
+        const { id, groupId, organizationId, ...data } = input;
+        return db.updateStaff(id, {
+          ...data,
+          organizationId: organizationId ?? groupId,
+        });
       }),
     delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteStaff(input.id)),
     bulkUpdate: adminOnlyProcedure
@@ -427,8 +480,8 @@ export const appRouter = router({
           results.push(result);
         }
         return { updated: results.length };
+        }),
       }),
-  }),
 
   // Client Organization
   companies: router({
@@ -470,7 +523,7 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
+      .mutation(async ({ input }) => {
         const { id, ...data } = input;
         return db.updateCompany(id, data);
       }),
@@ -506,7 +559,7 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
+      .mutation(async ({ input }) => {
         const { id, ...data } = input;
         return db.updateDivision(id, data);
       }),
@@ -542,7 +595,7 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
+      .mutation(async ({ input }) => {
         const { id, ...data } = input;
         return db.updateDepartment(id, data);
       }),
@@ -569,6 +622,7 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          companyId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
           description: z.string().optional(),
           address: z.string().optional(),
@@ -577,8 +631,8 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
-        const { id, ...data } = input;
+      .mutation(async ({ input }) => {
+        const { id, companyId, ...data } = input;
         return db.updateCoDepartment(id, data);
       }),
     delete: adminOnlyProcedure.input(z.object({ id: z.number(), companyId: z.number().optional() })).mutation(({ input }) => db.deleteCoDepartment(input.id, input.companyId)),
@@ -606,6 +660,7 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
+          coDepartmentId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
           address: z.string().optional(),
           phone: z.string().optional(),
@@ -613,8 +668,8 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
-        const { id, ...data } = input;
+      .mutation(async ({ input }) => {
+        const { id, coDepartmentId, ...data } = input;
         return db.updateCompanyTeam(id, data);
       }),
     delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteCompanyTeam(input.id)),
@@ -653,7 +708,7 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
+      .mutation(async ({ input }) => {
         const { id, ...data } = input;
         return db.updateFSM(id, data);
       }),
@@ -699,18 +754,6 @@ export const appRouter = router({
         })
       )
       .mutation(({ input }) => db.createClient(input)),
-    update: adminOnlyProcedure
-      .input(
-        z.object({
-          id: z.number(),
-          name: z.string().min(1).max(255).optional(),
-          updatedBy: z.number(),
-        })
-      )
-      .mutation(({ input }) => {
-        const { id, ...data } = input;
-        return db.updateStaffDepartment(id, data);
-      }),
     update: writeAccessProcedure
       .input(
         z.object({
@@ -973,7 +1016,11 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => db.createSession(input)),
+      .mutation(async ({ input }) => {
+        const result = await db.createSession(input);
+        await syncSessionNotifications(result);
+        return result;
+      }),
     update: writeAccessProcedure
       .input(
         z.object({
@@ -997,13 +1044,17 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
+      .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        return db.updateSession(id, data);
+        await db.updateSession(id, data);
+        const updatedSession = await db.getSessionById(id);
+        if (updatedSession) {
+          await syncSessionNotifications(updatedSession);
+        }
+        return { success: true };
       }),
     delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteSession(input.id)),
   }),
-
   // Notifications
   notifications: router({
     listBySession: protectedProcedure.input(z.object({ sessionId: z.number() })).query(({ input }) => db.getNotificationsBySessionId(input.sessionId)),
@@ -1035,8 +1086,6 @@ export const appRouter = router({
         return db.updateNotification(id, data);
       }),
   }),
-
-  // Reporting
   reports: router({
     billableHoursByStaff: protectedProcedure
       .input(

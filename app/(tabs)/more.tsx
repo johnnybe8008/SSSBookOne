@@ -7,6 +7,8 @@ import { useStaffRole } from "@/hooks/use-staff-role";
 import { trpc } from "@/lib/trpc";
 import { APP_VERSION } from "@/constants/const";
 import { useRouter } from "expo-router";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 
 /**
  * More Screen (More Tab)
@@ -22,7 +24,7 @@ export default function MoreScreen() {
     if (typeof window !== "undefined" && typeof document !== "undefined") {
       const match = document.cookie.match(/(?:^|; )session_token=([^;]*)/);
       const token = match ? decodeURIComponent(match[1]) : null;
-      console.log("[MoreScreen][DEBUG] session_token from cookie:", token);
+      // console.log("[MoreScreen][DEBUG] session_token from cookie:", token);
     }
     // ...existing code...
     // Ensure only one useAuth destructuring
@@ -31,18 +33,27 @@ export default function MoreScreen() {
   const router = useRouter();
   const { staff, isAuthenticated, loading: authLoading, logout } = useAuth();
   const { isAdmin } = useStaffRole();
+  const { data: allStaff = [] } = trpc.staff.listAll.useQuery(undefined, {
+    enabled: isAdmin,
+  });
+  const { data: allClients = [] } = trpc.clients.listAll.useQuery(undefined, {
+    enabled: isAdmin,
+  });
+  const { data: allCompanies = [] } = trpc.companies.list.useQuery(undefined, {
+    enabled: isAdmin,
+  });
 
   // Fix admin account mutation
   const fixAdminMutation = trpc.auth.fixAdmin.useMutation();
 
   const handleLogout = () => {
     if (Platform.OS === "web") {
-      console.log("[MoreScreen] Web logout confirm dialog");
+      // console.log("[MoreScreen] Web logout confirm dialog");
       if (window.confirm("Are you sure you want to logout?")) {
         (async () => {
-          console.log("[MoreScreen] Logout button pressed");
+          // console.log("[MoreScreen] Logout button pressed");
           await logout();
-          console.log("[MoreScreen] Logout completed, navigating to /login");
+          // console.log("[MoreScreen] Logout completed, navigating to /login");
           router.replace("/login" as any);
         })();
       }
@@ -56,14 +67,283 @@ export default function MoreScreen() {
             text: "Logout",
             style: "destructive",
             onPress: async () => {
-              console.log("[MoreScreen] Logout button pressed");
+              // console.log("[MoreScreen] Logout button pressed");
               await logout();
-              console.log("[MoreScreen] Logout completed, navigating to /login");
+              // console.log("[MoreScreen] Logout completed, navigating to /login");
               router.replace("/login" as any);
             },
           },
         ]
       );
+    }
+  };
+
+  const csvEscape = (value: unknown) => {
+    const text = String(value ?? "");
+    if (!/[",\n]/.test(text)) {
+      return text;
+    }
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+
+  const confirmAndRunExport = (title: string, message: string, action: () => void | Promise<void>) => {
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && !window.confirm(`${title}\n\n${message}`)) {
+        return;
+      }
+      void action();
+      return;
+    }
+
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Export",
+        onPress: () => {
+          void action();
+        },
+      },
+    ]);
+  };
+
+  const saveAndShareCsv = async (csv: string, fileName: string, successMessage: string, dialogTitle: string) => {
+    if (Platform.OS === "web") {
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+      Alert.alert("Success", successMessage);
+      return;
+    }
+
+    const baseDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+    if (!baseDir) {
+      throw new Error("No writable directory available for CSV export.");
+    }
+
+    const fileUri = `${baseDir}${fileName}`;
+    await FileSystem.writeAsStringAsync(fileUri, csv, {
+      encoding: FileSystem.EncodingType.UTF8,
+    });
+
+    const canShare = await Sharing.isAvailableAsync();
+    if (canShare) {
+      try {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: "text/csv",
+          dialogTitle,
+          UTI: "public.comma-separated-values-text",
+        });
+      } catch {
+        Alert.alert("Success", `CSV saved to ${fileUri}`);
+      }
+    } else {
+      Alert.alert("Success", `CSV saved to ${fileUri}`);
+    }
+  };
+
+  const handleExportStaffCsv = async () => {
+    try {
+      if (!allStaff.length) {
+        Alert.alert("Export Staff CSV", "No staff records found to export.");
+        return;
+      }
+
+      const headers = [
+        "id",
+        "organizationId",
+        "staffDepartmentId",
+        "teamId",
+        "name",
+        "address",
+        "phone",
+        "email",
+        "mustChangePassword",
+        "lastSignedIn",
+        "role",
+        "isVipRated",
+        "isAdmin",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+      ];
+
+      const rows = allStaff.map((member: any) => [
+        member.id,
+        member.organizationId,
+        member.staffDepartmentId,
+        member.teamId,
+        member.name,
+        member.address,
+        member.phone,
+        member.email,
+        member.mustChangePassword,
+        member.lastSignedIn,
+        member.role,
+        member.isVipRated,
+        member.isAdmin,
+        member.createdAt,
+        member.createdBy,
+        member.updatedAt,
+        member.updatedBy,
+      ]);
+
+      const csv = [
+        headers.map(csvEscape).join(","),
+        ...rows.map((row) => row.map(csvEscape).join(",")),
+      ].join("\n");
+
+      const fileName = `staff_export_${new Date().toISOString().split("T")[0]}.csv`;
+      await saveAndShareCsv(csv, fileName, `Exported ${allStaff.length} staff records.`, "Export Staff CSV");
+    } catch (error) {
+      // console.error("[MoreScreen] Staff CSV export failed", error);
+      Alert.alert("Export Failed", "Could not export Staff CSV.");
+    }
+  };
+
+  const handleExportClientsCsv = async () => {
+    try {
+      if (!allClients.length) {
+        Alert.alert("Export Clients CSV", "No client records found to export.");
+        return;
+      }
+
+      const headers = [
+        "id",
+        "companyId",
+        "coDepartmentId",
+        "companyTeamId",
+        "referralSourceId",
+        "referralSourceType",
+        "name",
+        "address",
+        "addressLine1",
+        "city",
+        "stateProvince",
+        "postalCode",
+        "homePhone",
+        "mobilePhone",
+        "workPhone",
+        "email",
+        "occupation",
+        "title",
+        "dateOfBirth",
+        "timeInServiceYears",
+        "timeInServiceMonths",
+        "timeInService",
+        "status",
+        "isVip",
+        "notificationPreference",
+        "notificationOptOut",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+      ];
+
+      const rows = allClients.map((client: any) => [
+        client.id,
+        client.companyId,
+        client.coDepartmentId,
+        client.companyTeamId,
+        client.referralSourceId,
+        client.referralSourceType,
+        client.name,
+        client.address,
+        client.addressLine1,
+        client.city,
+        client.stateProvince,
+        client.postalCode,
+        client.homePhone,
+        client.mobilePhone,
+        client.workPhone,
+        client.email,
+        client.occupation,
+        client.title,
+        client.dateOfBirth,
+        client.timeInServiceYears,
+        client.timeInServiceMonths,
+        client.timeInService,
+        client.status,
+        client.isVip,
+        client.notificationPreference,
+        client.notificationOptOut,
+        client.createdAt,
+        client.createdBy,
+        client.updatedAt,
+        client.updatedBy,
+      ]);
+
+      const csv = [
+        headers.map(csvEscape).join(","),
+        ...rows.map((row) => row.map(csvEscape).join(",")),
+      ].join("\n");
+
+      const fileName = `clients_export_${new Date().toISOString().split("T")[0]}.csv`;
+      await saveAndShareCsv(csv, fileName, `Exported ${allClients.length} client records.`, "Export Clients CSV");
+    } catch (error) {
+      // console.error("[MoreScreen] Clients CSV export failed", error);
+      Alert.alert("Export Failed", "Could not export Clients CSV.");
+    }
+  };
+
+  const handleExportCompaniesCsv = async () => {
+    try {
+      if (!allCompanies.length) {
+        Alert.alert("Export Companies CSV", "No company records found to export.");
+        return;
+      }
+
+      const headers = [
+        "id",
+        "name",
+        "address",
+        "addressLine1",
+        "city",
+        "stateProvince",
+        "postalCode",
+        "phone",
+        "email",
+        "website",
+        "contactPerson",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+      ];
+
+      const rows = allCompanies.map((company: any) => [
+        company.id,
+        company.name,
+        company.address,
+        company.addressLine1,
+        company.city,
+        company.stateProvince,
+        company.postalCode,
+        company.phone,
+        company.email,
+        company.website,
+        company.contactPerson,
+        company.createdAt,
+        company.createdBy,
+        company.updatedAt,
+        company.updatedBy,
+      ]);
+
+      const csv = [
+        headers.map(csvEscape).join(","),
+        ...rows.map((row) => row.map(csvEscape).join(",")),
+      ].join("\n");
+
+      const fileName = `companies_export_${new Date().toISOString().split("T")[0]}.csv`;
+      await saveAndShareCsv(csv, fileName, `Exported ${allCompanies.length} company records.`, "Export Companies CSV");
+    } catch (error) {
+      // console.error("[MoreScreen] Companies CSV export failed", error);
+      Alert.alert("Export Failed", "Could not export Companies CSV.");
     }
   };
 
@@ -272,23 +552,51 @@ export default function MoreScreen() {
             {/* Staff CSV Export Link */}
             <TouchableOpacity
               className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-              onPress={() => {
-                // Use the same handler as in admin-staff.tsx
-                // Export handler logic
-                // We'll show a placeholder alert for now
-                Alert.alert(
-                  "Export Staff",
-                  "CSV export ready. In a production app, this would download a file.",
-                  [
-                    { text: "OK" },
-                    { text: "Copy to Clipboard", onPress: () => Alert.alert("Success", "CSV data copied to clipboard") }
-                  ]
-                );
-              }}
+              onPress={() =>
+                confirmAndRunExport(
+                  "Export Staff CSV",
+                  "Export all staff records to a CSV file now?",
+                  handleExportStaffCsv,
+                )
+              }
             >
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="arrow.up.doc" size={20} color={colors.success} />
                 <Text className="text-base text-foreground">Export Staff CSV</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() =>
+                confirmAndRunExport(
+                  "Export Clients CSV",
+                  "Export all client records to a CSV file now?",
+                  handleExportClientsCsv,
+                )
+              }
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="arrow.up.doc" size={20} color={colors.success} />
+                <Text className="text-base text-foreground">Export Clients CSV</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.muted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="px-6 py-4 flex-row items-center justify-between border-t border-border"
+              onPress={() =>
+                confirmAndRunExport(
+                  "Export Companies CSV",
+                  "Export all company records to a CSV file now?",
+                  handleExportCompaniesCsv,
+                )
+              }
+            >
+              <View className="flex-row items-center gap-3">
+                <IconSymbol name="arrow.up.doc" size={20} color={colors.success} />
+                <Text className="text-base text-foreground">Export Companies CSV</Text>
               </View>
               <IconSymbol name="chevron.right" size={20} color={colors.muted} />
             </TouchableOpacity>
@@ -310,7 +618,7 @@ export default function MoreScreen() {
         <TouchableOpacity
           className="bg-error/10 py-4 rounded-xl border border-error/30 items-center"
           onPress={() => {
-            console.log("[MoreScreen] Logout button direct onPress fired");
+            // console.log("[MoreScreen] Logout button direct onPress fired");
             handleLogout();
           }}
         >

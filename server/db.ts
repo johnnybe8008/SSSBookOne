@@ -18,9 +18,53 @@ export async function updateCompany(id, data) {
 }
 // Fetch user by OpenId
 export async function getUserByOpenId(openId) {
+  // Legacy compatibility: current schema no longer stores openId on staff.
+  // Use email as a best-effort lookup key for OAuth flows.
+  if (!openId) return null;
   const db = await getDb();
-  const [user] = await db.select().from(staff).where(eq(staff.openId, openId)).limit(1);
+  const [user] = await db.select().from(staff).where(eq(staff.email, openId)).limit(1);
   return user || null;
+}
+
+export async function getStaffByOpenId(openId) {
+  return getUserByOpenId(openId);
+}
+
+export async function upsertStaff(input) {
+  const db = await getDb();
+  if (!input?.email) {
+    return { success: false, reason: "email required" };
+  }
+
+  const email = String(input.email).trim().toLowerCase();
+  const existing = await db.select().from(staff).where(eq(staff.email, email)).limit(1);
+
+  if (existing.length > 0) {
+    await db.update(staff)
+      .set({
+        name: input.name ?? existing[0].name,
+        email,
+        updatedAt: new Date(),
+      })
+      .where(eq(staff.id, existing[0].id));
+    return { id: existing[0].id, updated: true };
+  }
+
+  const [result] = await db.insert(staff).values({
+    name: input.name || email,
+    email,
+    role: "viewer",
+    isVipRated: 0,
+    isAdmin: 0,
+    mustChangePassword: 0,
+    createdBy: 1,
+    updatedBy: 1,
+  });
+  return { id: result.insertId, created: true };
+}
+
+export async function upsertUser(input) {
+  return upsertStaff(input);
 }
 // Create a new company team (client organization team)
 export async function createCompanyTeam(input) {
@@ -119,6 +163,12 @@ export async function updateStaff(id, data) {
     .where(eq(staff.id, id));
   return { success: true };
 }
+
+export async function deleteStaff(id: number) {
+  const db = await getDb();
+  await db.delete(staff).where(eq(staff.id, id));
+  return { success: true };
+}
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { organizations, staffDepartments, teams, staff, companies, divisions, departments, companyTeams, clients, fsms, caseFolders, sessions, sessionTypes, sessionStatuses, sessionResults } from "../drizzle/schema";
@@ -158,6 +208,12 @@ export async function getAllOrganizations() {
   return db.select().from(organizations).orderBy(organizations.name);
 }
 
+export async function getOrganizationById(id: number) {
+  const db = await getDb();
+  const [organization] = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+  return organization || null;
+}
+
 // Delete an organization and cascade delete its departments and teams
 export async function deleteOrganization(id) {
   const db = await getDb();
@@ -182,6 +238,12 @@ export async function getStaffDepartmentsByOrganizationId(organizationId: number
   return db.select().from(staffDepartments).where(eq(staffDepartments.organizationId, organizationId)).orderBy(staffDepartments.name);
 }
 
+export async function getStaffDepartmentById(id: number) {
+  const db = await getDb();
+  const [department] = await db.select().from(staffDepartments).where(eq(staffDepartments.id, id)).limit(1);
+  return department || null;
+}
+
 // Fetch teams by organizationId (0 = all), sorted by name
 export async function getTeamsByOrganizationId(organizationId: number) {
   const db = await getDb();
@@ -189,6 +251,12 @@ export async function getTeamsByOrganizationId(organizationId: number) {
     return db.select().from(teams).orderBy(teams.name);
   }
   return db.select().from(teams).where(eq(teams.organizationId, organizationId)).orderBy(teams.name);
+}
+
+export async function getTeamById(id: number) {
+  const db = await getDb();
+  const [team] = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
+  return team || null;
 }
 
 // Add missing getAllDivisions, getAllDepartments, getAllCompanyTeams functions
@@ -213,6 +281,30 @@ export async function getAllCompanies() {
   return db.select().from(companies).orderBy(companies.name);
 }
 
+export async function getCompanyById(id: number) {
+  const db = await getDb();
+  const [company] = await db.select().from(companies).where(eq(companies.id, id)).limit(1);
+  return company || null;
+}
+
+export async function deleteCompany(id: number) {
+  const db = await getDb();
+  const companyDivisions = await db.select().from(divisions).where(eq(divisions.companyId, id));
+  const divisionIds = companyDivisions.map((division) => division.id);
+
+  await db.delete(clients).where(eq(clients.companyId, id));
+  await db.delete(companyTeams).where(eq(companyTeams.companyId, id));
+  await db.delete(coDepartments).where(eq(coDepartments.companyId, id));
+
+  if (divisionIds.length > 0) {
+    await db.delete(departments).where((row) => divisionIds.includes(row.divisionId));
+  }
+
+  await db.delete(divisions).where(eq(divisions.companyId, id));
+  await db.delete(companies).where(eq(companies.id, id));
+  return { success: true };
+}
+
 // --- CLIENT ORGS DB FUNCTIONS ---
 // Fetch divisions by companyId
 export async function getDivisionsByCompanyId(companyId: number) {
@@ -223,6 +315,33 @@ export async function getDivisionsByCompanyId(companyId: number) {
   return db.select().from(divisions).where(eq(divisions.companyId, companyId)).orderBy(divisions.name);
 }
 
+export async function getDivisionById(id: number) {
+  const db = await getDb();
+  const [division] = await db.select().from(divisions).where(eq(divisions.id, id)).limit(1);
+  return division || null;
+}
+
+export async function createDivision(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(divisions).values(data);
+  return result;
+}
+
+export async function updateDivision(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(divisions).set(updateData).where(eq(divisions.id, id));
+  return { success: true };
+}
+
+export async function deleteDivision(id: number) {
+  const db = await getDb();
+  await db.delete(departments).where(eq(departments.divisionId, id));
+  await db.delete(divisions).where(eq(divisions.id, id));
+  return { success: true };
+}
+
 // Fetch departments by divisionId
 export async function getDepartmentsByDivisionId(divisionId: number) {
   const db = await getDb();
@@ -230,6 +349,32 @@ export async function getDepartmentsByDivisionId(divisionId: number) {
     return db.select().from(departments).orderBy(departments.name);
   }
   return db.select().from(departments).where(eq(departments.divisionId, divisionId)).orderBy(departments.name);
+}
+
+export async function getDepartmentById(id: number) {
+  const db = await getDb();
+  const [department] = await db.select().from(departments).where(eq(departments.id, id)).limit(1);
+  return department || null;
+}
+
+export async function createDepartment(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(departments).values(data);
+  return result;
+}
+
+export async function updateDepartment(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(departments).set(updateData).where(eq(departments.id, id));
+  return { success: true };
+}
+
+export async function deleteDepartment(id: number) {
+  const db = await getDb();
+  await db.delete(departments).where(eq(departments.id, id));
+  return { success: true };
 }
 
 // Fetch company teams by departmentId
@@ -247,8 +392,14 @@ export async function getCompanyTeamById(id: number) {
   return team || null;
 }
 
+export async function deleteCompanyTeam(id: number) {
+  const db = await getDb();
+  await db.delete(companyTeams).where(eq(companyTeams.id, id));
+  return { success: true };
+}
+
 // --- coDepartments DB FUNCTIONS ---
-import { coDepartments } from "../drizzle/schema";
+import { coDepartments, notifications } from "../drizzle/schema";
 
 export async function getCoDepartmentsByCompanyId(companyId: number) {
   const db = await getDb();
@@ -787,6 +938,38 @@ export async function updateSession(id: number, data: any) {
 export async function deleteSession(id: number) {
   const db = await getDb();
   await db.delete(sessions).where(eq(sessions.id, id));
+  return { success: true };
+}
+
+export async function getNotificationsBySessionId(sessionId: number) {
+  const db = await getDb();
+  return db.select().from(notifications).where(eq(notifications.sessionId, sessionId)).orderBy(desc(notifications.createdAt));
+}
+
+export async function getPendingNotifications() {
+  const db = await getDb();
+  return db.select().from(notifications).where(eq(notifications.status, "pending")).orderBy(notifications.createdAt);
+}
+
+export async function createNotification(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  const [result] = await db.insert(notifications).values(data);
+  return { id: result.insertId, ...data };
+}
+
+export async function deletePendingNotificationsBySessionId(sessionId: number) {
+  const db = await getDb();
+  await db
+    .delete(notifications)
+    .where(and(eq(notifications.sessionId, sessionId), eq(notifications.status, "pending")));
+  return { success: true };
+}
+
+export async function updateNotification(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  await db.update(notifications).set(updateData).where(eq(notifications.id, id));
   return { success: true };
 }
 

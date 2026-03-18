@@ -102,11 +102,6 @@ export default function AdminCSVImportScreen() {
     }
   };
 
-  const sampleCSV = `Name,Email,Phone,Address,Role,IsVipRated,Organization,StaffDepartment,Team
-"Jack Black","jack.black@sss.org","555-0001","11 Main St","admin","1","Central Org","Clinical Services","Intake Team"
-"Mary Lane","mary.lane@sss.org","555-0002","22 Oak St","counselor","0","Central Org","Clinical Services","Crisis Team"
-"Jon Doe","jon.doe@sss.org","555-0003","33 Pine St","viewer","0","North Org","Operations",""`;
-
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
@@ -185,22 +180,6 @@ export default function AdminCSVImportScreen() {
               • Role defaults to counselor if omitted{"\n"}
               • Use empty values for optional columns
             </Text>
-          </View>
-
-          {/* Sample CSV */}
-          <View className="bg-success/10 border border-success rounded-2xl p-5">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-lg font-semibold text-foreground">Sample CSV</Text>
-              <TouchableOpacity
-                onPress={() => setCsvText(sampleCSV)}
-                className="bg-success px-3 py-1 rounded-full"
-              >
-                <Text className="text-xs font-semibold text-background">Use Sample</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={true} className="bg-background rounded-xl p-3">
-              <Text className="text-xs font-mono text-foreground">{sampleCSV}</Text>
-            </ScrollView>
           </View>
 
           {/* File Upload */}

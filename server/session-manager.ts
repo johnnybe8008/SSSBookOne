@@ -101,6 +101,8 @@ export async function validateSessionToken(token: string): Promise<any> {
   return staffRecord || null;
 }
 
+export const validateSession = validateSessionToken;
+
 /**
  * Delete a session (logout)
  */

@@ -31,6 +31,7 @@ export default function AdminLookupTablesScreen() {
   const [activeTable, setActiveTable] = useState<TableType>("types");
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
+  const [formData, setFormData] = useState({ name: "" });
 
   // Fetch data for all tables
   const { data: sessionTypes } = trpc.sessionTypes.list.useQuery();

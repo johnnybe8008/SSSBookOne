@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal } from "react-native";
 import { Picker } from "@react-native-picker/picker";

@@ -8,6 +8,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { initializeServer } from "../init";
+import { processPendingNotifications } from "../notification-dispatcher";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -55,9 +56,13 @@ async function startServer() {
 
   const server = createServer(app);
 
-  // Log all incoming tRPC requests and errors (must be after app is initialized)
+  // Early log before JSON parsing.
   app.use('/api/trpc', (req, res, next) => {
-    console.log('[tRPC][INCOMING]', req.method, req.originalUrl, req.body);
+    console.log('[tRPC][INCOMING][raw]', req.method, req.originalUrl, {
+      contentType: req.headers["content-type"],
+      contentLength: req.headers["content-length"],
+      body: req.body,
+    });
     res.on('finish', () => {
       if (res.statusCode >= 400) {
         console.error('[tRPC][ERROR]', req.method, req.originalUrl, res.statusCode);
@@ -69,6 +74,15 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   app.use(cookieParser()); // Parse cookies from requests
+
+  // Parsed log after JSON/body parsers.
+  app.use('/api/trpc', (req, _res, next) => {
+    console.log('[tRPC][INCOMING][parsed]', req.method, req.originalUrl, {
+      contentType: req.headers["content-type"],
+      body: req.body,
+    });
+    next();
+  });
 
   registerOAuthRoutes(app);
 
@@ -104,6 +118,9 @@ async function startServer() {
     console.log(`[api] server listening on port ${port}`);
     // Run initialization tasks
     await initializeServer();
+    setInterval(() => {
+      void processPendingNotifications();
+    }, 60_000);
   });
 }
 
