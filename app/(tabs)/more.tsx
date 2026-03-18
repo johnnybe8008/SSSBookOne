@@ -398,7 +398,11 @@ export default function MoreScreen() {
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
             onPress={() => {
-              Alert.alert("Edit Profile", "Profile editing will be implemented in a future update");
+              if (!staff?.id) {
+                Alert.alert("Edit Profile", "Staff profile could not be loaded.");
+                return;
+              }
+              router.push(`/admin-staff-edit?id=${staff.id}` as any);
             }}
           >
             <View className="flex-row items-center gap-3">
@@ -409,9 +413,7 @@ export default function MoreScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             className="px-6 py-4 flex-row items-center justify-between border-t border-border"
-            onPress={() => {
-              Alert.alert("Notifications", "Notification settings will be implemented in a future update.");
-            }}
+            onPress={() => router.push("/notifications" as any)}
           >
             <View className="flex-row items-center gap-3">
               <IconSymbol name="message.fill" size={20} color={colors.foreground} />

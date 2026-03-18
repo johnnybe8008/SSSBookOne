@@ -158,9 +158,12 @@ export async function updateStaff(id, data) {
   const db = await getDb();
   // Remove id if present in data
   const { id: _id, ...updateData } = data;
+  console.log("[db.updateStaff] id:", id, "updateData:", updateData);
   await db.update(staff)
     .set(updateData)
     .where(eq(staff.id, id));
+  const [updated] = await db.select().from(staff).where(eq(staff.id, id)).limit(1);
+  console.log("[db.updateStaff] updated row:", updated);
   return { success: true };
 }
 

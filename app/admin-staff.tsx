@@ -56,6 +56,24 @@ export default function AdminStaffScreen() {
     return breadcrumbs;
   }
 
+  function getStaffAddress(staff: any) {
+    const line1 = String(staff.addressLine1 || "").trim();
+    const city = String(staff.city || "").trim();
+    const stateProvince = String(staff.stateProvince || "").trim();
+    const postalCode = String(staff.postalCode || "").trim();
+    const cityStatePostal = [city, stateProvince, postalCode].filter(Boolean).join(", ");
+    return [line1, cityStatePostal].filter(Boolean).join(" • ");
+  }
+
+  function getStaffPhoneSummary(staff: any) {
+    return [
+      staff.mobilePhone ? `(M) ${staff.mobilePhone}` : null,
+      staff.homePhone ? `(H) ${staff.homePhone}` : null,
+      staff.workPhone ? `(W) ${staff.workPhone}` : null,
+      !staff.mobilePhone && !staff.homePhone && !staff.workPhone && staff.phone ? staff.phone : null,
+    ].filter(Boolean).join(" | ");
+  }
+
   // CSV Export Handler
   const handleExportCSV = () => {
     if (!allStaff || allStaff.length === 0) {
@@ -479,7 +497,12 @@ export default function AdminStaffScreen() {
                     <Text className="text-lg font-semibold text-foreground">
                       {staff.name}
                     </Text>
-                    <Text className="text-sm text-muted mt-1">{staff.email}</Text>
+                    {!!getStaffAddress(staff) && (
+                      <Text className="text-sm text-muted mt-1">{getStaffAddress(staff)}</Text>
+                    )}
+                    <Text className="text-sm text-muted mt-1">
+                      {[staff.email, getStaffPhoneSummary(staff)].filter(Boolean).join(" | ") || "No contact info"}
+                    </Text>
                     
                     {/* Organizational Breadcrumbs */}
                     <OrganizationalBreadcrumbs items={getStaffBreadcrumbs(staff, organizations, allStaffDepartments, allTeams)} className="mt-2" />

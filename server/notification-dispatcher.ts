@@ -1,17 +1,19 @@
 import * as db from "./db";
 
 type RecipientType = "staff" | "client";
+type NotificationType = "sms" | "whatsapp";
 
 const getTwilioConfig = () => {
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
   const fromNumber = process.env.TWILIO_PHONE_NUMBER?.trim();
+  const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM?.trim();
 
   if (!accountSid || !authToken || !fromNumber) {
     return null;
   }
 
-  return { accountSid, authToken, fromNumber };
+  return { accountSid, authToken, fromNumber, whatsappFrom };
 };
 
 const toE164 = (value: string | null | undefined) => {
@@ -28,11 +30,7 @@ const toE164 = (value: string | null | undefined) => {
 
 const getRecipientPhone = (recipientType: RecipientType, record: any) => {
   if (!record) return null;
-  if (recipientType === "staff") {
-    return toE164(record.phone);
-  }
-
-  return toE164(record.mobilePhone) || toE164(record.homePhone) || toE164(record.workPhone);
+  return toE164(record.mobilePhone);
 };
 
 const formatWhen = (value: Date | string | null | undefined) => {
@@ -99,6 +97,71 @@ async function sendSms(to: string, body: string) {
   }
 
   return response.json().catch(() => ({}));
+}
+
+async function sendWhatsapp(to: string, body: string) {
+  const config = getTwilioConfig();
+  if (!config) {
+    throw new Error("Twilio is not configured");
+  }
+  if (!config.whatsappFrom) {
+    throw new Error("Twilio WhatsApp sender is not configured");
+  }
+
+  const authHeader = Buffer.from(`${config.accountSid}:${config.authToken}`).toString("base64");
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${config.accountSid}/Messages.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        From: config.whatsappFrom,
+        To: `whatsapp:${to}`,
+        Body: body,
+      }).toString(),
+    },
+  );
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Twilio WhatsApp send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
+  }
+
+  return response.json().catch(() => ({}));
+}
+
+export async function sendDirectNotification(args: {
+  recipientType: RecipientType;
+  recipientRecord: any;
+  message: string;
+}) {
+  const { recipientType, recipientRecord, message } = args;
+  if (!recipientRecord) {
+    throw new Error("Recipient not found");
+  }
+  if (recipientRecord.notificationOptOut) {
+    return { status: "skipped" as const, reason: "Recipient opted out of notifications" };
+  }
+
+  const notificationType = recipientRecord.notificationPreference as NotificationType | null | undefined;
+  if (!notificationType) {
+    return { status: "skipped" as const, reason: "Recipient notification preference is not set" };
+  }
+  const recipientPhone = getRecipientPhone(recipientType, recipientRecord);
+  if (!recipientPhone) {
+    return { status: "failed" as const, reason: "Recipient phone number is missing or invalid" };
+  }
+
+  if (notificationType === "whatsapp") {
+    await sendWhatsapp(recipientPhone, message);
+    return { status: "sent" as const, channel: "whatsapp" as const };
+  }
+
+  await sendSms(recipientPhone, message);
+  return { status: "sent" as const, channel: "sms" as const };
 }
 
 let dispatchInFlight = false;

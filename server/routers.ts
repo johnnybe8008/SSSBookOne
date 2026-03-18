@@ -6,7 +6,7 @@ import { publicProcedure, protectedProcedure, router, writeAccessProcedure, admi
 import * as db from "./db";
 import { authenticateStaff, changePassword } from "./auth";
 import { createSession } from "./session-manager";
-import { processPendingNotifications } from "./notification-dispatcher";
+import { processPendingNotifications, sendDirectNotification } from "./notification-dispatcher";
 import { resetDatabase } from "./reset-database";
 import { previewResetDatabase } from "./reset-database";
 // import { importOrganizationalCSV, parseCSV } from "./csv-import";
@@ -35,7 +35,7 @@ async function syncSessionNotifications(session: {
   console.log("[Notification][Sync] staffRecord:", staffRecord);
   console.log("[Notification][Sync] clientRecord:", clientRecord);
 
-  if (staffRecord && !staffRecord.notificationOptOut) {
+  if (staffRecord && !staffRecord.notificationOptOut && staffRecord.notificationPreference && staffRecord.mobilePhone) {
     await db.createNotification({
       sessionId: session.id,
       recipientType: "staff",
@@ -46,7 +46,7 @@ async function syncSessionNotifications(session: {
     });
   }
 
-  if (clientRecord && !clientRecord.notificationOptOut) {
+  if (clientRecord && !clientRecord.notificationOptOut && clientRecord.notificationPreference && clientRecord.mobilePhone) {
     await db.createNotification({
       sessionId: session.id,
       recipientType: "client",
@@ -58,6 +58,20 @@ async function syncSessionNotifications(session: {
   }
 
   await processPendingNotifications();
+}
+
+function composeAddress(addressLine1?: string, city?: string, stateProvince?: string, postalCode?: string) {
+  const line1 = addressLine1?.trim();
+  const cityStatePostal = [city?.trim(), stateProvince?.trim(), postalCode?.trim()].filter(Boolean).join(" ");
+  return [line1, cityStatePostal].filter(Boolean).join(", ") || undefined;
+}
+
+function pickPrimaryPhone(mobilePhone?: string, homePhone?: string, workPhone?: string, fallbackPhone?: string) {
+  return mobilePhone?.trim() || homePhone?.trim() || workPhone?.trim() || fallbackPhone?.trim() || undefined;
+}
+
+function normalizeNotificationPreference(preference?: "sms" | "whatsapp" | null, mobilePhone?: string) {
+  return mobilePhone?.trim() ? preference ?? undefined : undefined;
 }
 
 export const appRouter = router({
@@ -417,10 +431,17 @@ export const appRouter = router({
           userId: z.number().optional(),
           name: z.string().min(1).max(255),
           address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
           phone: z.string().max(50).optional(),
+          homePhone: z.string().max(50).optional(),
+          mobilePhone: z.string().max(50).optional(),
+          workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           role: z.enum(["admin", "counselor", "viewer"]).default("counselor"),
-          notificationPreference: z.enum(["sms", "whatsapp"]).optional(),
+          notificationPreference: z.enum(["sms", "whatsapp"]).nullable().optional(),
           notificationOptOut: z.number().optional(),
           isVipRated: z.number().default(0),
           isAdmin: z.number().default(0), // DEPRECATED: kept for backward compatibility
@@ -432,6 +453,9 @@ export const appRouter = router({
         const { groupId, organizationId, ...data } = input;
         return db.createStaff({
           ...data,
+          address: data.address ?? composeAddress(data.addressLine1, data.city, data.stateProvince, data.postalCode),
+          phone: pickPrimaryPhone(data.mobilePhone, data.homePhone, data.workPhone, data.phone),
+          notificationPreference: normalizeNotificationPreference(data.notificationPreference, data.mobilePhone),
           organizationId: organizationId ?? groupId,
         });
       }),
@@ -445,11 +469,18 @@ export const appRouter = router({
           teamId: z.number().optional(),
           name: z.string().min(1).max(255).optional(),
           address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
           phone: z.string().max(50).optional(),
+          homePhone: z.string().max(50).optional(),
+          mobilePhone: z.string().max(50).optional(),
+          workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           password: z.string().min(1).optional(),
           role: z.enum(["admin", "counselor", "viewer"]).optional(),
-          notificationPreference: z.enum(["sms", "whatsapp"]).optional(),
+          notificationPreference: z.enum(["sms", "whatsapp"]).nullable().optional(),
           notificationOptOut: z.number().optional(),
           isVipRated: z.number().optional(),
           isAdmin: z.number().optional(), // DEPRECATED: kept for backward compatibility
@@ -460,6 +491,9 @@ export const appRouter = router({
         const { id, groupId, organizationId, ...data } = input;
         return db.updateStaff(id, {
           ...data,
+          address: data.address ?? composeAddress(data.addressLine1, data.city, data.stateProvince, data.postalCode),
+          phone: pickPrimaryPhone(data.mobilePhone, data.homePhone, data.workPhone, data.phone),
+          notificationPreference: normalizeNotificationPreference(data.notificationPreference, data.mobilePhone),
           organizationId: organizationId ?? groupId,
         });
       }),
@@ -747,13 +781,18 @@ export const appRouter = router({
           timeInService: z.number().optional(),
           status: z.enum(["Active", "Inactive", "Referred", "On Hold"]).optional(),
           isVip: z.number().optional(),
-          notificationPreference: z.enum(["sms", "whatsapp"]).optional(),
+          notificationPreference: z.enum(["sms", "whatsapp"]).nullable().optional(),
           notificationOptOut: z.number().optional(),
           createdBy: z.number(),
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => db.createClient(input)),
+      .mutation(({ input }) =>
+        db.createClient({
+          ...input,
+          notificationPreference: normalizeNotificationPreference(input.notificationPreference, input.mobilePhone),
+        })
+      ),
     update: writeAccessProcedure
       .input(
         z.object({
@@ -781,7 +820,7 @@ export const appRouter = router({
           timeInService: z.number().optional(),
           status: z.enum(["Active", "Inactive", "Referred", "On Hold"]).optional(),
           isVip: z.number().optional(),
-          notificationPreference: z.enum(["sms", "whatsapp"]).optional(),
+          notificationPreference: z.enum(["sms", "whatsapp"]).nullable().optional(),
           notificationOptOut: z.number().optional(),
           updatedBy: z.number(),
         })
@@ -789,6 +828,7 @@ export const appRouter = router({
       .mutation(({ input }) => {
         const { id, dateOfBirth, ...data } = input;
         const updates: any = { ...data };
+        updates.notificationPreference = normalizeNotificationPreference(data.notificationPreference, data.mobilePhone);
         if (dateOfBirth) {
           updates.dateOfBirth = dateOfBirth.slice(0, 10);
         }
@@ -1059,6 +1099,78 @@ export const appRouter = router({
   notifications: router({
     listBySession: protectedProcedure.input(z.object({ sessionId: z.number() })).query(({ input }) => db.getNotificationsBySessionId(input.sessionId)),
     pending: protectedProcedure.query(() => db.getPendingNotifications()),
+    sendManual: protectedProcedure
+      .input(
+        z.object({
+          recipientType: z.enum(["staff", "client"]),
+          recipientIds: z.array(z.number()).min(1),
+          message: z.string().min(1).max(1000),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+
+        const isAdmin = ctx.staffRole === "admin" || ctx.user.role === "admin";
+        const results: Array<{
+          recipientId: number;
+          status: "sent" | "failed" | "skipped";
+          channel?: "sms" | "whatsapp";
+          reason?: string;
+        }> = [];
+
+        if (!isAdmin && input.recipientType !== "client") {
+          throw new Error("Only admins can send messages to staff");
+        }
+
+        let allowedClientIds = new Set<number>();
+        if (!isAdmin && input.recipientType === "client") {
+          const ownSessions = await db.getSessionsByStaffId(ctx.user.id);
+          allowedClientIds = new Set(ownSessions.map((session: any) => Number(session.clientId)));
+        }
+
+        for (const recipientId of input.recipientIds) {
+          if (!isAdmin && input.recipientType === "client" && !allowedClientIds.has(Number(recipientId))) {
+            results.push({
+              recipientId,
+              status: "skipped",
+              reason: "Client is not assigned to this staff member",
+            });
+            continue;
+          }
+
+          const recipientRecord =
+            input.recipientType === "staff"
+              ? await db.getStaffById(recipientId)
+              : await db.getClientById(recipientId);
+
+          try {
+            const result = await sendDirectNotification({
+              recipientType: input.recipientType,
+              recipientRecord,
+              message: input.message,
+            });
+            results.push({
+              recipientId,
+              status: result.status,
+              channel: result.channel,
+              reason: result.reason,
+            });
+          } catch (error: any) {
+            results.push({
+              recipientId,
+              status: "failed",
+              reason: error?.message || "Unknown notification error",
+            });
+          }
+        }
+
+        return {
+          success: results.some((result) => result.status === "sent"),
+          results,
+        };
+      }),
     create: writeAccessProcedure
       .input(
         z.object({

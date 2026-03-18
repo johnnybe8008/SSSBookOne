@@ -7,6 +7,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { OrganizationalBreadcrumbs } from "@/components/organizational-breadcrumbs";
+import { Picker } from "@react-native-picker/picker";
 
 export default function AdminStaffEditScreen() {
     // Modal and input state for department/team creation
@@ -22,10 +23,18 @@ export default function AdminStaffEditScreen() {
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [mobilePhone, setMobilePhone] = useState("");
+  const [homePhone, setHomePhone] = useState("");
+  const [workPhone, setWorkPhone] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [city, setCity] = useState("");
+  const [stateProvince, setStateProvince] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
+  const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp" | null>(null);
+  const [notificationOptOut, setNotificationOptOut] = useState(0);
   
   // Staff organizational assignment (Organizations → Departments → Teams)
   const [groupId, setGroupId] = useState<number | null>(null);
@@ -89,9 +98,17 @@ export default function AdminStaffEditScreen() {
     if (staff) {
       setName(staff.name);
       setEmail(staff.email || "");
-      setPhone((staff as any).phone || "");
+      setMobilePhone((staff as any).mobilePhone || (staff as any).phone || "");
+      setHomePhone((staff as any).homePhone || "");
+      setWorkPhone((staff as any).workPhone || "");
+      setAddressLine1((staff as any).addressLine1 || "");
+      setCity((staff as any).city || "");
+      setStateProvince((staff as any).stateProvince || "");
+      setPostalCode((staff as any).postalCode || "");
       setRole((staff as any).role || "counselor");
       setIsVipRated(staff.isVipRated === 1);
+      setNotificationPreference((staff as any).notificationPreference === "whatsapp" ? "whatsapp" : (staff as any).notificationPreference === "sms" ? "sms" : null);
+      setNotificationOptOut((staff as any).notificationOptOut === 1 ? 1 : 0);
       setStaffDepartmentId((staff as any).staffDepartmentId || null);
       setTeamId(staff.teamId || null);
       // Set groupId (organizationId) from staff data or look it up from team
@@ -162,20 +179,31 @@ export default function AdminStaffEditScreen() {
       return;
     }
 
-    updateStaff.mutate({
+    const payload = {
       id: staffId,
       name: name.trim(),
       email: email.trim().toLowerCase(),
-      phone: phone.trim(),
+      phone: mobilePhone.trim(),
+      mobilePhone: mobilePhone.trim(),
+      homePhone: homePhone.trim(),
+      workPhone: workPhone.trim(),
+      addressLine1: addressLine1.trim(),
+      city: city.trim(),
+      stateProvince: stateProvince.trim(),
+      postalCode: postalCode.trim(),
       password: password.trim() || undefined, // Only send if not empty
       role: role,
       isVipRated: isVipRated ? 1 : 0,
+      notificationPreference: mobilePhone.trim() ? notificationPreference || undefined : undefined,
+      notificationOptOut,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
       groupId: groupId || undefined,
       staffDepartmentId: staffDepartmentId || undefined,
       teamId: teamId || undefined,
       updatedBy: 1, // Admin user
-    });
+    };
+    console.log("[admin-staff-edit] update payload", payload);
+    updateStaff.mutate(payload);
   };
 
   const handleDelete = () => {
@@ -291,14 +319,87 @@ export default function AdminStaffEditScreen() {
             />
           </View>
 
-          {/* Phone */}
+          {/* Contact Information */}
           <View>
-            <Text className="text-sm font-semibold text-foreground mb-2">Phone</Text>
+            <Text className="text-sm font-semibold text-foreground mb-2">Mobile Phone</Text>
             <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Enter phone number"
+              value={mobilePhone}
+              onChangeText={(text) => {
+                setMobilePhone(text);
+                if (!text.trim()) {
+                  setNotificationPreference(null);
+                }
+              }}
+              placeholder="Enter mobile phone"
               keyboardType="phone-pad"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Home Phone</Text>
+            <TextInput
+              value={homePhone}
+              onChangeText={setHomePhone}
+              placeholder="Enter home phone"
+              keyboardType="phone-pad"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Work Phone</Text>
+            <TextInput
+              value={workPhone}
+              onChangeText={setWorkPhone}
+              placeholder="Enter work phone"
+              keyboardType="phone-pad"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Address Line 1</Text>
+            <TextInput
+              value={addressLine1}
+              onChangeText={setAddressLine1}
+              placeholder="Enter address line 1"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">City</Text>
+            <TextInput
+              value={city}
+              onChangeText={setCity}
+              placeholder="Enter city"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">State / Province</Text>
+            <TextInput
+              value={stateProvince}
+              onChangeText={setStateProvince}
+              placeholder="Enter state or province"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Postal Code</Text>
+            <TextInput
+              value={postalCode}
+              onChangeText={setPostalCode}
+              placeholder="Enter postal code"
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
               placeholderTextColor="#9BA1A6"
             />
@@ -351,6 +452,37 @@ export default function AdminStaffEditScreen() {
               </View>
             </View>
           </TouchableOpacity>
+
+          <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
+            <Text className="text-base font-semibold text-foreground">Preferences</Text>
+
+            <View>
+              <Text className="text-sm font-medium text-foreground mb-2">Notification Preference</Text>
+              <View className={`bg-background border rounded-xl overflow-hidden ${mobilePhone.trim() ? "border-border" : "border-border opacity-50"}`}>
+                <Picker
+                  selectedValue={notificationPreference}
+                  onValueChange={(value) => setNotificationPreference(value || null)}
+                  style={{ color: colors.foreground }}
+                  enabled={!!mobilePhone.trim()}
+                >
+                  <Picker.Item label="Select with mobile number" value={null} />
+                  <Picker.Item label="SMS" value="sms" />
+                  <Picker.Item label="WhatsApp" value="whatsapp" />
+                </Picker>
+              </View>
+              {!mobilePhone.trim() && <Text className="text-xs text-muted mt-2">Enter a mobile phone number to enable notifications.</Text>}
+            </View>
+
+            <TouchableOpacity
+              className="flex-row items-center gap-3"
+              onPress={() => setNotificationOptOut(notificationOptOut === 1 ? 0 : 1)}
+            >
+              <View className={`w-6 h-6 rounded border-2 items-center justify-center ${notificationOptOut === 1 ? "bg-primary border-primary" : "border-border"}`}>
+                {notificationOptOut === 1 && <IconSymbol name="checkmark" size={16} color={colors.background} />}
+              </View>
+              <Text className="text-base text-foreground">Opt out of notifications</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Role Selection */}
           <View>

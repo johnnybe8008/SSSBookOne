@@ -44,7 +44,7 @@ export default function AddClientScreen() {
   // Referral source state
   const [referralSourceType, setReferralSourceType] = useState<"client" | "staff" | "fsm" | null>(null);
   const [referralSourceId, setReferralSourceId] = useState<number | null>(null);
-  const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp">("sms");
+  const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp" | null>(null);
   const [notificationOptOut, setNotificationOptOut] = useState(0);
   
   const [isVip, setIsVip] = useState(false);
@@ -385,7 +385,7 @@ export default function AddClientScreen() {
         (timeInServiceMonths ? parseInt(timeInServiceMonths, 10) : 0) || undefined,
       status: "Active",
       isVip: isVip ? 1 : 0,
-      notificationPreference,
+      notificationPreference: phone.trim() ? notificationPreference || undefined : undefined,
       notificationOptOut,
       createdBy: user.id,
       updatedBy: user.id,
@@ -459,7 +459,12 @@ export default function AddClientScreen() {
                 placeholder="Enter phone number"
                 placeholderTextColor={colors.muted}
                 value={phone}
-                onChangeText={setPhone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  if (!text.trim()) {
+                    setNotificationPreference(null);
+                  }
+                }}
                 keyboardType="phone-pad"
               />
             </View>
@@ -753,16 +758,19 @@ export default function AddClientScreen() {
 
             <View>
               <Text className="text-sm font-medium text-foreground mb-2">Notification Preference</Text>
-              <View className="bg-background border border-border rounded-xl overflow-hidden">
+              <View className={`bg-background border rounded-xl overflow-hidden ${phone.trim() ? "border-border" : "border-border opacity-50"}`}>
                 <Picker
                   selectedValue={notificationPreference}
-                  onValueChange={(value) => setNotificationPreference(value)}
+                  onValueChange={(value) => setNotificationPreference(value || null)}
                   style={{ color: colors.foreground }}
+                  enabled={!!phone.trim()}
                 >
+                  <Picker.Item label="Select with mobile number" value={null} />
                   <Picker.Item label="SMS" value="sms" />
                   <Picker.Item label="WhatsApp" value="whatsapp" />
                 </Picker>
               </View>
+              {!phone.trim() && <Text className="text-xs text-muted mt-2">Enter a mobile phone number to enable notifications.</Text>}
             </View>
 
             <TouchableOpacity

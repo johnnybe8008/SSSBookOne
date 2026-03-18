@@ -110,13 +110,20 @@ export const staff = mysqlTable("staff", {
   teamId: int("teamId"),
   name: varchar("name", { length: 255 }).notNull(),
   address: text("address"),
+  addressLine1: text("addressLine1"),
+  city: varchar("city", { length: 120 }),
+  stateProvince: varchar("stateProvince", { length: 120 }),
+  postalCode: varchar("postalCode", { length: 30 }),
   phone: varchar("phone", { length: 50 }),
+  homePhone: varchar("homePhone", { length: 50 }),
+  mobilePhone: varchar("mobilePhone", { length: 50 }),
+  workPhone: varchar("workPhone", { length: 50 }),
   email: varchar("email", { length: 320 }),
   passwordHash: varchar("passwordHash", { length: 255 }),
   mustChangePassword: int("mustChangePassword").notNull().default(0),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   role: mysqlEnum("role", ["admin", "counselor", "viewer"]).notNull().default("counselor"),
-    notificationPreference: mysqlEnum("notificationPreference", ["sms", "whatsapp"]).default("sms").notNull(),
+    notificationPreference: mysqlEnum("notificationPreference", ["sms", "whatsapp"]),
     notificationOptOut: int("notificationOptOut").notNull().default(0), // 0 = false, 1 = true
     isVipRated: int("isVipRated").notNull().default(0),
   isAdmin: int("isAdmin").notNull().default(0),
@@ -209,7 +216,7 @@ export const clients = mysqlTable("clients", {
   timeInService: int("timeInService"), // in months
   status: mysqlEnum("status", ["Active", "Inactive", "Referred", "On Hold"]).default("Active").notNull(),
   isVip: int("isVip").notNull().default(0), // 0 = false, 1 = true
-  notificationPreference: mysqlEnum("notificationPreference", ["sms", "whatsapp"]).default("sms").notNull(),
+  notificationPreference: mysqlEnum("notificationPreference", ["sms", "whatsapp"]),
   notificationOptOut: int("notificationOptOut").notNull().default(0), // 0 = false, 1 = true
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   createdBy: int("createdBy").notNull(),

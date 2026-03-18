@@ -8,6 +8,7 @@ export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const sessionId = id ? parseInt(id) : 0;
   const colors = useColors();
+  const returnTo = "/(tabs)/sessions";
 
   const { data: session, isLoading } = trpc.sessions.get.useQuery({ id: sessionId });
   const { data: client } = trpc.clients.get.useQuery(
@@ -18,6 +19,10 @@ export default function SessionDetailScreen() {
     { id: session?.staffId || 0 },
     { enabled: !!session?.staffId }
   );
+
+  const canEdit = session?.completedAt
+    ? (new Date().getTime() - new Date(session.completedAt).getTime()) / (1000 * 60 * 60) <= 48
+    : !!session;
 
   if (isLoading) {
     return (
@@ -141,6 +146,23 @@ export default function SessionDetailScreen() {
 
         {/* Action Buttons */}
         <View className="gap-3 mt-8 mb-8">
+          {canEdit ? (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: `/edit-session/${session.id}` as any,
+                  params: { returnTo },
+                } as any)
+              }
+              className="bg-secondary rounded-lg p-4 border border-border"
+            >
+              <Text className="text-foreground font-semibold text-center text-lg">Edit Session</Text>
+            </TouchableOpacity>
+          ) : (
+            <View className="bg-surface rounded-lg p-4 border border-border">
+              <Text className="text-muted font-semibold text-center text-lg">Editing locked after 48 hours</Text>
+            </View>
+          )}
           <TouchableOpacity
             onPress={() => router.back()}
             className="bg-primary rounded-lg p-4"

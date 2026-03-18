@@ -31,7 +31,7 @@ export default function EditClientScreen() {
     workPhone: "",
     email: "",
     status: "Active",
-    notificationPreference: "sms",
+    notificationPreference: null as "sms" | "whatsapp" | null,
     notificationOptOut: 0,
     isVip: 0,
   });
@@ -205,7 +205,7 @@ export default function EditClientScreen() {
       workPhone: client.workPhone || "",
       email: client.email || "",
       status: client.status,
-      notificationPreference: client.notificationPreference || "sms",
+      notificationPreference: client.notificationPreference || null,
       notificationOptOut: client.notificationOptOut || 0,
       isVip: client.isVip || 0,
     });
@@ -276,7 +276,7 @@ export default function EditClientScreen() {
       workPhone: formData.workPhone.trim() || undefined,
       email: formData.email.trim() || undefined,
       status: formData.status as "Active" | "Inactive" | "Referred" | "On Hold",
-      notificationPreference: formData.notificationPreference as "sms" | "whatsapp",
+      notificationPreference: formData.mobilePhone.trim() ? formData.notificationPreference || undefined : undefined,
       notificationOptOut: formData.notificationOptOut,
       isVip: formData.isVip,
       updatedBy: user.id,
@@ -373,7 +373,13 @@ export default function EditClientScreen() {
                 placeholder="Enter mobile phone"
                 placeholderTextColor={colors.muted}
                 value={formData.mobilePhone}
-                onChangeText={(text) => setFormData({ ...formData, mobilePhone: text })}
+                onChangeText={(text) =>
+                  setFormData({
+                    ...formData,
+                    mobilePhone: text,
+                    notificationPreference: text.trim() ? formData.notificationPreference : null,
+                  })
+                }
                 keyboardType="phone-pad"
               />
             </View>
@@ -639,16 +645,19 @@ export default function EditClientScreen() {
 
             <View>
               <Text className="text-sm font-medium text-foreground mb-2">Notification Preference</Text>
-              <View className="bg-background border border-border rounded-xl overflow-hidden">
+              <View className={`bg-background border rounded-xl overflow-hidden ${formData.mobilePhone.trim() ? "border-border" : "border-border opacity-50"}`}>
                 <Picker
                   selectedValue={formData.notificationPreference}
                   onValueChange={(value) => setFormData({ ...formData, notificationPreference: value })}
                   style={{ color: colors.foreground }}
+                  enabled={!!formData.mobilePhone.trim()}
                 >
+                  <Picker.Item label="Select with mobile number" value={null} />
                   <Picker.Item label="SMS" value="sms" />
                   <Picker.Item label="WhatsApp" value="whatsapp" />
                 </Picker>
               </View>
+              {!formData.mobilePhone.trim() && <Text className="text-xs text-muted mt-2">Enter a mobile phone number to enable notifications.</Text>}
             </View>
 
             <TouchableOpacity

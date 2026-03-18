@@ -12,7 +12,13 @@ export default function AdminStaffAddScreen() {
   const colors = useColors();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [mobilePhone, setMobilePhone] = useState("");
+  const [homePhone, setHomePhone] = useState("");
+  const [workPhone, setWorkPhone] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [city, setCity] = useState("");
+  const [stateProvince, setStateProvince] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
@@ -75,10 +81,17 @@ export default function AdminStaffAddScreen() {
     }
     console.log('Calling createStaff.mutate with:', {
       name: name.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone.trim(),
-      role: role,
-      isVipRated: isVipRated ? 1 : 0,
+       email: email.trim().toLowerCase(),
+       phone: mobilePhone.trim(),
+       mobilePhone: mobilePhone.trim(),
+       homePhone: homePhone.trim(),
+       workPhone: workPhone.trim(),
+       addressLine1: addressLine1.trim(),
+       city: city.trim(),
+       stateProvince: stateProvince.trim(),
+       postalCode: postalCode.trim(),
+       role: role,
+       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0,
       teamId: teamId || 1,
       createdBy: 1,
@@ -89,7 +102,14 @@ export default function AdminStaffAddScreen() {
     createStaff.mutate({
       name: name.trim(),
       email: email.trim().toLowerCase(),
-      phone: phone.trim(),
+      phone: mobilePhone.trim(),
+      mobilePhone: mobilePhone.trim(),
+      homePhone: homePhone.trim(),
+      workPhone: workPhone.trim(),
+      addressLine1: addressLine1.trim(),
+      city: city.trim(),
+      stateProvince: stateProvince.trim(),
+      postalCode: postalCode.trim(),
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
@@ -196,14 +216,88 @@ export default function AdminStaffAddScreen() {
             />
           </View>
 
-          {/* Phone */}
+          {/* Contact Information */}
           <View>
-            <Text className="text-sm font-semibold text-foreground mb-2">Phone</Text>
+            <Text className="text-sm font-semibold text-foreground mb-2">Mobile Phone</Text>
             <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Enter phone number"
+              value={mobilePhone}
+              onChangeText={setMobilePhone}
+              placeholder="Enter mobile phone"
               keyboardType="phone-pad"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Home Phone</Text>
+            <TextInput
+              value={homePhone}
+              onChangeText={setHomePhone}
+              placeholder="Enter home phone"
+              keyboardType="phone-pad"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Work Phone</Text>
+            <TextInput
+              value={workPhone}
+              onChangeText={setWorkPhone}
+              placeholder="Enter work phone"
+              keyboardType="phone-pad"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Address Line 1</Text>
+            <TextInput
+              value={addressLine1}
+              onChangeText={setAddressLine1}
+              placeholder="Enter address line 1"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">City</Text>
+            <TextInput
+              value={city}
+              onChangeText={setCity}
+              placeholder="Enter city"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">State / Province</Text>
+            <TextInput
+              value={stateProvince}
+              onChangeText={setStateProvince}
+              placeholder="Enter state or province"
+              className="bg-surface border border-border rounded-lg p-3 text-foreground"
+              style={{ minHeight: 48 }}
+              placeholderTextColor="#9BA1A6"
+            />
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Postal Code</Text>
+            <TextInput
+              value={postalCode}
+              onChangeText={setPostalCode}
+              placeholder="Enter postal code"
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
               style={{ minHeight: 48 }}
               placeholderTextColor="#9BA1A6"

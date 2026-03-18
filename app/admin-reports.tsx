@@ -35,6 +35,27 @@ type PdfSessionRow = {
   notes: string;
 };
 
+const toValidDate = (value: Date | string) => {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const startOfDay = (value: Date) => {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const endOfDay = (value: Date) => {
+  const date = new Date(value);
+  date.setHours(23, 59, 59, 999);
+  return date;
+};
+
 export default function AdminReportsScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -122,8 +143,8 @@ export default function AdminReportsScreen() {
         startDate = new Date(now.getFullYear(), 0, 1);
         break;
       case "custom":
-        startDate = customStartDate;
-        endDate = customEndDate;
+        startDate = startOfDay(customStartDate);
+        endDate = endOfDay(customEndDate);
         break;
       default:
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -149,6 +170,30 @@ export default function AdminReportsScreen() {
       return true;
     });
   }, [companyTeams, filterCompanyIds, filterDepartmentIds, departmentById]);
+
+  const filteredStaff = useMemo(() => {
+    const source = staff || [];
+    if (filterStaffIds.length === 0) return source;
+    return source.filter((member: any) => filterStaffIds.includes(Number(member.id)));
+  }, [staff, filterStaffIds]);
+
+  const totalStaffDepartments = useMemo(() => {
+    const ids = new Set<number>();
+    filteredStaff.forEach((member: any) => {
+      const id = Number(member.staffDepartmentId ?? 0);
+      if (id > 0) ids.add(id);
+    });
+    return ids.size;
+  }, [filteredStaff]);
+
+  const totalStaffTeams = useMemo(() => {
+    const ids = new Set<number>();
+    filteredStaff.forEach((member: any) => {
+      const id = Number(member.teamId ?? 0);
+      if (id > 0) ids.add(id);
+    });
+    return ids.size;
+  }, [filteredStaff]);
 
   const searchList = (items: any[] | undefined, search: string, pick: (v: any) => string) => {
     const source = items || [];
@@ -221,9 +266,9 @@ export default function AdminReportsScreen() {
   const totalClients = filteredClients.length;
   const totalSessions = filteredSessions.length;
   const totalCompanies = filterCompanyIds.length > 0 ? filterCompanyIds.length : (companies?.length || 0);
-  const totalDepartments = groupedDepartmentOptions.length;
-  const totalTeams = groupedTeamOptions.length;
-  const totalStaff = filterStaffIds.length > 0 ? filterStaffIds.length : (staff?.length || 0);
+  const totalDepartments = filteredDepartments.length;
+  const totalTeams = filteredTeams.length;
+  const totalStaff = filteredStaff.length;
   const totalFsms = fsms?.length || 0;
 
   const clientsByDepartment = useMemo(() => {
@@ -682,117 +727,35 @@ export default function AdminReportsScreen() {
         </View>
       ) : (
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View className="px-6 py-4 bg-surface border-b border-border">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-sm font-semibold text-foreground">Filters</Text>
-              {hasAnyFilter && (
-                <TouchableOpacity className="px-3 py-1 rounded-full border border-border bg-background" onPress={clearAllFilters}>
-                  <Text className="text-xs font-semibold text-foreground">Clear All</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <View className="mb-4">
-              <Text className="text-xs text-muted mb-2">Date Range</Text>
-              <View className="flex-row flex-wrap gap-2">
-                <TouchableOpacity onPress={() => setDateRangeType("weekly")} className={`px-4 py-2 rounded-full border ${dateRangeType === "weekly" ? "bg-primary border-primary" : "bg-background border-border"}`}>
-                  <Text className={`text-sm font-medium ${dateRangeType === "weekly" ? "text-background" : "text-foreground"}`}>Weekly</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setDateRangeType("monthly")} className={`px-4 py-2 rounded-full border ${dateRangeType === "monthly" ? "bg-primary border-primary" : "bg-background border-border"}`}>
-                  <Text className={`text-sm font-medium ${dateRangeType === "monthly" ? "text-background" : "text-foreground"}`}>Monthly</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setDateRangeType("ytd")} className={`px-4 py-2 rounded-full border ${dateRangeType === "ytd" ? "bg-primary border-primary" : "bg-background border-border"}`}>
-                  <Text className={`text-sm font-medium ${dateRangeType === "ytd" ? "text-background" : "text-foreground"}`}>YTD</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setDateRangeType("custom")} className={`px-4 py-2 rounded-full border ${dateRangeType === "custom" ? "bg-primary border-primary" : "bg-background border-border"}`}>
-                  <Text className={`text-sm font-medium ${dateRangeType === "custom" ? "text-background" : "text-foreground"}`}>Custom</Text>
-                </TouchableOpacity>
-              </View>
-
-              {dateRangeType === "custom" && (
-                <View className="mt-3 gap-2">
-                  <TouchableOpacity onPress={() => setShowStartPicker(true)} className="bg-background border border-border rounded-lg px-4 py-3">
-                    <Text className="text-xs text-muted mb-1">Start Date</Text>
-                    <Text className="text-sm text-foreground">{customStartDate.toLocaleDateString()}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setShowEndPicker(true)} className="bg-background border border-border rounded-lg px-4 py-3">
-                    <Text className="text-xs text-muted mb-1">End Date</Text>
-                    <Text className="text-sm text-foreground">{customEndDate.toLocaleDateString()}</Text>
-                  </TouchableOpacity>
-
-                  {showStartPicker && (
-                    <DateTimePicker
-                      value={customStartDate}
-                      mode="date"
-                      onChange={(value) => {
-                        setShowStartPicker(Platform.OS === "ios");
-                        if (value instanceof Date && !Number.isNaN(value.getTime())) {
-                          setCustomStartDate(value);
-                        }
-                      }}
-                    />
-                  )}
-                  {showEndPicker && (
-                    <DateTimePicker
-                      value={customEndDate}
-                      mode="date"
-                      onChange={(value) => {
-                        setShowEndPicker(Platform.OS === "ios");
-                        if (value instanceof Date && !Number.isNaN(value.getTime())) {
-                          setCustomEndDate(value);
-                        }
-                      }}
-                    />
-                  )}
-                </View>
-              )}
-            </View>
-
-            <View className="gap-2">
-              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowCompanyModal(true)}>
-                <Text className="text-sm font-medium text-foreground">{filterCompanyIds.length > 0 ? `${filterCompanyIds.length} compan${filterCompanyIds.length === 1 ? "y" : "ies"} selected` : "All Companies"}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowDepartmentModal(true)}>
-                <Text className="text-sm font-medium text-foreground">{selectedDepartmentNameCount > 0 ? `${selectedDepartmentNameCount} department(s) selected` : "All Departments"}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowTeamModal(true)}>
-                <Text className="text-sm font-medium text-foreground">{selectedTeamNameCount > 0 ? `${selectedTeamNameCount} team(s) selected` : "All Teams"}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowStaffModal(true)}>
-                <Text className="text-sm font-medium text-foreground">{filterStaffIds.length > 0 ? `${filterStaffIds.length} staff selected` : "All Staff"}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
           <View className="px-6 py-4 gap-6">
             <View className="gap-4">
               <Text className="text-xl font-bold text-foreground">Overview</Text>
               <View className="flex-row flex-wrap gap-3">
-                <View className="flex-1 min-w-[45%] bg-primary/10 border border-primary rounded-2xl p-4">
-                  <Text className="text-3xl font-bold text-primary">{totalClients}</Text>
-                  <Text className="text-sm text-muted mt-1">Total Clients</Text>
-                </View>
-                <View className="flex-1 min-w-[45%] bg-success/10 border border-success rounded-2xl p-4">
-                  <Text className="text-3xl font-bold text-success">{totalSessions}</Text>
-                  <Text className="text-sm text-muted mt-1">Total Sessions</Text>
-                </View>
-                <View className="flex-1 min-w-[45%] bg-surface border border-border rounded-2xl p-4">
+                <View className="w-[31%] bg-surface border border-border rounded-2xl p-4">
                   <Text className="text-3xl font-bold text-foreground">{totalCompanies}</Text>
                   <Text className="text-sm text-muted mt-1">Companies</Text>
                 </View>
-                <View className="flex-1 min-w-[45%] bg-surface border border-border rounded-2xl p-4">
+                <View className="w-[31%] bg-surface border border-border rounded-2xl p-4">
                   <Text className="text-3xl font-bold text-foreground">{totalDepartments}</Text>
-                  <Text className="text-sm text-muted mt-1">Departments</Text>
+                  <Text className="text-sm text-muted mt-1">CoDepartments</Text>
                 </View>
-                <View className="flex-1 min-w-[45%] bg-surface border border-border rounded-2xl p-4">
+                <View className="w-[31%] bg-surface border border-border rounded-2xl p-4">
                   <Text className="text-3xl font-bold text-foreground">{totalTeams}</Text>
-                  <Text className="text-sm text-muted mt-1">Teams</Text>
+                  <Text className="text-sm text-muted mt-1">Co Teams</Text>
                 </View>
-                <View className="flex-1 min-w-[45%] bg-surface border border-border rounded-2xl p-4">
+                <View className="w-[31%] bg-surface border border-border rounded-2xl p-4">
                   <Text className="text-3xl font-bold text-foreground">{totalStaff}</Text>
                   <Text className="text-sm text-muted mt-1">Staff</Text>
                 </View>
-                <View className="flex-1 min-w-[45%] bg-surface border border-border rounded-2xl p-4">
+                <View className="w-[31%] bg-surface border border-border rounded-2xl p-4">
+                  <Text className="text-3xl font-bold text-foreground">{totalStaffDepartments}</Text>
+                  <Text className="text-sm text-muted mt-1">Staff Departments</Text>
+                </View>
+                <View className="w-[31%] bg-surface border border-border rounded-2xl p-4">
+                  <Text className="text-3xl font-bold text-foreground">{totalStaffTeams}</Text>
+                  <Text className="text-sm text-muted mt-1">Staff Teams</Text>
+                </View>
+                <View className="w-full bg-surface border border-border rounded-2xl p-4">
                   <Text className="text-3xl font-bold text-foreground">{totalFsms}</Text>
                   <Text className="text-sm text-muted mt-1">FSMs</Text>
                 </View>
@@ -813,6 +776,101 @@ export default function AdminReportsScreen() {
                   ))}
                 </View>
               )}
+            </View>
+
+            <View className="bg-surface border border-border rounded-2xl p-5">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-lg font-bold text-foreground">Filter Sessions</Text>
+                {hasAnyFilter && (
+                  <TouchableOpacity className="px-3 py-1 rounded-full border border-border bg-background" onPress={clearAllFilters}>
+                    <Text className="text-xs font-semibold text-foreground">Clear All</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View className="mb-4">
+                <Text className="text-xs text-muted mb-2">Date Range</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  <TouchableOpacity onPress={() => setDateRangeType("weekly")} className={`px-4 py-2 rounded-full border ${dateRangeType === "weekly" ? "bg-primary border-primary" : "bg-background border-border"}`}>
+                    <Text className={`text-sm font-medium ${dateRangeType === "weekly" ? "text-background" : "text-foreground"}`}>Weekly</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setDateRangeType("monthly")} className={`px-4 py-2 rounded-full border ${dateRangeType === "monthly" ? "bg-primary border-primary" : "bg-background border-border"}`}>
+                    <Text className={`text-sm font-medium ${dateRangeType === "monthly" ? "text-background" : "text-foreground"}`}>Monthly</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setDateRangeType("ytd")} className={`px-4 py-2 rounded-full border ${dateRangeType === "ytd" ? "bg-primary border-primary" : "bg-background border-border"}`}>
+                    <Text className={`text-sm font-medium ${dateRangeType === "ytd" ? "text-background" : "text-foreground"}`}>YTD</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setDateRangeType("custom")} className={`px-4 py-2 rounded-full border ${dateRangeType === "custom" ? "bg-primary border-primary" : "bg-background border-border"}`}>
+                    <Text className={`text-sm font-medium ${dateRangeType === "custom" ? "text-background" : "text-foreground"}`}>Custom</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {dateRangeType === "custom" && (
+                  <View className="mt-3 gap-2">
+                    <TouchableOpacity onPress={() => setShowStartPicker(true)} className="bg-background border border-border rounded-lg px-4 py-3">
+                      <Text className="text-xs text-muted mb-1">Start Date</Text>
+                      <Text className="text-sm text-foreground">{customStartDate.toLocaleDateString()}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowEndPicker(true)} className="bg-background border border-border rounded-lg px-4 py-3">
+                      <Text className="text-xs text-muted mb-1">End Date</Text>
+                      <Text className="text-sm text-foreground">{customEndDate.toLocaleDateString()}</Text>
+                    </TouchableOpacity>
+
+                    {showStartPicker && (
+                      <DateTimePicker
+                        value={customStartDate}
+                        mode="date"
+                        onChange={(value) => {
+                          setShowStartPicker(Platform.OS === "ios");
+                          const nextDate = toValidDate(value);
+                          if (nextDate) {
+                            setCustomStartDate(nextDate);
+                          }
+                        }}
+                      />
+                    )}
+                    {showEndPicker && (
+                      <DateTimePicker
+                        value={customEndDate}
+                        mode="date"
+                        onChange={(value) => {
+                          setShowEndPicker(Platform.OS === "ios");
+                          const nextDate = toValidDate(value);
+                          if (nextDate) {
+                            setCustomEndDate(nextDate);
+                          }
+                        }}
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+
+              <View className="gap-2">
+                <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowCompanyModal(true)}>
+                  <Text className="text-sm font-medium text-foreground">{filterCompanyIds.length > 0 ? `${filterCompanyIds.length} compan${filterCompanyIds.length === 1 ? "y" : "ies"} selected` : "All Companies"}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowDepartmentModal(true)}>
+                  <Text className="text-sm font-medium text-foreground">{selectedDepartmentNameCount > 0 ? `${selectedDepartmentNameCount} department(s) selected` : "All Departments"}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowTeamModal(true)}>
+                  <Text className="text-sm font-medium text-foreground">{selectedTeamNameCount > 0 ? `${selectedTeamNameCount} team(s) selected` : "All Teams"}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity className="px-4 py-2 bg-background rounded-full border border-border" onPress={() => setShowStaffModal(true)}>
+                  <Text className="text-sm font-medium text-foreground">{filterStaffIds.length > 0 ? `${filterStaffIds.length} staff selected` : "All Staff"}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View className="flex-row flex-wrap gap-3">
+              <View className="flex-1 min-w-[45%] bg-primary/10 border border-primary rounded-2xl p-4">
+                <Text className="text-3xl font-bold text-primary">{totalClients}</Text>
+                <Text className="text-sm text-muted mt-1">Total Clients</Text>
+              </View>
+              <View className="flex-1 min-w-[45%] bg-success/10 border border-success rounded-2xl p-4">
+                <Text className="text-3xl font-bold text-success">{totalSessions}</Text>
+                <Text className="text-sm text-muted mt-1">Total Sessions</Text>
+              </View>
             </View>
 
             <View className="bg-surface border border-border rounded-2xl p-5">

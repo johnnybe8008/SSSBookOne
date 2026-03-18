@@ -52,7 +52,7 @@ export async function createDefaultAdmin() {
     email: adminEmail,
     passwordHash,
     role: "admin",
-    notificationPreference: "sms",
+    notificationPreference: null,
     notificationOptOut: 0,
     isVipRated: 0,
     isAdmin: 1,
