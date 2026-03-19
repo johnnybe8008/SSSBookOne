@@ -17,15 +17,17 @@ export default function ManualsScreen() {
   const exportManualPdf = async (manual: ManualDefinition, filePrefix: string) => {
     try {
       const html = buildManualHtml(manual);
+
+      if (Platform.OS === "web") {
+        await Print.printAsync({ html });
+        Alert.alert("PDF Ready", "Use your browser's Save as PDF or print controls to save the manual.");
+        return;
+      }
+
       const result = await Print.printToFileAsync({ html });
       const fileName = `${filePrefix}_${new Date().toISOString().split("T")[0]}.pdf`;
       const targetUri = `${FileSystem.documentDirectory}${fileName}`;
       await FileSystem.copyAsync({ from: result.uri, to: targetUri });
-
-      if (Platform.OS === "web") {
-        Alert.alert("PDF Ready", "The manual PDF has been generated. Use your browser's download or print controls.");
-        return;
-      }
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
