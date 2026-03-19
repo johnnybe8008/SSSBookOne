@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router, writeAccessProcedure, adminOnlyProcedure } from "./_core/trpc";
 import * as db from "./db";
-import { authenticateStaff, changePassword, hashPassword } from "./auth";
+import { authenticateStaff, changePassword, completeForcedPasswordReset, getStaffByEmail, hashPassword } from "./auth";
 import { createSession } from "./session-manager";
 import { processPendingNotifications, sendDirectNotification } from "./notification-dispatcher";
 import { resetDatabase } from "./reset-database";
@@ -107,6 +107,29 @@ export const appRouter = router({
     throw err;
   }}
 ),
+    passwordResetState: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+        })
+      )
+      .query(async ({ input }) => {
+        const staffRecord = await getStaffByEmail(input.email);
+        return {
+          mustChangePassword: staffRecord?.mustChangePassword === 1,
+        };
+      }),
+    completeForcedPasswordReset: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          newPassword: z.string().min(6),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await completeForcedPasswordReset(input.email, input.newPassword);
+        return { success: true };
+      }),
     changePassword: protectedProcedure
       .input(
         z.object({

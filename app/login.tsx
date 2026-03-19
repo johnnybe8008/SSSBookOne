@@ -9,13 +9,73 @@ import { setStaffInfo, setSessionToken } from "@/lib/_core/auth";
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [requiresPasswordReset, setRequiresPasswordReset] = useState(false);
 
   const loginMutation = trpc.auth.login.useMutation();
+  const passwordResetStateQuery = trpc.auth.passwordResetState.useQuery(
+    { email: email.trim().toLowerCase() },
+    {
+      enabled: false,
+      retry: false,
+    }
+  );
+  const completeForcedPasswordResetMutation = trpc.auth.completeForcedPasswordReset.useMutation();
+
+  const syncPasswordResetState = async (nextEmail?: string) => {
+    const lookupEmail = (nextEmail ?? email).trim().toLowerCase();
+
+    if (!lookupEmail || !lookupEmail.includes("@")) {
+      setRequiresPasswordReset(false);
+      return;
+    }
+
+    try {
+      const result = await passwordResetStateQuery.refetch();
+      setRequiresPasswordReset(!!result.data?.mustChangePassword);
+    } catch {
+      setRequiresPasswordReset(false);
+    }
+  };
 
   const handleLogin = async () => {
     setLoginError("");
+    if (requiresPasswordReset) {
+      if (!email || !password || !confirmPassword) {
+        setLoginError("Please fill in all password reset fields");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setLoginError("New passwords do not match");
+        return;
+      }
+
+      if (password.length < 6) {
+        setLoginError("Password must be at least 6 characters long");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        await completeForcedPasswordResetMutation.mutateAsync({
+          email: email.trim().toLowerCase(),
+          newPassword: password,
+        });
+        setPassword("");
+        setConfirmPassword("");
+        setRequiresPasswordReset(false);
+        Alert.alert("Success", "Password updated. Please sign in with your new password.");
+      } catch (error: any) {
+        setLoginError(error.message || "Failed to change password");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!email || !password) {
       setLoginError("Please enter both email and password");
       return;
@@ -47,12 +107,7 @@ export default function LoginScreen() {
         } catch (err) {
           console.error('[Login] Failed to fetch staff info from backend:', err);
         }
-        // Check if staff must change password
-        if (result.staff.mustChangePassword === 1) {
-          router.replace("/change-password" as any);
-        } else {
-          router.replace("/(tabs)");
-        }
+        router.replace("/(tabs)");
       } else {
         setLoginError("Invalid email or password");
       }
@@ -83,7 +138,15 @@ export default function LoginScreen() {
               placeholder="Enter your email"
               placeholderTextColor="#9BA1A6"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(value) => {
+                setEmail(value);
+                if (!value.trim()) {
+                  setRequiresPasswordReset(false);
+                  setPassword("");
+                  setConfirmPassword("");
+                }
+              }}
+              onBlur={() => syncPasswordResetState()}
               autoComplete="username"
               autoCapitalize="none"
               autoCorrect={false}
@@ -95,10 +158,12 @@ export default function LoginScreen() {
           </View>
 
           <View>
-            <Text className="text-sm font-medium text-foreground mb-2">Password</Text>
+            <Text className="text-sm font-medium text-foreground mb-2">
+              {requiresPasswordReset ? "New Password" : "Password"}
+            </Text>
             <TextInput
               className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
-              placeholder="Enter your password"
+              placeholder={requiresPasswordReset ? "Enter your new password" : "Enter your password"}
               placeholderTextColor="#9BA1A6"
               value={password}
               onChangeText={setPassword}
@@ -111,6 +176,23 @@ export default function LoginScreen() {
             />
           </View>
 
+          {requiresPasswordReset && (
+            <View>
+              <Text className="text-sm font-medium text-foreground mb-2">Confirm New Password</Text>
+              <TextInput
+                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
+                placeholder="Re-enter your new password"
+                placeholderTextColor="#9BA1A6"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                autoCorrect={false}
+                secureTextEntry
+                textContentType="password"
+                editable={!loading}
+              />
+            </View>
+          )}
+
           <TouchableOpacity
             className="bg-primary rounded-lg py-4 mt-4"
             onPress={handleLogin}
@@ -120,7 +202,9 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text className="text-background text-center font-semibold text-lg">Sign In</Text>
+              <Text className="text-background text-center font-semibold text-lg">
+                {requiresPasswordReset ? "Save New Password" : "Sign In"}
+              </Text>
             )}
           </TouchableOpacity>
         </View>

@@ -33,6 +33,13 @@ export async function authenticateStaff(email: string, password: string) {
   return staffRecord;
 }
 
+export async function getStaffByEmail(email: string) {
+  const db = await getDb();
+  const normalizedEmail = email.trim().toLowerCase();
+  const [staffRecord] = await db.select().from(staff).where(eq(staff.email, normalizedEmail)).limit(1);
+  return staffRecord ?? null;
+}
+
 export async function authenticateUser(email: string, password: string) {
   return authenticateStaff(email, password);
 }
@@ -95,5 +102,20 @@ export async function changePassword(
     })
     .where(eq(staff.id, staffId));
 
+  return true;
+}
+
+export async function completeForcedPasswordReset(email: string, newPassword: string) {
+  const staffRecord = await getStaffByEmail(email);
+
+  if (!staffRecord) {
+    throw new Error("Staff account not found");
+  }
+
+  if (staffRecord.mustChangePassword !== 1) {
+    throw new Error("Password reset is not required for this account");
+  }
+
+  await changePassword(staffRecord.id, newPassword);
   return true;
 }
