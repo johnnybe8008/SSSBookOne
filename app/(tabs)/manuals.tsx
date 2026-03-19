@@ -25,14 +25,20 @@ export default function ManualsScreen() {
           return;
         }
 
+        const fullHtml = `<!DOCTYPE html>${html}`;
         printWindow.document.open();
-        printWindow.document.write(html);
+        printWindow.document.write(fullHtml);
         printWindow.document.close();
+        printWindow.focus();
 
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
+        window.setTimeout(() => {
+          try {
+            printWindow.focus();
+            printWindow.print();
+          } catch (error) {
+            console.error("[Manuals] Web print failed", error);
+          }
+        }, 500);
 
         return;
       }
