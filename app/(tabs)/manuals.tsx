@@ -19,26 +19,42 @@ export default function ManualsScreen() {
       const html = buildManualHtml(manual);
 
       if (Platform.OS === "web") {
-        const printWindow = window.open("", "_blank", "noopener,noreferrer,width=900,height=1200");
-        if (!printWindow) {
-          Alert.alert("Export Failed", "Your browser blocked the print window. Please allow pop-ups and try again.");
-          return;
-        }
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.setAttribute("aria-hidden", "true");
+        document.body.appendChild(iframe);
 
-        const fullHtml = `<!DOCTYPE html>${html}`;
-        printWindow.document.open();
-        printWindow.document.write(fullHtml);
-        printWindow.document.close();
-        printWindow.focus();
+        const cleanup = () => {
+          window.setTimeout(() => {
+            iframe.parentNode?.removeChild(iframe);
+          }, 1000);
+        };
 
-        window.setTimeout(() => {
+        iframe.onload = () => {
           try {
-            printWindow.focus();
-            printWindow.print();
+            const frameWindow = iframe.contentWindow;
+            if (!frameWindow) {
+              cleanup();
+              Alert.alert("Export Failed", "The browser could not prepare the manual for printing.");
+              return;
+            }
+
+            frameWindow.focus();
+            frameWindow.print();
+            cleanup();
           } catch (error) {
             console.error("[Manuals] Web print failed", error);
+            cleanup();
+            Alert.alert("Export Failed", "Could not open the print dialog for this manual.");
           }
-        }, 500);
+        };
+
+        iframe.srcdoc = `<!DOCTYPE html>${html}`;
 
         return;
       }
