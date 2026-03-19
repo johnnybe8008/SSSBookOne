@@ -42,6 +42,7 @@ const MAPPING = {
   "mappin.circle.fill": "place",
   "building.2.fill": "business",
   "doc.fill": "description",
+  "book.fill": "menu-book",
   "arrow.down.doc": "file-download",
   "arrow.up.doc": "file-upload",
   "trash": "delete",
