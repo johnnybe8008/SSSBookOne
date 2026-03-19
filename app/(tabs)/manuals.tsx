@@ -19,8 +19,21 @@ export default function ManualsScreen() {
       const html = buildManualHtml(manual);
 
       if (Platform.OS === "web") {
-        await Print.printAsync({ html });
-        Alert.alert("PDF Ready", "Use your browser's Save as PDF or print controls to save the manual.");
+        const printWindow = window.open("", "_blank", "noopener,noreferrer,width=900,height=1200");
+        if (!printWindow) {
+          Alert.alert("Export Failed", "Your browser blocked the print window. Please allow pop-ups and try again.");
+          return;
+        }
+
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
         return;
       }
 
