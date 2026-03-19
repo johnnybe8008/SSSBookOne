@@ -8,9 +8,11 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { APP_VERSION } from "@/constants/const";
 import { adminManual, buildManualHtml, staffManual, type ManualDefinition } from "@/lib/manuals";
+import { useStaffRole } from "@/hooks/use-staff-role";
 
 export default function ManualsScreen() {
   const colors = useColors();
+  const { isAdmin } = useStaffRole();
 
   const exportManualPdf = async (manual: ManualDefinition, filePrefix: string) => {
     try {
@@ -93,12 +95,20 @@ export default function ManualsScreen() {
             These manuals are based on the current application flow in version {APP_VERSION}.
           </Text>
           <Text className="text-sm text-muted">
-            Screenshot placeholders are included in the exported PDFs so real captures can be dropped in during a later documentation pass.
+            {isAdmin
+              ? "Admin users can export both the admin guide and the staff guide. Screenshot placeholders are included so real captures can be dropped in during a later documentation pass."
+              : "This area gives staff a printable guide for the current system. Screenshot placeholders are included so real captures can be dropped in during a later documentation pass."}
           </Text>
         </View>
 
-        {renderManualCard(staffManual, "SSS_Staff_Manual", "bg-primary")}
-        {renderManualCard(adminManual, "SSS_Admin_Manual", "bg-error")}
+        {isAdmin ? (
+          <>
+            {renderManualCard(adminManual, "SSS_Admin_Manual", "bg-error")}
+            {renderManualCard(staffManual, "SSS_Staff_Manual", "bg-primary")}
+          </>
+        ) : (
+          renderManualCard(staffManual, "SSS_Staff_Manual", "bg-primary")
+        )}
       </ScrollView>
     </ScreenContainer>
   );
