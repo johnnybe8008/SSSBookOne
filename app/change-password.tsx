@@ -5,6 +5,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
+import { clearStaffInfo, removeSessionToken } from "@/lib/_core/auth";
 
 /**
  * Change Password Screen
@@ -20,12 +21,13 @@ export default function ChangePasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const requiresPasswordReset = staff?.mustChangePassword === 1;
 
   const changePasswordMutation = trpc.auth.changePassword.useMutation();
 
   const handleChangePassword = async () => {
     // Validation
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if ((!requiresPasswordReset && !currentPassword) || !newPassword || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
@@ -40,26 +42,37 @@ export default function ChangePasswordScreen() {
       return;
     }
 
-    if (newPassword === currentPassword) {
+    if (!requiresPasswordReset && newPassword === currentPassword) {
       Alert.alert("Error", "New password must be different from current password");
       return;
     }
 
     setLoading(true);
     try {
-      await changePasswordMutation.mutateAsync({
-        currentPassword,
-        newPassword,
-      });
+      await changePasswordMutation.mutateAsync(
+        requiresPasswordReset
+          ? { newPassword }
+          : {
+              currentPassword,
+              newPassword,
+            }
+      );
+
+      if (requiresPasswordReset) {
+        await removeSessionToken();
+        await clearStaffInfo();
+      }
 
       Alert.alert(
         "Success",
-        "Your password has been changed successfully",
+        requiresPasswordReset
+          ? "Your password has been changed. Please sign in again."
+          : "Your password has been changed successfully",
         [
           {
             text: "OK",
             onPress: () => {
-              router.replace("/");
+              router.replace(requiresPasswordReset ? "/login" : "/");
             },
           },
         ]
@@ -78,22 +91,27 @@ export default function ChangePasswordScreen() {
           Change Password
         </Text>
         <Text className="text-base text-muted mb-8">
-          You must change your password before continuing
+          {requiresPasswordReset
+            ? "You must change your password before continuing"
+            : "Update your current password"}
         </Text>
 
-        {/* Current Password */}
-        <Text className="text-sm font-medium text-foreground mb-2">
-          Current Password
-        </Text>
-        <TextInput
-          className="bg-surface border border-border rounded-xl px-4 py-3 text-foreground mb-4"
-          placeholder="Enter current password"
-          placeholderTextColor={colors.muted}
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          secureTextEntry
-          autoCapitalize="none"
-        />
+        {!requiresPasswordReset && (
+          <>
+            <Text className="text-sm font-medium text-foreground mb-2">
+              Current Password
+            </Text>
+            <TextInput
+              className="bg-surface border border-border rounded-xl px-4 py-3 text-foreground mb-4"
+              placeholder="Enter current password"
+              placeholderTextColor={colors.muted}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </>
+        )}
 
         {/* New Password */}
         <Text className="text-sm font-medium text-foreground mb-2">

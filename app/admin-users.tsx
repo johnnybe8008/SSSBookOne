@@ -26,6 +26,7 @@ export default function AdminUsersScreen() {
     name: "",
     email: "",
     phone: "",
+    password: "",
     role: "Counselor" as "Admin" | "Counselor" | "Viewer",
   });
 
@@ -38,7 +39,7 @@ export default function AdminUsersScreen() {
       utils.staff.invalidate();
       Alert.alert("Success", "Staff member added successfully");
       setShowAddForm(false);
-      setFormData({ name: "", email: "", phone: "", role: "Counselor" });
+      setFormData({ name: "", email: "", phone: "", password: "", role: "Counselor" });
     },
     onError: (error) => {
       Alert.alert("Error", error.message || "Failed to add staff member");
@@ -65,12 +66,24 @@ export default function AdminUsersScreen() {
       Alert.alert("Validation Error", "Please enter staff email");
       return;
     }
+    if (!formData.password.trim()) {
+      Alert.alert("Validation Error", "Please enter a temporary password");
+      return;
+    }
 
     createStaff.mutate({
       teamId: 1, // Default team - should be selectable in production
       name: formData.name.trim(),
       email: formData.email.trim() || undefined,
       phone: formData.phone.trim() || undefined,
+      password: formData.password.trim(),
+      mustChangePassword: 1,
+      role:
+        formData.role === "Admin"
+          ? "admin"
+          : formData.role === "Viewer"
+          ? "viewer"
+          : "counselor",
       isAdmin: formData.role === "Admin" ? 1 : 0,
       isVipRated: 0,
       createdBy: 1, // Should be current user ID
@@ -148,6 +161,15 @@ export default function AdminUsersScreen() {
                 value={formData.phone}
                 onChangeText={(text) => setFormData({ ...formData, phone: text })}
                 keyboardType="phone-pad"
+              />
+              <TextInput
+                className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                placeholder="Temporary Password *"
+                placeholderTextColor={colors.muted}
+                value={formData.password}
+                onChangeText={(text) => setFormData({ ...formData, password: text })}
+                secureTextEntry
+                autoCapitalize="none"
               />
               <View className="flex-row gap-2">
                 {(["Admin", "Counselor", "Viewer"] as const).map((role) => (

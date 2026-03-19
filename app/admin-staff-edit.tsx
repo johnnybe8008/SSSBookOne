@@ -31,6 +31,7 @@ export default function AdminStaffEditScreen() {
   const [stateProvince, setStateProvince] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [password, setPassword] = useState("");
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
   const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp" | null>(null);
@@ -105,6 +106,7 @@ export default function AdminStaffEditScreen() {
       setCity((staff as any).city || "");
       setStateProvince((staff as any).stateProvince || "");
       setPostalCode((staff as any).postalCode || "");
+      setMustChangePassword((staff as any).mustChangePassword === 1);
       setRole((staff as any).role || "counselor");
       setIsVipRated(staff.isVipRated === 1);
       setNotificationPreference((staff as any).notificationPreference === "whatsapp" ? "whatsapp" : (staff as any).notificationPreference === "sms" ? "sms" : null);
@@ -192,6 +194,7 @@ export default function AdminStaffEditScreen() {
       stateProvince: stateProvince.trim(),
       postalCode: postalCode.trim(),
       password: password.trim() || undefined, // Only send if not empty
+      mustChangePassword: mustChangePassword ? 1 : 0,
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       notificationPreference: mobilePhone.trim() ? notificationPreference || undefined : undefined,
@@ -425,6 +428,27 @@ export default function AdminStaffEditScreen() {
             />
             <Text className="text-xs text-muted mt-1">Only enter a new password if you want to reset it</Text>
           </View>
+
+          <TouchableOpacity
+            onPress={() => setMustChangePassword(!mustChangePassword)}
+            className="bg-surface border border-border rounded-lg p-4"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-foreground">Require Password Reset</Text>
+                <Text className="text-sm text-muted mt-1">
+                  Force this staff member to set a new password at next login
+                </Text>
+              </View>
+              <View
+                className={`w-12 h-7 rounded-full p-1 ${mustChangePassword ? "bg-primary" : "bg-border"}`}
+              >
+                <View
+                  className={`w-5 h-5 rounded-full bg-background ${mustChangePassword ? "ml-auto" : ""}`}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
 
           {/* VIP Toggle */}
           <TouchableOpacity

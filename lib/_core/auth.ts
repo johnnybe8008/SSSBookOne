@@ -24,6 +24,7 @@ export type Staff = {
   name: string | null;
   email: string | null;
   role: string | null;
+  mustChangePassword?: number;
   lastSignedIn: Date;
   // Add any other staff fields needed
 };

@@ -20,6 +20,7 @@ export default function AdminStaffAddScreen() {
   const [stateProvince, setStateProvince] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [password, setPassword] = useState("");
+  const [mustChangePassword, setMustChangePassword] = useState(true);
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
   
@@ -85,6 +86,8 @@ export default function AdminStaffAddScreen() {
       city: city.trim(),
       stateProvince: stateProvince.trim(),
       postalCode: postalCode.trim(),
+      password: password.trim(),
+      mustChangePassword: mustChangePassword ? 1 : 0,
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
@@ -293,6 +296,29 @@ export default function AdminStaffAddScreen() {
             />
             <Text className="text-xs text-muted mt-1">Admin can reset this password later if needed</Text>
           </View>
+
+          <TouchableOpacity
+            onPress={() => setMustChangePassword(!mustChangePassword)}
+            className="bg-surface border border-border rounded-lg p-4"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-foreground">Require Password Reset</Text>
+                <Text className="text-sm text-muted mt-1">
+                  Staff must create a new password the next time they sign in
+                </Text>
+              </View>
+              <View
+                className={`w-12 h-7 rounded-full p-1${mustChangePassword ? " bg-primary" : " bg-border"}`}
+                style={{ minHeight: 32 }}
+              >
+                <View
+                  className={`w-5 h-5 rounded-full bg-background${mustChangePassword ? " ml-auto" : ""}`}
+                  style={{ minHeight: 24 }}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
 
           {/* VIP Toggle */}
           <TouchableOpacity

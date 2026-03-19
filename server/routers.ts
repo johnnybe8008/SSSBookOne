@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router, writeAccessProcedure, adminOnlyProcedure } from "./_core/trpc";
 import * as db from "./db";
-import { authenticateStaff, changePassword } from "./auth";
+import { authenticateStaff, changePassword, hashPassword } from "./auth";
 import { createSession } from "./session-manager";
 import { processPendingNotifications, sendDirectNotification } from "./notification-dispatcher";
 import { resetDatabase } from "./reset-database";
@@ -110,7 +110,7 @@ export const appRouter = router({
     changePassword: protectedProcedure
       .input(
         z.object({
-          currentPassword: z.string().min(1),
+          currentPassword: z.string().min(1).optional(),
           newPassword: z.string().min(6),
         })
       )
@@ -118,7 +118,14 @@ export const appRouter = router({
         if (!ctx.user) {
           throw new Error("Not authenticated");
         }
-        await changePassword(ctx.user.id, input.newPassword);
+        if (ctx.user.mustChangePassword === 1) {
+          await changePassword(ctx.user.id, input.newPassword);
+          return { success: true, requiresLogin: true };
+        }
+        if (!input.currentPassword) {
+          throw new Error("Current password is required");
+        }
+        await changePassword(ctx.user.id, input.currentPassword, input.newPassword);
         return { success: true };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -421,6 +428,8 @@ export const appRouter = router({
           mobilePhone: z.string().max(50).optional(),
           workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
+          password: z.string().min(6),
+          mustChangePassword: z.number().optional(),
           role: z.enum(["admin", "counselor", "viewer"]).default("counselor"),
           notificationPreference: z.enum(["sms", "whatsapp"]).nullable().optional(),
           notificationOptOut: z.number().optional(),
@@ -430,10 +439,12 @@ export const appRouter = router({
           updatedBy: z.number(),
         })
       )
-      .mutation(({ input }) => {
-        const { groupId, organizationId, ...data } = input;
+      .mutation(async ({ input }) => {
+        const { groupId, organizationId, password, ...data } = input;
         return db.createStaff({
           ...data,
+          passwordHash: await hashPassword(password),
+          mustChangePassword: data.mustChangePassword ?? 0,
           address: data.address ?? composeAddress(data.addressLine1, data.city, data.stateProvince, data.postalCode),
           phone: pickPrimaryPhone(data.mobilePhone, data.homePhone, data.workPhone, data.phone),
           notificationPreference: normalizeNotificationPreference(data.notificationPreference, data.mobilePhone),
@@ -460,6 +471,7 @@ export const appRouter = router({
           workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           password: z.string().min(1).optional(),
+          mustChangePassword: z.number().optional(),
           role: z.enum(["admin", "counselor", "viewer"]).optional(),
           notificationPreference: z.enum(["sms", "whatsapp"]).nullable().optional(),
           notificationOptOut: z.number().optional(),
@@ -470,13 +482,21 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const { id, groupId, organizationId, ...data } = input;
-        return db.updateStaff(id, {
+        const updates: Record<string, unknown> = {
           ...data,
           address: data.address ?? composeAddress(data.addressLine1, data.city, data.stateProvince, data.postalCode),
           phone: pickPrimaryPhone(data.mobilePhone, data.homePhone, data.workPhone, data.phone),
           notificationPreference: normalizeNotificationPreference(data.notificationPreference, data.mobilePhone),
           organizationId: organizationId ?? groupId,
-        });
+        };
+
+        if (data.password) {
+          updates.passwordHash = await hashPassword(data.password);
+        }
+
+        delete updates.password;
+
+        return db.updateStaff(id, updates);
       }),
     delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteStaff(input.id)),
     bulkUpdate: adminOnlyProcedure
