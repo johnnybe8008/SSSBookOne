@@ -521,6 +521,47 @@ export const appRouter = router({
 
         return db.updateStaff(id, updates);
       }),
+    updateProfile: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(1).max(255).optional(),
+          address: z.string().optional(),
+          addressLine1: z.string().optional(),
+          city: z.string().optional(),
+          stateProvince: z.string().optional(),
+          postalCode: z.string().optional(),
+          phone: z.string().max(50).optional(),
+          homePhone: z.string().max(50).optional(),
+          mobilePhone: z.string().max(50).optional(),
+          workPhone: z.string().max(50).optional(),
+          email: z.string().email().optional(),
+          password: z.string().min(1).optional(),
+          notificationPreference: z.enum(["sms", "whatsapp"]).nullable().optional(),
+          notificationOptOut: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) {
+          throw new Error("Not authenticated");
+        }
+
+        const updates: Record<string, unknown> = {
+          ...input,
+          address: input.address ?? composeAddress(input.addressLine1, input.city, input.stateProvince, input.postalCode),
+          phone: pickPrimaryPhone(input.mobilePhone, input.homePhone, input.workPhone, input.phone),
+          notificationPreference: normalizeNotificationPreference(input.notificationPreference, input.mobilePhone),
+          updatedBy: ctx.user.id,
+        };
+
+        if (input.password) {
+          updates.passwordHash = await hashPassword(input.password);
+          updates.mustChangePassword = 0;
+        }
+
+        delete updates.password;
+
+        return db.updateStaff(ctx.user.id, updates);
+      }),
     delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteStaff(input.id)),
     bulkUpdate: adminOnlyProcedure
       .input(

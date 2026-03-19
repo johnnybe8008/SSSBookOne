@@ -8,6 +8,7 @@ import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { OrganizationalBreadcrumbs } from "@/components/organizational-breadcrumbs";
 import { Picker } from "@react-native-picker/picker";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminStaffEditScreen() {
     // Modal and input state for department/team creation
@@ -18,6 +19,10 @@ export default function AdminStaffEditScreen() {
   const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const staffId = id ? parseInt(id) : 0;
+  const { staff: currentStaff } = useAuth();
+  const isAdmin = currentStaff?.role === "admin";
+  const isOwnProfile = currentStaff?.id === staffId;
+  const isSelfServiceProfile = !isAdmin && isOwnProfile;
 
   const { data: staff, isLoading } = trpc.staff.get.useQuery({ id: staffId });
   
@@ -137,6 +142,17 @@ export default function AdminStaffEditScreen() {
       Alert.alert("Error", error.message || "Failed to update staff member");
     },
   });
+  const updateProfile = trpc.staff.updateProfile.useMutation({
+    onSuccess: () => {
+      utils.staff.listAll.invalidate();
+      utils.staff.get.invalidate({ id: staffId });
+      Alert.alert("Success", "Profile updated successfully");
+      router.back();
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to update profile");
+    },
+  });
 
   const deleteStaff = trpc.staff.delete.useMutation({
     onSuccess: () => {
@@ -182,7 +198,6 @@ export default function AdminStaffEditScreen() {
     }
 
     const payload = {
-      id: staffId,
       name: name.trim(),
       email: email.trim().toLowerCase(),
       phone: mobilePhone.trim(),
@@ -194,7 +209,6 @@ export default function AdminStaffEditScreen() {
       stateProvince: stateProvince.trim(),
       postalCode: postalCode.trim(),
       password: password.trim() || undefined, // Only send if not empty
-      mustChangePassword: mustChangePassword ? 1 : 0,
       role: role,
       isVipRated: isVipRated ? 1 : 0,
       notificationPreference: mobilePhone.trim() ? notificationPreference || undefined : undefined,
@@ -205,7 +219,31 @@ export default function AdminStaffEditScreen() {
       teamId: teamId || undefined,
       updatedBy: 1, // Admin user
     };
-    updateStaff.mutate(payload);
+
+    if (isSelfServiceProfile) {
+      updateProfile.mutate({
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        mobilePhone: payload.mobilePhone,
+        homePhone: payload.homePhone,
+        workPhone: payload.workPhone,
+        addressLine1: payload.addressLine1,
+        city: payload.city,
+        stateProvince: payload.stateProvince,
+        postalCode: payload.postalCode,
+        password: payload.password,
+        notificationPreference: payload.notificationPreference,
+        notificationOptOut: payload.notificationOptOut,
+      });
+      return;
+    }
+
+    updateStaff.mutate({
+      id: staffId,
+      ...payload,
+      mustChangePassword: mustChangePassword ? 1 : 0,
+    });
   };
 
   const handleDelete = () => {
@@ -417,64 +455,74 @@ export default function AdminStaffEditScreen() {
 
           {/* Password Reset */}
           <View>
-            <Text className="text-sm font-semibold text-foreground mb-2">Reset Password</Text>
+            <Text className="text-sm font-semibold text-foreground mb-2">
+              {isSelfServiceProfile ? "Change Password" : "Reset Password"}
+            </Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Leave blank to keep current password"
+              placeholder={isSelfServiceProfile ? "Leave blank to keep your current password" : "Leave blank to keep current password"}
               secureTextEntry
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
               placeholderTextColor="#9BA1A6"
             />
-            <Text className="text-xs text-muted mt-1">Only enter a new password if you want to reset it</Text>
+            <Text className="text-xs text-muted mt-1">
+              {isSelfServiceProfile
+                ? "Only enter a new password if you want to change it"
+                : "Only enter a new password if you want to reset it"}
+            </Text>
           </View>
 
-          <TouchableOpacity
-            onPress={() => setMustChangePassword(!mustChangePassword)}
-            className="bg-surface border border-border rounded-lg p-4"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-foreground">Require Password Reset</Text>
-                <Text className="text-sm text-muted mt-1">
-                  Force this staff member to set a new password at next login
-                </Text>
-              </View>
-              <View
-                className={`w-12 h-7 rounded-full p-1 ${mustChangePassword ? "bg-primary" : "bg-border"}`}
-              >
+          {isAdmin && (
+            <TouchableOpacity
+              onPress={() => setMustChangePassword(!mustChangePassword)}
+              className="bg-surface border border-border rounded-lg p-4"
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground">Require Password Reset</Text>
+                  <Text className="text-sm text-muted mt-1">
+                    Force this staff member to set a new password at next login
+                  </Text>
+                </View>
                 <View
-                  className={`w-5 h-5 rounded-full bg-background ${mustChangePassword ? "ml-auto" : ""}`}
-                />
+                  className={`w-12 h-7 rounded-full p-1 ${mustChangePassword ? "bg-primary" : "bg-border"}`}
+                >
+                  <View
+                    className={`w-5 h-5 rounded-full bg-background ${mustChangePassword ? "ml-auto" : ""}`}
+                  />
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
 
           {/* VIP Toggle */}
-          <TouchableOpacity
-            onPress={() => setIsVipRated(!isVipRated)}
-            className="bg-surface border border-border rounded-lg p-4"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-foreground">VIP Rated</Text>
-                <Text className="text-sm text-muted mt-1">
-                  Can create folders for VIP clients
-                </Text>
-              </View>
-              <View
-                className={`w-12 h-7 rounded-full p-1 ${
-                  isVipRated ? "bg-warning" : "bg-border"
-                }`}
-              >
+          {isAdmin && (
+            <TouchableOpacity
+              onPress={() => setIsVipRated(!isVipRated)}
+              className="bg-surface border border-border rounded-lg p-4"
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground">VIP Rated</Text>
+                  <Text className="text-sm text-muted mt-1">
+                    Can create folders for VIP clients
+                  </Text>
+                </View>
                 <View
-                  className={`w-5 h-5 rounded-full bg-background ${
-                    isVipRated ? "ml-auto" : ""
+                  className={`w-12 h-7 rounded-full p-1 ${
+                    isVipRated ? "bg-warning" : "bg-border"
                   }`}
-                />
+                >
+                  <View
+                    className={`w-5 h-5 rounded-full bg-background ${
+                      isVipRated ? "ml-auto" : ""
+                    }`}
+                  />
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
 
           <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
             <Text className="text-base font-semibold text-foreground">Preferences</Text>
@@ -508,9 +556,10 @@ export default function AdminStaffEditScreen() {
           </View>
 
           {/* Role Selection */}
-          <View>
-            <Text className="text-sm font-semibold text-foreground mb-2">Role *</Text>
-            <View className="gap-2">
+          {isAdmin && (
+            <View>
+              <Text className="text-sm font-semibold text-foreground mb-2">Role *</Text>
+              <View className="gap-2">
               <TouchableOpacity
                 onPress={() => setRole("admin")}
                 className={`border rounded-lg p-4 ${
@@ -553,9 +602,11 @@ export default function AdminStaffEditScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
+            </View>
+          )}
 
           {/* Staff Organizational Assignment */}
+          {isAdmin && (
           <View className="mt-6">
             <Text className="text-lg font-bold text-foreground mb-2">Staff Organization Assignment</Text>
             <Text className="text-sm text-muted mb-4">
@@ -630,6 +681,7 @@ export default function AdminStaffEditScreen() {
               </View>
             )}
           </View>
+          )}
 
 
         </View>
@@ -647,7 +699,7 @@ export default function AdminStaffEditScreen() {
               <ActivityIndicator color="#ffffff" />
             ) : (
               <Text className="text-background font-semibold text-center text-lg">
-                Save Changes
+                {isSelfServiceProfile ? "Save Profile" : "Save Changes"}
               </Text>
             )}
           </TouchableOpacity>
@@ -660,21 +712,23 @@ export default function AdminStaffEditScreen() {
             <Text className="text-foreground font-semibold text-center text-lg">Cancel</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleDelete}
-            disabled={updateStaff.isPending || deleteStaff.isPending}
-            className={`rounded-lg p-4 ${
-              deleteStaff.isPending ? "bg-muted" : "bg-error"
-            }`}
-          >
-            {deleteStaff.isPending ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text className="text-background font-semibold text-center text-lg">
-                Delete Staff Member
-              </Text>
-            )}
-          </TouchableOpacity>
+          {isAdmin && (
+            <TouchableOpacity
+              onPress={handleDelete}
+              disabled={updateStaff.isPending || deleteStaff.isPending}
+              className={`rounded-lg p-4 ${
+                deleteStaff.isPending ? "bg-muted" : "bg-error"
+              }`}
+            >
+              {deleteStaff.isPending ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text className="text-background font-semibold text-center text-lg">
+                  Delete Staff Member
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
 
