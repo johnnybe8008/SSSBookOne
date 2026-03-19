@@ -28,10 +28,17 @@ const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
 const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
 
+const looksLikeJwt = (value: string) => value.split(".").length === 3;
+
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
     console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
+    if (ENV.oAuthServerUrl) {
+      return;
+    }
+    if (ENV.isProduction) {
+      console.warn("[OAuth] OAUTH_SERVER_URL is not configured. OAuth sign-in is disabled.");
+    } else {
       console.error(
         "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable.",
       );
@@ -182,7 +189,10 @@ class SDKServer {
     cookieValue: string | undefined | null,
   ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
+      return null;
+    }
+
+    if (!looksLikeJwt(cookieValue)) {
       return null;
     }
 
@@ -204,7 +214,9 @@ class SDKServer {
         name,
       };
     } catch (error) {
-      console.warn("[Auth] Session verification failed", String(error));
+      if (!ENV.isProduction) {
+        console.warn("[Auth] Session verification failed", String(error));
+      }
       return null;
     }
   }

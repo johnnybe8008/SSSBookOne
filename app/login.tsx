@@ -84,8 +84,12 @@ export default function LoginScreen() {
               placeholderTextColor="#9BA1A6"
               value={email}
               onChangeText={setEmail}
+              autoComplete="username"
               autoCapitalize="none"
+              autoCorrect={false}
               keyboardType="email-address"
+              textContentType="username"
+              importantForAutofill="yes"
               editable={!loading}
             />
           </View>
@@ -98,7 +102,11 @@ export default function LoginScreen() {
               placeholderTextColor="#9BA1A6"
               value={password}
               onChangeText={setPassword}
+              autoComplete="current-password"
+              autoCorrect={false}
               secureTextEntry
+              textContentType="password"
+              importantForAutofill="yes"
               editable={!loading}
             />
           </View>
