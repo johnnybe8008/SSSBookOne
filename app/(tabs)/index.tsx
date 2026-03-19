@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -23,6 +24,13 @@ export default function DashboardScreen() {
   const { canWrite } = useStaffRole();
   const router = useRouter();
   const staffId = staff?.id || 0;
+  const [mounted, setMounted] = useState(false);
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    setCurrentDate(new Date());
+  }, []);
 
   // Get upcoming sessions (next 7 days)
   const { data: upcomingSessions, isLoading: upcomingLoading } = trpc.sessions.upcoming.useQuery(
@@ -37,12 +45,11 @@ export default function DashboardScreen() {
   );
 
   // Get monthly billable hours
-  const currentDate = new Date();
   const { data: monthlyHours, isLoading: hoursLoading } = trpc.reports.monthlyBillableHours.useQuery(
     {
       staffId,
-      year: currentDate.getFullYear(),
-      month: currentDate.getMonth() + 1,
+      year: (currentDate || new Date()).getFullYear(),
+      month: (currentDate || new Date()).getMonth() + 1,
     },
     { enabled: !!staffId }
   );
@@ -56,6 +63,36 @@ export default function DashboardScreen() {
     if (fromSession) return fromSession;
     const fromLookup = (clientNameById.get(Number(session?.clientId)) || "").trim();
     return fromLookup || `Client #${session?.clientId}`;
+  };
+
+  const formatFullDate = (value: Date | string | null | undefined, fallback = "Loading...") => {
+    if (!mounted || !value) return fallback;
+    return new Date(value).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatMonthYear = (value: Date | null, fallback = "Current Month") => {
+    if (!mounted || !value) return fallback;
+    return value.toLocaleString("default", { month: "long", year: "numeric" });
+  };
+
+  const formatShortDateTime = (value: Date | string | null | undefined, fallback = "Loading...") => {
+    if (!mounted || !value) return fallback;
+    return new Date(value).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const formatDateOnly = (value: Date | string | null | undefined, fallback = "Loading...") => {
+    if (!mounted || !value) return fallback;
+    return new Date(value).toLocaleDateString();
   };
 
   // Show loading indicator while authenticating
@@ -88,7 +125,7 @@ export default function DashboardScreen() {
     );
   }
 
-  const currentMonth = currentDate.toLocaleString("default", { month: "long", year: "numeric" });
+  const currentMonth = formatMonthYear(currentDate);
 
   return (
     <ScreenContainer className="p-6">
@@ -105,7 +142,7 @@ export default function DashboardScreen() {
                 {staff?.role?.charAt(0).toUpperCase() + staff?.role?.slice(1)}
               </Text>
             )}
-            <Text className="text-sm text-muted mt-1">{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Text>
+            <Text className="text-sm text-muted mt-1">{formatFullDate(currentDate)}</Text>
           </View>
 
           {/* Monthly Billable Hours Summary */}
@@ -145,7 +182,7 @@ export default function DashboardScreen() {
                     <View className="flex-1">
                       <Text className="text-base font-medium text-foreground">{getClientLabel(session)}</Text>
                       <Text className="text-sm text-muted">
-                        {session.scheduledDate ? new Date(session.scheduledDate).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Not scheduled"}
+                        {session.scheduledDate ? formatShortDateTime(session.scheduledDate) : "Not scheduled"}
                       </Text>
                     </View>
                     <IconSymbol name="chevron.right" size={20} color={colors.muted} />
@@ -179,7 +216,7 @@ export default function DashboardScreen() {
                       <Text className="text-base font-medium text-foreground">{getClientLabel(session)}</Text>
                       <View className="flex-row items-center gap-2 mt-1">
                         <Text className="text-sm text-muted">
-                          {session.completedAt ? new Date(session.completedAt).toLocaleDateString() : "In progress"}
+                          {session.completedAt ? formatDateOnly(session.completedAt) : "In progress"}
                         </Text>
                         {session.billableHours && (
                           <Text className="text-sm font-medium text-primary">{session.billableHours} hrs</Text>
