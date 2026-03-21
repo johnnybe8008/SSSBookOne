@@ -27,6 +27,7 @@ export default function AddClientScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [mobileCountryIso, setMobileCountryIso] = useState<"US" | "ZA">("ZA");
   const [addressLine1, setAddressLine1] = useState("");
   const [city, setCity] = useState("");
   const [stateProvince, setStateProvince] = useState("");
@@ -374,6 +375,7 @@ export default function AddClientScreen() {
       stateProvince: stateProvince.trim() || undefined,
       postalCode: postalCode.trim() || undefined,
       mobilePhone: phone.trim() || undefined,
+      mobileCountryIso,
       email: email.trim() || undefined,
       title: title.trim() || undefined,
       occupation: occupation.trim() || undefined,
@@ -452,6 +454,20 @@ export default function AddClientScreen() {
             </View>
 
             {/* Phone Input */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-foreground mb-2">Mobile Country</Text>
+              <View className="bg-background border border-border rounded-xl overflow-hidden">
+                <Picker
+                  selectedValue={mobileCountryIso}
+                  onValueChange={(value) => setMobileCountryIso(value)}
+                  style={{ color: colors.foreground }}
+                >
+                  <Picker.Item label="South Africa (+27)" value="ZA" />
+                  <Picker.Item label="United States (+1)" value="US" />
+                </Picker>
+              </View>
+            </View>
+
             <View className="mb-4">
               <Text className="text-sm font-medium text-foreground mb-2">Phone</Text>
               <TextInput

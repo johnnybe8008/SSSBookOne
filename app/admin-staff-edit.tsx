@@ -29,6 +29,7 @@ export default function AdminStaffEditScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobilePhone, setMobilePhone] = useState("");
+  const [mobileCountryIso, setMobileCountryIso] = useState<"US" | "ZA">("ZA");
   const [homePhone, setHomePhone] = useState("");
   const [workPhone, setWorkPhone] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
@@ -105,6 +106,7 @@ export default function AdminStaffEditScreen() {
       setName(staff.name);
       setEmail(staff.email || "");
       setMobilePhone((staff as any).mobilePhone || (staff as any).phone || "");
+      setMobileCountryIso((staff as any).mobileCountryIso === "US" ? "US" : "ZA");
       setHomePhone((staff as any).homePhone || "");
       setWorkPhone((staff as any).workPhone || "");
       setAddressLine1((staff as any).addressLine1 || "");
@@ -202,6 +204,7 @@ export default function AdminStaffEditScreen() {
       email: email.trim().toLowerCase(),
       phone: mobilePhone.trim(),
       mobilePhone: mobilePhone.trim(),
+      mobileCountryIso,
       homePhone: homePhone.trim(),
       workPhone: workPhone.trim(),
       addressLine1: addressLine1.trim(),
@@ -226,6 +229,7 @@ export default function AdminStaffEditScreen() {
         email: payload.email,
         phone: payload.phone,
         mobilePhone: payload.mobilePhone,
+        mobileCountryIso: payload.mobileCountryIso,
         homePhone: payload.homePhone,
         workPhone: payload.workPhone,
         addressLine1: payload.addressLine1,
@@ -360,6 +364,20 @@ export default function AdminStaffEditScreen() {
           </View>
 
           {/* Contact Information */}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Mobile Country</Text>
+            <View className="bg-surface border border-border rounded-lg overflow-hidden">
+              <Picker
+                selectedValue={mobileCountryIso}
+                onValueChange={(value) => setMobileCountryIso(value)}
+                style={{ color: colors.foreground }}
+              >
+                <Picker.Item label="South Africa (+27)" value="ZA" />
+                <Picker.Item label="United States (+1)" value="US" />
+              </Picker>
+            </View>
+          </View>
+
           <View>
             <Text className="text-sm font-semibold text-foreground mb-2">Mobile Phone</Text>
             <TextInput

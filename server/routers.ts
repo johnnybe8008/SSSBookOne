@@ -9,6 +9,7 @@ import { createSession } from "./session-manager";
 import { processPendingNotifications, sendDirectNotification } from "./notification-dispatcher";
 import { resetDatabase } from "./reset-database";
 import { previewResetDatabase } from "./reset-database";
+import { normalizeMobileFields } from "./phone-utils";
 // import { importOrganizationalCSV, parseCSV } from "./csv-import";
 // import { importClientsFromCSV, parseClientCSV } from "./csv-import-clients";
 import { saveCompanyAsTemplate, applyTemplateToCompany, getAllTemplates, deleteTemplate, renameTemplate } from "./templates";
@@ -70,6 +71,14 @@ function pickPrimaryPhone(mobilePhone?: string, homePhone?: string, workPhone?: 
 
 function normalizeNotificationPreference(preference?: "sms" | "whatsapp" | null, mobilePhone?: string) {
   return mobilePhone?.trim() ? preference ?? undefined : undefined;
+}
+
+function buildMobilePhoneUpdates(input: { mobilePhone?: string; mobileCountryIso?: string | null }) {
+  const normalized = normalizeMobileFields(input);
+  return {
+    mobileCountryIso: normalized.mobileCountryIso,
+    mobilePhoneE164: normalized.mobilePhoneE164,
+  };
 }
 
 export const appRouter = router({
@@ -449,6 +458,7 @@ export const appRouter = router({
           phone: z.string().max(50).optional(),
           homePhone: z.string().max(50).optional(),
           mobilePhone: z.string().max(50).optional(),
+          mobileCountryIso: z.enum(["US", "ZA"]).optional(),
           workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           password: z.string().min(6),
@@ -471,6 +481,7 @@ export const appRouter = router({
           address: data.address ?? composeAddress(data.addressLine1, data.city, data.stateProvince, data.postalCode),
           phone: pickPrimaryPhone(data.mobilePhone, data.homePhone, data.workPhone, data.phone),
           notificationPreference: normalizeNotificationPreference(data.notificationPreference, data.mobilePhone),
+          ...buildMobilePhoneUpdates(data),
           organizationId: organizationId ?? groupId,
         });
       }),
@@ -491,6 +502,7 @@ export const appRouter = router({
           phone: z.string().max(50).optional(),
           homePhone: z.string().max(50).optional(),
           mobilePhone: z.string().max(50).optional(),
+          mobileCountryIso: z.enum(["US", "ZA"]).optional(),
           workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           password: z.string().min(1).optional(),
@@ -510,6 +522,7 @@ export const appRouter = router({
           address: data.address ?? composeAddress(data.addressLine1, data.city, data.stateProvince, data.postalCode),
           phone: pickPrimaryPhone(data.mobilePhone, data.homePhone, data.workPhone, data.phone),
           notificationPreference: normalizeNotificationPreference(data.notificationPreference, data.mobilePhone),
+          ...buildMobilePhoneUpdates(data),
           organizationId: organizationId ?? groupId,
         };
 
@@ -533,6 +546,7 @@ export const appRouter = router({
           phone: z.string().max(50).optional(),
           homePhone: z.string().max(50).optional(),
           mobilePhone: z.string().max(50).optional(),
+          mobileCountryIso: z.enum(["US", "ZA"]).optional(),
           workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           password: z.string().min(1).optional(),
@@ -550,6 +564,7 @@ export const appRouter = router({
           address: input.address ?? composeAddress(input.addressLine1, input.city, input.stateProvince, input.postalCode),
           phone: pickPrimaryPhone(input.mobilePhone, input.homePhone, input.workPhone, input.phone),
           notificationPreference: normalizeNotificationPreference(input.notificationPreference, input.mobilePhone),
+          ...buildMobilePhoneUpdates(input),
           updatedBy: ctx.user.id,
         };
 
@@ -836,6 +851,7 @@ export const appRouter = router({
           postalCode: z.string().optional(),
           homePhone: z.string().max(50).optional(),
           mobilePhone: z.string().max(50).optional(),
+          mobileCountryIso: z.enum(["US", "ZA"]).optional(),
           workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           occupation: z.string().max(255).optional(),
@@ -856,6 +872,7 @@ export const appRouter = router({
         db.createClient({
           ...input,
           notificationPreference: normalizeNotificationPreference(input.notificationPreference, input.mobilePhone),
+          ...buildMobilePhoneUpdates(input),
         })
       ),
     update: writeAccessProcedure
@@ -875,6 +892,7 @@ export const appRouter = router({
           postalCode: z.string().optional(),
           homePhone: z.string().max(50).optional(),
           mobilePhone: z.string().max(50).optional(),
+          mobileCountryIso: z.enum(["US", "ZA"]).optional(),
           workPhone: z.string().max(50).optional(),
           email: z.string().email().optional(),
           occupation: z.string().max(255).optional(),
@@ -894,6 +912,7 @@ export const appRouter = router({
         const { id, dateOfBirth, ...data } = input;
         const updates: any = { ...data };
         updates.notificationPreference = normalizeNotificationPreference(data.notificationPreference, data.mobilePhone);
+        Object.assign(updates, buildMobilePhoneUpdates(data));
         if (dateOfBirth) {
           updates.dateOfBirth = dateOfBirth.slice(0, 10);
         }
@@ -1262,6 +1281,67 @@ export const appRouter = router({
         const { id, ...data } = input;
         return db.updateNotification(id, data);
       }),
+  }),
+  messagingProviders: router({
+    list: adminOnlyProcedure.query(() => db.getMessagingProviders()),
+    get: adminOnlyProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getMessagingProviderById(input.id)),
+    create: adminOnlyProcedure
+      .input(
+        z.object({
+          name: z.string().min(1).max(255),
+          providerType: z.enum(["twilio", "clickatell"]),
+          isActive: z.number().default(1),
+          isDefault: z.number().default(0),
+          credentials: z.object({
+            accountSid: z.string().optional(),
+            authToken: z.string().optional(),
+            fromNumber: z.string().optional(),
+            whatsappFrom: z.string().optional(),
+            apiKey: z.string().optional(),
+          }),
+          settings: z.object({
+            defaultCountryIso: z.enum(["US", "ZA"]).optional(),
+            whatsappTemplateNameStaff: z.string().optional(),
+            whatsappTemplateNameClient: z.string().optional(),
+            whatsappTemplateLanguage: z.string().optional(),
+          }).optional(),
+          createdBy: z.number(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => db.createMessagingProvider(input)),
+    update: adminOnlyProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).max(255).optional(),
+          providerType: z.enum(["twilio", "clickatell"]).optional(),
+          isActive: z.number().optional(),
+          isDefault: z.number().optional(),
+          credentials: z.object({
+            accountSid: z.string().optional(),
+            authToken: z.string().optional(),
+            fromNumber: z.string().optional(),
+            whatsappFrom: z.string().optional(),
+            apiKey: z.string().optional(),
+          }).optional(),
+          settings: z.object({
+            defaultCountryIso: z.enum(["US", "ZA"]).optional(),
+            whatsappTemplateNameStaff: z.string().optional(),
+            whatsappTemplateNameClient: z.string().optional(),
+            whatsappTemplateLanguage: z.string().optional(),
+          }).optional(),
+          updatedBy: z.number(),
+        })
+      )
+      .mutation(({ input }) => {
+        const { id, ...data } = input;
+        return db.updateMessagingProvider(id, data);
+      }),
+    setDefault: adminOnlyProcedure
+      .input(z.object({ id: z.number(), updatedBy: z.number() }))
+      .mutation(({ input }) => db.setDefaultMessagingProvider(input.id, input.updatedBy)),
+    delete: adminOnlyProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteMessagingProvider(input.id)),
   }),
   reports: router({
     billableHoursByStaff: protectedProcedure

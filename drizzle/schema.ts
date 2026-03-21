@@ -117,6 +117,8 @@ export const staff = mysqlTable("staff", {
   phone: varchar("phone", { length: 50 }),
   homePhone: varchar("homePhone", { length: 50 }),
   mobilePhone: varchar("mobilePhone", { length: 50 }),
+  mobileCountryIso: varchar("mobileCountryIso", { length: 2 }),
+  mobilePhoneE164: varchar("mobilePhoneE164", { length: 20 }),
   workPhone: varchar("workPhone", { length: 50 }),
   email: varchar("email", { length: 320 }),
   passwordHash: varchar("passwordHash", { length: 255 }),
@@ -206,6 +208,8 @@ export const clients = mysqlTable("clients", {
   postalCode: varchar("postalCode", { length: 30 }),
   homePhone: varchar("homePhone", { length: 50 }),
   mobilePhone: varchar("mobilePhone", { length: 50 }),
+  mobileCountryIso: varchar("mobileCountryIso", { length: 2 }),
+  mobilePhoneE164: varchar("mobilePhoneE164", { length: 20 }),
   workPhone: varchar("workPhone", { length: 50 }),
   email: varchar("email", { length: 320 }),
   occupation: varchar("occupation", { length: 255 }),
@@ -343,6 +347,20 @@ export const notifications = mysqlTable("notifications", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const messagingProviders = mysqlTable("messagingProviders", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  providerType: mysqlEnum("providerType", ["twilio", "clickatell"]).notNull(),
+  isActive: int("isActive").notNull().default(1),
+  isDefault: int("isDefault").notNull().default(0),
+  credentials: json("credentials").notNull(),
+  settings: json("settings"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdBy: int("createdBy").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: int("updatedBy").notNull(),
+});
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -388,3 +406,6 @@ export type InsertSession = typeof sessions.$inferInsert;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+export type MessagingProvider = typeof messagingProviders.$inferSelect;
+export type InsertMessagingProvider = typeof messagingProviders.$inferInsert;

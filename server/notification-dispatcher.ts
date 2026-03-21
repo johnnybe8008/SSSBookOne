@@ -1,36 +1,39 @@
 import * as db from "./db";
+import { normalizeCountryIso, normalizePhoneToE164 } from "./phone-utils";
 
 type RecipientType = "staff" | "client";
 type NotificationType = "sms" | "whatsapp";
 
-const getTwilioConfig = () => {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
-  const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER?.trim();
-  const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM?.trim();
+type MessagingProviderRecord = Awaited<ReturnType<typeof db.getDefaultMessagingProvider>>;
 
-  if (!accountSid || !authToken || !fromNumber) {
-    return null;
-  }
-
-  return { accountSid, authToken, fromNumber, whatsappFrom };
+type ProviderCredentials = {
+  accountSid?: string;
+  authToken?: string;
+  fromNumber?: string;
+  whatsappFrom?: string;
+  apiKey?: string;
 };
 
-const toE164 = (value: string | null | undefined) => {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (trimmed.startsWith("+")) return trimmed;
-
-  const digits = trimmed.replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return null;
+type ProviderSettings = {
+  defaultCountryIso?: "US" | "ZA";
+  whatsappTemplateNameStaff?: string;
+  whatsappTemplateNameClient?: string;
+  whatsappTemplateLanguage?: string;
 };
 
-const getRecipientPhone = (recipientType: RecipientType, record: any) => {
+const getProviderCredentials = (provider: MessagingProviderRecord): ProviderCredentials =>
+  (provider?.credentials as ProviderCredentials | null) || {};
+
+const getProviderSettings = (provider: MessagingProviderRecord): ProviderSettings =>
+  (provider?.settings as ProviderSettings | null) || {};
+
+const getRecipientPhone = (provider: MessagingProviderRecord, record: any) => {
   if (!record) return null;
-  return toE164(record.mobilePhone);
+  if (record.mobilePhoneE164) return record.mobilePhoneE164;
+
+  const settings = getProviderSettings(provider);
+  const countryIso = normalizeCountryIso(record.mobileCountryIso || settings.defaultCountryIso);
+  return normalizePhoneToE164(record.mobilePhone, countryIso);
 };
 
 const formatWhen = (value: Date | string | null | undefined) => {
@@ -68,15 +71,15 @@ const buildMessage = ({
   return `Your session with ${staffName} is scheduled for ${when}.`;
 };
 
-async function sendSms(to: string, body: string) {
-  const config = getTwilioConfig();
-  if (!config) {
-    throw new Error("Twilio is not configured");
+async function sendViaTwilioSms(provider: MessagingProviderRecord, to: string, body: string) {
+  const credentials = getProviderCredentials(provider);
+  if (!credentials.accountSid || !credentials.authToken || !credentials.fromNumber) {
+    throw new Error("Default Twilio provider is missing SMS credentials");
   }
 
-  const authHeader = Buffer.from(`${config.accountSid}:${config.authToken}`).toString("base64");
+  const authHeader = Buffer.from(`${credentials.accountSid}:${credentials.authToken}`).toString("base64");
   const response = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${config.accountSid}/Messages.json`,
+    `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Messages.json`,
     {
       method: "POST",
       headers: {
@@ -84,7 +87,7 @@ async function sendSms(to: string, body: string) {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        From: config.fromNumber,
+        From: credentials.fromNumber,
         To: to,
         Body: body,
       }).toString(),
@@ -93,24 +96,21 @@ async function sendSms(to: string, body: string) {
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(`Twilio send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
+    throw new Error(`Twilio SMS send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
   }
 
   return response.json().catch(() => ({}));
 }
 
-async function sendWhatsapp(to: string, body: string) {
-  const config = getTwilioConfig();
-  if (!config) {
-    throw new Error("Twilio is not configured");
-  }
-  if (!config.whatsappFrom) {
-    throw new Error("Twilio WhatsApp sender is not configured");
+async function sendViaTwilioWhatsapp(provider: MessagingProviderRecord, to: string, body: string) {
+  const credentials = getProviderCredentials(provider);
+  if (!credentials.accountSid || !credentials.authToken || !credentials.whatsappFrom) {
+    throw new Error("Default Twilio provider is missing WhatsApp credentials");
   }
 
-  const authHeader = Buffer.from(`${config.accountSid}:${config.authToken}`).toString("base64");
+  const authHeader = Buffer.from(`${credentials.accountSid}:${credentials.authToken}`).toString("base64");
   const response = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${config.accountSid}/Messages.json`,
+    `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/Messages.json`,
     {
       method: "POST",
       headers: {
@@ -118,7 +118,7 @@ async function sendWhatsapp(to: string, body: string) {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        From: config.whatsappFrom,
+        From: credentials.whatsappFrom,
         To: `whatsapp:${to}`,
         Body: body,
       }).toString(),
@@ -131,6 +131,114 @@ async function sendWhatsapp(to: string, body: string) {
   }
 
   return response.json().catch(() => ({}));
+}
+
+async function sendViaClickatellSms(provider: MessagingProviderRecord, to: string, body: string) {
+  const credentials = getProviderCredentials(provider);
+  if (!credentials.apiKey) {
+    throw new Error("Default Clickatell provider is missing API key");
+  }
+
+  const response = await fetch("https://platform.clickatell.com/messages", {
+    method: "POST",
+    headers: {
+      Authorization: credentials.apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content: body,
+      to: [to],
+      ...(credentials.fromNumber ? { from: credentials.fromNumber } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Clickatell SMS send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
+  }
+
+  return response.json().catch(() => ({}));
+}
+
+async function sendViaClickatellWhatsapp(
+  provider: MessagingProviderRecord,
+  to: string,
+  body: string,
+  recipientType: RecipientType,
+) {
+  const credentials = getProviderCredentials(provider);
+  const settings = getProviderSettings(provider);
+  const templateName =
+    recipientType === "staff" ? settings.whatsappTemplateNameStaff : settings.whatsappTemplateNameClient;
+
+  if (!credentials.apiKey) {
+    throw new Error("Default Clickatell provider is missing API key");
+  }
+  if (!templateName) {
+    throw new Error("Default Clickatell provider is missing WhatsApp template configuration");
+  }
+
+  const response = await fetch("https://platform.clickatell.com/v1/message", {
+    method: "POST",
+    headers: {
+      Authorization: credentials.apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messages: [
+        {
+          channel: "whatsapp",
+          to,
+          contentType: "template",
+          template: {
+            name: templateName,
+            language: settings.whatsappTemplateLanguage || "en",
+            body: {
+              parameters: {
+                "1": body,
+              },
+            },
+          },
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Clickatell WhatsApp send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
+  }
+
+  return response.json().catch(() => ({}));
+}
+
+async function sendSms(provider: MessagingProviderRecord, to: string, body: string) {
+  if (!provider) {
+    throw new Error("No active default messaging provider is configured");
+  }
+
+  if (provider.providerType === "clickatell") {
+    return sendViaClickatellSms(provider, to, body);
+  }
+
+  return sendViaTwilioSms(provider, to, body);
+}
+
+async function sendWhatsapp(
+  provider: MessagingProviderRecord,
+  to: string,
+  body: string,
+  recipientType: RecipientType,
+) {
+  if (!provider) {
+    throw new Error("No active default messaging provider is configured");
+  }
+
+  if (provider.providerType === "clickatell") {
+    return sendViaClickatellWhatsapp(provider, to, body, recipientType);
+  }
+
+  return sendViaTwilioWhatsapp(provider, to, body);
 }
 
 export async function sendDirectNotification(args: {
@@ -150,17 +258,19 @@ export async function sendDirectNotification(args: {
   if (!notificationType) {
     return { status: "skipped" as const, reason: "Recipient notification preference is not set" };
   }
-  const recipientPhone = getRecipientPhone(recipientType, recipientRecord);
+
+  const provider = await db.getDefaultMessagingProvider();
+  const recipientPhone = getRecipientPhone(provider, recipientRecord);
   if (!recipientPhone) {
     return { status: "failed" as const, reason: "Recipient phone number is missing or invalid" };
   }
 
   if (notificationType === "whatsapp") {
-    await sendWhatsapp(recipientPhone, message);
+    await sendWhatsapp(provider, recipientPhone, message, recipientType);
     return { status: "sent" as const, channel: "whatsapp" as const };
   }
 
-  await sendSms(recipientPhone, message);
+  await sendSms(provider, recipientPhone, message);
   return { status: "sent" as const, channel: "sms" as const };
 }
 
@@ -171,8 +281,8 @@ export async function processPendingNotifications() {
     return;
   }
 
-  const config = getTwilioConfig();
-  if (!config) {
+  const provider = await db.getDefaultMessagingProvider();
+  if (!provider) {
     return;
   }
 
@@ -181,14 +291,6 @@ export async function processPendingNotifications() {
     const pending = await db.getPendingNotifications();
     for (const notification of pending) {
       try {
-        if (notification.notificationType !== "sms") {
-          await db.updateNotification(notification.id, {
-            status: "skipped",
-            skipReason: `Unsupported notification type: ${notification.notificationType}`,
-          });
-          continue;
-        }
-
         const session = await db.getSessionById(notification.sessionId);
         if (!session) {
           await db.updateNotification(notification.id, {
@@ -202,7 +304,7 @@ export async function processPendingNotifications() {
         const clientRecord = await db.getClientById(session.clientId);
         const recipientRecord =
           notification.recipientType === "staff" ? staffRecord : clientRecord;
-        const recipientPhone = getRecipientPhone(notification.recipientType as RecipientType, recipientRecord);
+        const recipientPhone = getRecipientPhone(provider, recipientRecord);
 
         if (!recipientPhone) {
           await db.updateNotification(notification.id, {
@@ -219,7 +321,18 @@ export async function processPendingNotifications() {
           staffRecord,
         });
 
-        await sendSms(recipientPhone, body);
+        if (notification.notificationType === "whatsapp") {
+          await sendWhatsapp(provider, recipientPhone, body, notification.recipientType as RecipientType);
+        } else if (notification.notificationType === "sms") {
+          await sendSms(provider, recipientPhone, body);
+        } else {
+          await db.updateNotification(notification.id, {
+            status: "skipped",
+            skipReason: `Unsupported notification type: ${notification.notificationType}`,
+          });
+          continue;
+        }
+
         await db.updateNotification(notification.id, {
           status: "sent",
           sentAt: new Date(),

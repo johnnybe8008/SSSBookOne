@@ -27,6 +27,7 @@ export default function EditClientScreen() {
     stateProvince: "",
     postalCode: "",
     mobilePhone: "",
+    mobileCountryIso: "ZA" as "US" | "ZA",
     homePhone: "",
     workPhone: "",
     email: "",
@@ -201,6 +202,7 @@ export default function EditClientScreen() {
       stateProvince: (client as any).stateProvince || "",
       postalCode: (client as any).postalCode || "",
       mobilePhone: client.mobilePhone || "",
+      mobileCountryIso: (client as any).mobileCountryIso === "US" ? "US" : "ZA",
       homePhone: client.homePhone || "",
       workPhone: client.workPhone || "",
       email: client.email || "",
@@ -272,6 +274,7 @@ export default function EditClientScreen() {
       stateProvince: formData.stateProvince.trim() || undefined,
       postalCode: formData.postalCode.trim() || undefined,
       mobilePhone: formData.mobilePhone.trim() || undefined,
+      mobileCountryIso: formData.mobileCountryIso,
       homePhone: formData.homePhone.trim() || undefined,
       workPhone: formData.workPhone.trim() || undefined,
       email: formData.email.trim() || undefined,
@@ -364,6 +367,20 @@ export default function EditClientScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+            </View>
+
+            <View>
+              <Text className="text-sm font-medium text-foreground mb-2">Mobile Country</Text>
+              <View className="bg-background border border-border rounded-xl overflow-hidden">
+                <Picker
+                  selectedValue={formData.mobileCountryIso}
+                  onValueChange={(value) => setFormData({ ...formData, mobileCountryIso: value })}
+                  style={{ color: colors.foreground }}
+                >
+                  <Picker.Item label="South Africa (+27)" value="ZA" />
+                  <Picker.Item label="United States (+1)" value="US" />
+                </Picker>
+              </View>
             </View>
 
             <View>

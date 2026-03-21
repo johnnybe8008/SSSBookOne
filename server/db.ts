@@ -170,7 +170,7 @@ export async function deleteStaff(id: number) {
 }
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { organizations, staffDepartments, teams, staff, companies, divisions, departments, companyTeams, clients, fsms, caseFolders, sessions, sessionTypes, sessionStatuses, sessionResults } from "../drizzle/schema";
+import { organizations, staffDepartments, teams, staff, companies, divisions, departments, companyTeams, clients, fsms, caseFolders, sessions, sessionTypes, sessionStatuses, sessionResults, messagingProviders } from "../drizzle/schema";
 // Create a new client company
 export async function createCompany(input) {
   const db = await getDb();
@@ -968,6 +968,63 @@ export async function updateNotification(id: number, data: any) {
   const db = await getDb();
   const { id: _id, ...updateData } = data;
   await db.update(notifications).set(updateData).where(eq(notifications.id, id));
+  return { success: true };
+}
+
+export async function getMessagingProviders() {
+  const db = await getDb();
+  return db.select().from(messagingProviders).orderBy(desc(messagingProviders.isDefault), messagingProviders.name);
+}
+
+export async function getMessagingProviderById(id: number) {
+  const db = await getDb();
+  const [provider] = await db.select().from(messagingProviders).where(eq(messagingProviders.id, id)).limit(1);
+  return provider || null;
+}
+
+export async function getDefaultMessagingProvider() {
+  const db = await getDb();
+  const [provider] = await db
+    .select()
+    .from(messagingProviders)
+    .where(and(eq(messagingProviders.isDefault, 1), eq(messagingProviders.isActive, 1)))
+    .limit(1);
+  return provider || null;
+}
+
+export async function createMessagingProvider(input: any) {
+  const db = await getDb();
+  const { id, ...data } = input;
+  if (data.isDefault) {
+    await db.update(messagingProviders).set({ isDefault: 0 });
+  }
+  const [result] = await db.insert(messagingProviders).values(data);
+  return { id: result.insertId, ...data };
+}
+
+export async function updateMessagingProvider(id: number, data: any) {
+  const db = await getDb();
+  const { id: _id, ...updateData } = data;
+  if (updateData.isDefault) {
+    await db.update(messagingProviders).set({ isDefault: 0 });
+  }
+  await db.update(messagingProviders).set(updateData).where(eq(messagingProviders.id, id));
+  return { success: true };
+}
+
+export async function setDefaultMessagingProvider(id: number, updatedBy: number) {
+  const db = await getDb();
+  await db.update(messagingProviders).set({ isDefault: 0, updatedBy });
+  await db
+    .update(messagingProviders)
+    .set({ isDefault: 1, updatedBy })
+    .where(eq(messagingProviders.id, id));
+  return { success: true };
+}
+
+export async function deleteMessagingProvider(id: number) {
+  const db = await getDb();
+  await db.delete(messagingProviders).where(eq(messagingProviders.id, id));
   return { success: true };
 }
 

@@ -13,6 +13,7 @@ export default function AdminStaffAddScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobilePhone, setMobilePhone] = useState("");
+  const [mobileCountryIso, setMobileCountryIso] = useState<"US" | "ZA">("ZA");
   const [homePhone, setHomePhone] = useState("");
   const [workPhone, setWorkPhone] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
@@ -80,6 +81,7 @@ export default function AdminStaffAddScreen() {
       email: email.trim().toLowerCase(),
       phone: mobilePhone.trim(),
       mobilePhone: mobilePhone.trim(),
+      mobileCountryIso,
       homePhone: homePhone.trim(),
       workPhone: workPhone.trim(),
       addressLine1: addressLine1.trim(),
@@ -195,6 +197,16 @@ export default function AdminStaffAddScreen() {
           </View>
 
           {/* Contact Information */}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Mobile Country</Text>
+            <View className="bg-surface border border-border rounded-lg overflow-hidden">
+              <Picker selectedValue={mobileCountryIso} onValueChange={(value) => setMobileCountryIso(value)}>
+                <Picker.Item label="South Africa (+27)" value="ZA" />
+                <Picker.Item label="United States (+1)" value="US" />
+              </Picker>
+            </View>
+          </View>
+
           <View>
             <Text className="text-sm font-semibold text-foreground mb-2">Mobile Phone</Text>
             <TextInput
