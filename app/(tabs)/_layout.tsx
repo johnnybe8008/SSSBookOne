@@ -3,14 +3,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Platform } from "react-native";
+import { Platform, Text } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 8 : Math.max(insets.bottom, 6);
-  const tabBarHeight = 50 + bottomPadding;
+  const tabBarHeight = 60 + bottomPadding;
 
   return (
     <Tabs
@@ -18,6 +18,21 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.tint,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarShowLabel: true,
+        tabBarLabelPosition: "below-icon",
+        tabBarLabel: ({ color, children }) => (
+          <Text
+            style={{
+              color: typeof color === "string" ? color : colors.foreground,
+              fontSize: 10,
+              fontWeight: "600",
+              marginBottom: 2,
+            }}
+            numberOfLines={1}
+          >
+            {children}
+          </Text>
+        ),
         tabBarStyle: {
           paddingTop: 4,
           paddingBottom: bottomPadding,
@@ -26,12 +41,8 @@ export default function TabLayout() {
           borderTopColor: colors.border,
           borderTopWidth: 0.5,
         },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: "600",
-          marginBottom: 2,
-        },
         tabBarItemStyle: {
+          minWidth: 0,
           paddingVertical: 2,
         },
       }}
