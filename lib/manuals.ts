@@ -164,6 +164,18 @@ export const adminManual: ManualDefinition = {
       ],
     },
     {
+      title: "Manage SMS Providers",
+      screenshot: "Add screenshot: More tab admin section and Manage SMS Providers screen with provider form.",
+      body: [
+        "Open More, then select Manage SMS Providers to configure the active messaging service.",
+        "Create either a CM.com or Twilio provider record and mark one provider as the default.",
+        "For CM.com, enter the product token, SMS from number, WhatsApp from number, template namespace, staff template name, client template name, and the WhatsApp template language code such as en_US.",
+        "For Twilio, enter the account SID, auth token, SMS from number, and WhatsApp from value if WhatsApp is enabled there.",
+        "The default mobile country setting controls how local mobile numbers are normalized before sending, so use South Africa for production unless a different country is required.",
+        "After changing provider credentials, send a manual test message and confirm scheduled reminders still deliver as expected.",
+      ],
+    },
+    {
       title: "CSV Import and Export",
       screenshot: "Add screenshot: More tab or admin import/export entry points.",
       body: [

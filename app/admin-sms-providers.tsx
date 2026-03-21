@@ -25,7 +25,7 @@ const emptyForm = {
   whatsappTemplateNameStaff: "",
   whatsappTemplateNameClient: "",
   whatsappTemplateNamespace: "",
-  whatsappTemplateLanguage: "en",
+  whatsappTemplateLanguage: "en_US",
 };
 
 export default function AdminSmsProvidersScreen() {
@@ -98,7 +98,7 @@ export default function AdminSmsProvidersScreen() {
       whatsappTemplateNameStaff: settings.whatsappTemplateNameStaff || "",
       whatsappTemplateNameClient: settings.whatsappTemplateNameClient || "",
       whatsappTemplateNamespace: settings.whatsappTemplateNamespace || "",
-      whatsappTemplateLanguage: settings.whatsappTemplateLanguage || "en",
+      whatsappTemplateLanguage: settings.whatsappTemplateLanguage || "en_US",
     });
   };
 
@@ -311,11 +311,12 @@ export default function AdminSmsProvidersScreen() {
                   />
                   <TextInput
                     className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                    placeholder="WhatsApp Template Language"
+                    placeholder="WhatsApp Template Language Code"
                     placeholderTextColor={colors.muted}
                     value={formData.whatsappTemplateLanguage}
                     onChangeText={(text) => setFormData({ ...formData, whatsappTemplateLanguage: text })}
                   />
+                  <Text className="text-xs text-muted -mt-1">Use the template language code from CM.com or Meta, for example `en_US`.</Text>
                 </>
               )}
 
