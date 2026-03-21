@@ -8,12 +8,12 @@ import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
 
-type ProviderType = "twilio" | "clickatell";
+type ProviderType = "twilio" | "cm";
 type CountryIso = "US" | "ZA";
 
 const emptyForm = {
   name: "",
-  providerType: "clickatell" as ProviderType,
+  providerType: "cm" as ProviderType,
   isActive: 1,
   isDefault: 0,
   defaultCountryIso: "ZA" as CountryIso,
@@ -21,9 +21,10 @@ const emptyForm = {
   authToken: "",
   fromNumber: "",
   whatsappFrom: "",
-  apiKey: "",
+  productToken: "",
   whatsappTemplateNameStaff: "",
   whatsappTemplateNameClient: "",
+  whatsappTemplateNamespace: "",
   whatsappTemplateLanguage: "en",
 };
 
@@ -85,7 +86,7 @@ export default function AdminSmsProvidersScreen() {
     setIsAdding(false);
     setFormData({
       name: provider.name || "",
-      providerType: provider.providerType || "clickatell",
+      providerType: provider.providerType || "cm",
       isActive: provider.isActive ?? 1,
       isDefault: provider.isDefault ?? 0,
       defaultCountryIso: settings.defaultCountryIso || "ZA",
@@ -93,9 +94,10 @@ export default function AdminSmsProvidersScreen() {
       authToken: credentials.authToken || "",
       fromNumber: credentials.fromNumber || "",
       whatsappFrom: credentials.whatsappFrom || "",
-      apiKey: credentials.apiKey || "",
+      productToken: credentials.productToken || "",
       whatsappTemplateNameStaff: settings.whatsappTemplateNameStaff || "",
       whatsappTemplateNameClient: settings.whatsappTemplateNameClient || "",
+      whatsappTemplateNamespace: settings.whatsappTemplateNamespace || "",
       whatsappTemplateLanguage: settings.whatsappTemplateLanguage || "en",
     });
   };
@@ -110,10 +112,11 @@ export default function AdminSmsProvidersScreen() {
       authToken: formData.authToken.trim() || undefined,
       fromNumber: formData.fromNumber.trim() || undefined,
       whatsappFrom: formData.whatsappFrom.trim() || undefined,
-      apiKey: formData.apiKey.trim() || undefined,
+      productToken: formData.productToken.trim() || undefined,
     },
     settings: {
       defaultCountryIso: formData.defaultCountryIso,
+      whatsappTemplateNamespace: formData.whatsappTemplateNamespace.trim() || undefined,
       whatsappTemplateNameStaff: formData.whatsappTemplateNameStaff.trim() || undefined,
       whatsappTemplateNameClient: formData.whatsappTemplateNameClient.trim() || undefined,
       whatsappTemplateLanguage: formData.whatsappTemplateLanguage.trim() || undefined,
@@ -133,8 +136,8 @@ export default function AdminSmsProvidersScreen() {
       Alert.alert("Validation Error", "Twilio requires Account SID, Auth Token, and From Number");
       return;
     }
-    if (formData.providerType === "clickatell" && !formData.apiKey.trim()) {
-      Alert.alert("Validation Error", "Clickatell requires an API key");
+    if (formData.providerType === "cm" && !formData.productToken.trim()) {
+      Alert.alert("Validation Error", "CM.com requires a product token");
       return;
     }
 
@@ -196,7 +199,7 @@ export default function AdminSmsProvidersScreen() {
                 <Text className="text-sm font-medium text-foreground mb-2">Provider Name *</Text>
                 <TextInput
                   className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                  placeholder="Production Clickatell"
+                  placeholder="Production CM.com"
                   placeholderTextColor={colors.muted}
                   value={formData.name}
                   onChangeText={(text) => setFormData({ ...formData, name: text })}
@@ -211,7 +214,7 @@ export default function AdminSmsProvidersScreen() {
                     onValueChange={(value) => setFormData({ ...formData, providerType: value })}
                     style={{ color: colors.foreground }}
                   >
-                    <Picker.Item label="Clickatell" value="clickatell" />
+                    <Picker.Item label="CM.com" value="cm" />
                     <Picker.Item label="Twilio" value="twilio" />
                   </Picker>
                 </View>
@@ -266,17 +269,31 @@ export default function AdminSmsProvidersScreen() {
                 <>
                   <TextInput
                     className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                    placeholder="API Key"
+                    placeholder="Product Token"
                     placeholderTextColor={colors.muted}
-                    value={formData.apiKey}
-                    onChangeText={(text) => setFormData({ ...formData, apiKey: text })}
+                    value={formData.productToken}
+                    onChangeText={(text) => setFormData({ ...formData, productToken: text })}
                   />
                   <TextInput
                     className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                    placeholder="Optional SMS From Number"
+                    placeholder="SMS From Number"
                     placeholderTextColor={colors.muted}
                     value={formData.fromNumber}
                     onChangeText={(text) => setFormData({ ...formData, fromNumber: text })}
+                  />
+                  <TextInput
+                    className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="WhatsApp From Number"
+                    placeholderTextColor={colors.muted}
+                    value={formData.whatsappFrom}
+                    onChangeText={(text) => setFormData({ ...formData, whatsappFrom: text })}
+                  />
+                  <TextInput
+                    className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="WhatsApp Template Namespace"
+                    placeholderTextColor={colors.muted}
+                    value={formData.whatsappTemplateNamespace}
+                    onChangeText={(text) => setFormData({ ...formData, whatsappTemplateNamespace: text })}
                   />
                   <TextInput
                     className="bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground"
@@ -350,7 +367,7 @@ export default function AdminSmsProvidersScreen() {
                   <Text className="text-lg font-semibold text-foreground">{provider.name}</Text>
                   <Text className="text-xs text-muted mt-1">ID: {provider.id}</Text>
                   <Text className="text-sm text-muted mt-1">
-                    {provider.providerType === "clickatell" ? "Clickatell" : "Twilio"}{provider.isDefault ? " • Default" : ""}{provider.isActive ? " • Active" : " • Inactive"}
+                    {provider.providerType === "cm" ? "CM.com" : "Twilio"}{provider.isDefault ? " • Default" : ""}{provider.isActive ? " • Active" : " • Inactive"}
                   </Text>
                   {provider.settings?.defaultCountryIso && (
                     <Text className="text-sm text-muted mt-1">Default country: {provider.settings.defaultCountryIso}</Text>

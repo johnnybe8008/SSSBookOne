@@ -92,6 +92,13 @@
       "when": 1774100000000,
       "tag": "0019_messaging_providers",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1774200000000,
+      "tag": "0020_cm_provider_type",
+      "breakpoints": true
     }
   ]
 }

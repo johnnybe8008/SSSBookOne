@@ -1289,7 +1289,7 @@ export const appRouter = router({
       .input(
         z.object({
           name: z.string().min(1).max(255),
-          providerType: z.enum(["twilio", "clickatell"]),
+          providerType: z.enum(["twilio", "cm"]),
           isActive: z.number().default(1),
           isDefault: z.number().default(0),
           credentials: z.object({
@@ -1297,10 +1297,11 @@ export const appRouter = router({
             authToken: z.string().optional(),
             fromNumber: z.string().optional(),
             whatsappFrom: z.string().optional(),
-            apiKey: z.string().optional(),
+            productToken: z.string().optional(),
           }),
           settings: z.object({
             defaultCountryIso: z.enum(["US", "ZA"]).optional(),
+            whatsappTemplateNamespace: z.string().optional(),
             whatsappTemplateNameStaff: z.string().optional(),
             whatsappTemplateNameClient: z.string().optional(),
             whatsappTemplateLanguage: z.string().optional(),
@@ -1315,7 +1316,7 @@ export const appRouter = router({
         z.object({
           id: z.number(),
           name: z.string().min(1).max(255).optional(),
-          providerType: z.enum(["twilio", "clickatell"]).optional(),
+          providerType: z.enum(["twilio", "cm"]).optional(),
           isActive: z.number().optional(),
           isDefault: z.number().optional(),
           credentials: z.object({
@@ -1323,10 +1324,11 @@ export const appRouter = router({
             authToken: z.string().optional(),
             fromNumber: z.string().optional(),
             whatsappFrom: z.string().optional(),
-            apiKey: z.string().optional(),
+            productToken: z.string().optional(),
           }).optional(),
           settings: z.object({
             defaultCountryIso: z.enum(["US", "ZA"]).optional(),
+            whatsappTemplateNamespace: z.string().optional(),
             whatsappTemplateNameStaff: z.string().optional(),
             whatsappTemplateNameClient: z.string().optional(),
             whatsappTemplateLanguage: z.string().optional(),

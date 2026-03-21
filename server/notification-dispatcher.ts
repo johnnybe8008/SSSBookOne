@@ -11,11 +11,12 @@ type ProviderCredentials = {
   authToken?: string;
   fromNumber?: string;
   whatsappFrom?: string;
-  apiKey?: string;
+  productToken?: string;
 };
 
 type ProviderSettings = {
   defaultCountryIso?: "US" | "ZA";
+  whatsappTemplateNamespace?: string;
   whatsappTemplateNameStaff?: string;
   whatsappTemplateNameClient?: string;
   whatsappTemplateLanguage?: string;
@@ -133,34 +134,48 @@ async function sendViaTwilioWhatsapp(provider: MessagingProviderRecord, to: stri
   return response.json().catch(() => ({}));
 }
 
-async function sendViaClickatellSms(provider: MessagingProviderRecord, to: string, body: string) {
+function toCmNumber(value: string) {
+  return value.startsWith("+") ? `00${value.slice(1)}` : value;
+}
+
+async function sendViaCmSms(provider: MessagingProviderRecord, to: string, body: string) {
   const credentials = getProviderCredentials(provider);
-  if (!credentials.apiKey) {
-    throw new Error("Default Clickatell provider is missing API key");
+  if (!credentials.productToken || !credentials.fromNumber) {
+    throw new Error("Default CM.com provider is missing SMS credentials");
   }
 
-  const response = await fetch("https://platform.clickatell.com/messages", {
+  const response = await fetch("https://gw.messaging.cm.com/v1.0/message", {
     method: "POST",
     headers: {
-      Authorization: credentials.apiKey,
+      "X-CM-PRODUCTTOKEN": credentials.productToken,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      content: body,
-      to: [to],
-      ...(credentials.fromNumber ? { from: credentials.fromNumber } : {}),
+      messages: {
+        msg: [
+          {
+            from: credentials.fromNumber,
+            to: [{ number: toCmNumber(to) }],
+            body: {
+              type: "auto",
+              content: body,
+            },
+            allowedChannels: ["SMS"],
+          },
+        ],
+      },
     }),
   });
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(`Clickatell SMS send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
+    throw new Error(`CM.com SMS send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
   }
 
   return response.json().catch(() => ({}));
 }
 
-async function sendViaClickatellWhatsapp(
+async function sendViaCmWhatsapp(
   provider: MessagingProviderRecord,
   to: string,
   body: string,
@@ -171,42 +186,56 @@ async function sendViaClickatellWhatsapp(
   const templateName =
     recipientType === "staff" ? settings.whatsappTemplateNameStaff : settings.whatsappTemplateNameClient;
 
-  if (!credentials.apiKey) {
-    throw new Error("Default Clickatell provider is missing API key");
+  if (!credentials.productToken || !credentials.whatsappFrom) {
+    throw new Error("Default CM.com provider is missing WhatsApp credentials");
   }
-  if (!templateName) {
-    throw new Error("Default Clickatell provider is missing WhatsApp template configuration");
+  if (!settings.whatsappTemplateNamespace || !templateName) {
+    throw new Error("Default CM.com provider is missing WhatsApp template configuration");
   }
 
-  const response = await fetch("https://platform.clickatell.com/v1/message", {
+  const response = await fetch("https://gw.messaging.cm.com/v1.0/message", {
     method: "POST",
     headers: {
-      Authorization: credentials.apiKey,
+      "X-CM-PRODUCTTOKEN": credentials.productToken,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      messages: [
-        {
-          channel: "whatsapp",
-          to,
-          contentType: "template",
-          template: {
-            name: templateName,
-            language: settings.whatsappTemplateLanguage || "en",
+      messages: {
+        msg: [
+          {
+            from: credentials.whatsappFrom,
+            to: [{ number: toCmNumber(to) }],
             body: {
-              parameters: {
-                "1": body,
-              },
+              type: "auto",
+              content: body,
+            },
+            allowedChannels: ["WhatsApp"],
+            richContent: {
+              conversation: [
+                {
+                  template: {
+                    whatsapp: {
+                      namespace: settings.whatsappTemplateNamespace,
+                      element_name: templateName,
+                      language: {
+                        policy: "deterministic",
+                        code: settings.whatsappTemplateLanguage || "en",
+                      },
+                      localizable_params: [{ default: body }],
+                    },
+                  },
+                },
+              ],
             },
           },
-        },
-      ],
+        ],
+      },
     }),
   });
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(`Clickatell WhatsApp send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
+    throw new Error(`CM.com WhatsApp send failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ""}`);
   }
 
   return response.json().catch(() => ({}));
@@ -217,8 +246,8 @@ async function sendSms(provider: MessagingProviderRecord, to: string, body: stri
     throw new Error("No active default messaging provider is configured");
   }
 
-  if (provider.providerType === "clickatell") {
-    return sendViaClickatellSms(provider, to, body);
+  if (provider.providerType === "cm") {
+    return sendViaCmSms(provider, to, body);
   }
 
   return sendViaTwilioSms(provider, to, body);
@@ -234,8 +263,8 @@ async function sendWhatsapp(
     throw new Error("No active default messaging provider is configured");
   }
 
-  if (provider.providerType === "clickatell") {
-    return sendViaClickatellWhatsapp(provider, to, body, recipientType);
+  if (provider.providerType === "cm") {
+    return sendViaCmWhatsapp(provider, to, body, recipientType);
   }
 
   return sendViaTwilioWhatsapp(provider, to, body);

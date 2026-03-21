@@ -350,7 +350,7 @@ export const notifications = mysqlTable("notifications", {
 export const messagingProviders = mysqlTable("messagingProviders", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  providerType: mysqlEnum("providerType", ["twilio", "clickatell"]).notNull(),
+  providerType: mysqlEnum("providerType", ["twilio", "cm"]).notNull(),
   isActive: int("isActive").notNull().default(1),
   isDefault: int("isDefault").notNull().default(0),
   credentials: json("credentials").notNull(),
