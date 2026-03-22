@@ -2,182 +2,179 @@
 
 ## Purpose
 
-This manual is for administrators who manage staff, organization structures, reports, imports, exports, notifications, and maintenance tasks in SSS Book One.
+This manual is for administrators who manage staff, client organizations, lookup tables, reports, notifications, imports, exports, messaging providers, and maintenance tasks in SSS Book One.
 
-## 1. Admin Access
+## 1. Admin Role Overview
 
-Admins have additional access to:
+Admins can:
 
 - manage staff
-- manage client company structures
+- manage client organizations
 - manage lookup tables
-- open Reports & Analytics
-- use CSV import and export tools
-- reset the database
+- review reports and analytics
+- run imports and exports
+- manage messaging providers
+- use reset and maintenance tools
 - send manual messages to clients and staff
 
-> Screenshot placeholder: More tab showing Admin Functions.
+> Screenshot placeholder: More tab showing admin function entries.
 
 ## 2. Managing Staff
 
-Use the staff management screens to:
+Use Manage Staff to:
 
-- add new staff
-- edit existing staff
-- reset a staff password
+- add staff
+- edit staff
+- remove staff
+- assign role and organization structure
+- set initial passwords
 - force password reset at next login
-- assign organizational placement
-- control role and admin status
 
-Important rules:
+Key notes:
 
-- only admins can update staff records
-- entering a new password in the staff edit screen writes the password hash to the database on save
-- enabling `Require Password Reset` forces the user to create a new password at next login
+- only admins can create or update staff records
+- entering a new password on save writes the password hash immediately
+- `Require Password Reset` forces the user to set a new password at next login
 
-> Screenshot placeholder: Admin staff edit screen with password and Require Password Reset controls.
+> Screenshot placeholder: Admin staff edit screen with password and profile controls.
 
-## 3. Staff Self-Service vs Admin Edit
+## 3. Managing Client Organizations
 
-Staff can edit their own personal details from `More > Edit Profile`, but they do not see admin-only controls.
+Use the client organization tools to:
 
-Admins editing staff records can see additional fields such as:
+- manage companies
+- manage departments
+- manage teams
+- keep reporting structures clean
 
-- role
-- VIP rating
-- organization assignment
-- Require Password Reset
-- delete action
+Keep names and hierarchy consistent before imports or reporting changes.
 
-## 4. Client Organization Management
+> Screenshot placeholder: Admin client organizations screen with company hierarchy controls.
 
-Admins can manage:
+## 4. Lookup Tables
 
-- companies
-- departments
-- teams
-- lookup hierarchy used for client placement and reporting
-
-Keep these structures correct before imports or major reporting work.
-
-> Screenshot placeholder: Admin client organizations screen.
-
-## 5. Lookup Tables
-
-Lookup tables control values used throughout the app, including:
+Lookup tables control values used across the app, including:
 
 - session types
 - session statuses
 - session results
-- organization and team structures
+- organization structures
 
-Changes here affect data entry and reports.
+Changes here affect available selections and reporting output.
 
 > Screenshot placeholder: Lookup tables screen.
 
-## 6. Reports and Analytics
+## 5. Reports and Analytics
 
-The admin reports screen provides broader organization visibility, including totals and filtered summaries across:
+Admins can review:
 
-- companies
-- departments
-- teams
-- staff
-- clients
-- sessions
+- staff activity
+- company and department totals
+- team and client summaries
+- session and billable-hour trends
 
-PDF export is available from the admin reporting workflow.
+Use filters carefully because filtered results affect totals and summaries shown on screen.
 
-> Screenshot placeholder: Reports & Analytics screen.
+> Screenshot placeholder: Admin reports screen with overview and filter sections.
 
-## 7. Notifications and Messaging
+## 6. Notifications and Messaging
 
-Admins can use the Notifications screen to:
+Admins can:
 
 - send manual messages to clients
 - send manual messages to staff
 
-Messaging behavior:
+Messaging notes:
 
-- recipients only appear if they have a mobile number
-- delivery uses their saved preference
-- SMS / WhatsApp delivery depends on provider setup
+- scheduled session notifications depend on future session dates and active messaging provider setup
+- only recipients with mobile numbers are available for manual messaging
+- delivery uses each recipient's saved notification preference
 
-> Screenshot placeholder: Notifications screen in admin mode.
+> Screenshot placeholder: Notifications screen in admin mode with client and staff recipient options.
+
+## 7. Manage SMS Providers
+
+Use `More > Manage SMS Providers` to configure the active messaging service.
+
+Setup guidance:
+
+- create either a `CM.com` or `Twilio` provider record
+- mark one provider as the default
+- for `CM.com`, enter the product token, SMS from number, WhatsApp from number, template namespace, staff template name, client template name, and WhatsApp template language code such as `en_US`
+- for `Twilio`, enter the account SID, auth token, SMS from number, and WhatsApp from value if WhatsApp is enabled there
+- use the default mobile country setting to control how local mobile numbers are normalized before sending
+- after changing credentials, send a manual test message and confirm scheduled reminders still deliver as expected
+
+> Screenshot placeholder: More tab admin section and Manage SMS Providers screen with provider form.
 
 ## 8. CSV Import and Export
 
-Where enabled, admins can:
+Use import/export tools to:
 
-- import structured staff data
-- import client data
+- import structured staff data where enabled
+- import client data where enabled
 - export staff, client, or company CSV files
 
 Best practice:
 
-- confirm structures first
-- validate incoming data before import
-- keep exports for operational review or backup copies
+- validate organization structure before import
+- review incoming data before saving
+- keep exports for backup or operational extracts
 
-## 9. Database Reset
+> Screenshot placeholder: More tab or admin import/export entry points.
+
+## 9. Database Reset and Environment Care
 
 Database reset is an admin-only maintenance action.
 
 Before running reset:
 
 - confirm the correct environment
-- confirm any needed backups
-- verify that users are out of the system if required
+- confirm backups if needed
+- avoid running reset in the wrong deployment
 
-After reset:
+After reset or major migration work:
 
 - verify login
-- verify staff baseline records
-- verify session workflows
+- verify sessions
 - verify reports
+- verify notifications
 
-## 10. Deployment and Release Awareness
+## 10. Release and Deployment Notes
 
 Admins involved in release or deployment support should remember:
 
-- update version numbers before formal release
-- pull and deploy branch `v2.5.4` for the current production line
-- verify server environment variables
-- protect database and messaging credentials
-- test login, sessions, notifications, and reports after deployment
+- keep the application version updated before significant releases
+- for server deployment, pull branch `v2.5.4`, build production assets, and restart the PM2 process
+- protect database and messaging credentials outside git
 
 ## 11. Troubleshooting
 
-### Staff cannot log in
-
-- confirm email and password
-- confirm whether the user is flagged for forced password reset
-- confirm the password hash is present in the database
-
-### Staff password reset does not work
-
-- confirm the record was saved
-- confirm `passwordHash` changed in the database
-- confirm `mustChangePassword` is set correctly for the intended flow
-
 ### Messaging does not deliver
 
-- confirm recipient has a mobile number
-- confirm notification preference exists
-- confirm messaging provider is active
+- confirm the recipient has a mobile number
+- confirm the notification preference is set
+- confirm the default messaging provider is active
+- confirm provider credentials and template values are correct
 
 ### Reports look incorrect
 
 - clear filters and recheck totals
-- confirm lookup structures and assignments
-- confirm data was saved under the expected organization, team, and staff
+- confirm assignment and lookup structure
+- confirm data was saved under the expected records
+
+### Staff account changes do not take effect
+
+- confirm the record was saved successfully
+- confirm password reset settings were applied as intended
+- confirm the user is editing the expected staff record
 
 ## 12. Maintenance Notes
 
 Update this manual whenever:
 
 - admin menu items change
-- staff password rules change
+- messaging provider setup changes
 - reporting behavior changes
-- messaging workflows change
 - deployment or reset procedures change
+- notification workflows change
