@@ -141,6 +141,7 @@ After reset:
 Admins involved in release or deployment support should remember:
 
 - update version numbers before formal release
+- pull and deploy branch `v2.5.4` for the current production line
 - verify server environment variables
 - protect database and messaging credentials
 - test login, sessions, notifications, and reports after deployment

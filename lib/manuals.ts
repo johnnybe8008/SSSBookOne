@@ -196,7 +196,7 @@ export const adminManual: ManualDefinition = {
       title: "Release and Deployment Notes",
       body: [
         "Keep the application version updated before significant releases.",
-        "For server deployment, pull the correct branch, build production assets, and restart the PM2 process.",
+        "For server deployment, pull branch v2.5.4, build production assets, and restart the PM2 process.",
         "Protect secrets such as database and messaging credentials outside git.",
       ],
     },
