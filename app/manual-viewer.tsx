@@ -106,15 +106,7 @@ export default function ManualViewerScreen() {
           <Text className="flex-1 text-base font-semibold text-foreground" numberOfLines={1}>
             {title}
           </Text>
-          {isMobileWeb ? (
-            <TouchableOpacity
-              onPress={() => void openExternally()}
-              className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
-            >
-              <IconSymbol name="book.fill" size={18} color={colors.foreground} />
-              <Text className="text-foreground font-medium">Open</Text>
-            </TouchableOpacity>
-          ) : Platform.OS === "web" ? (
+          {Platform.OS === "web" ? (
             <TouchableOpacity
               onPress={() => void downloadManual()}
               className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
@@ -143,24 +135,32 @@ export default function ManualViewerScreen() {
           <Text className="text-lg font-semibold text-foreground text-center mb-2">{title}</Text>
           <Text className="text-sm text-muted text-center mb-5">
             {isMobileWeb
-              ? "Use Open to read the full PDF in your browser, or Download to save a copy. Then use Back to return to the app."
+              ? "Use Download to open or save the PDF from your browser, then use Back to return to the app."
               : "Tap Open to view the PDF in your device browser, then use Back to return to the app."}
           </Text>
           <View className="w-full max-w-sm gap-3">
             <TouchableOpacity
-              onPress={() => void openExternally()}
-              className="bg-primary rounded-xl px-5 py-3 flex-row items-center justify-center gap-2"
-            >
-              <IconSymbol name="book.fill" size={18} color={colors.background} />
-              <Text className="text-background font-semibold">Open Manual</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
               onPress={() => void downloadManual()}
-              className="bg-background border border-border rounded-xl px-5 py-3 flex-row items-center justify-center gap-2"
+              className={`${isMobileWeb ? "bg-primary" : "bg-background border border-border"} rounded-xl px-5 py-3 flex-row items-center justify-center gap-2`}
             >
-              <IconSymbol name="arrow.down.doc" size={18} color={colors.foreground} />
-              <Text className="text-foreground font-semibold">Download PDF</Text>
+              <IconSymbol
+                name="arrow.down.doc"
+                size={18}
+                color={isMobileWeb ? colors.background : colors.foreground}
+              />
+              <Text className={`${isMobileWeb ? "text-background" : "text-foreground"} font-semibold`}>
+                Download PDF
+              </Text>
             </TouchableOpacity>
+            {!isMobileWeb ? (
+              <TouchableOpacity
+                onPress={() => void openExternally()}
+                className="bg-primary rounded-xl px-5 py-3 flex-row items-center justify-center gap-2"
+              >
+                <IconSymbol name="book.fill" size={18} color={colors.background} />
+                <Text className="text-background font-semibold">Open Manual</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
       )}
