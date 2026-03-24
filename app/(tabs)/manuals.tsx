@@ -19,6 +19,19 @@ type ManualAsset = {
   filePrefix: string;
 };
 
+function isMobileWebBrowser() {
+  if (Platform.OS !== "web" || typeof navigator === "undefined") {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent || "";
+  const mobileAgent =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  const hasTouchPoints = typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 1;
+
+  return mobileAgent || hasTouchPoints;
+}
+
 const adminManualAsset: ManualAsset = {
   accentClassName: "bg-error",
   definition: adminManual,
@@ -71,13 +84,17 @@ export default function ManualsScreen() {
     }
 
     if (Platform.OS === "web") {
-      router.push({
-        pathname: "/manual-viewer" as never,
-        params: {
-          fileName: manual.fileName,
-          title: manual.definition.title,
-        },
-      });
+      if (!isMobileWebBrowser() && typeof window !== "undefined") {
+        window.open(manualUrl, "_blank", "noopener,noreferrer");
+      } else {
+        router.push({
+          pathname: "/manual-viewer" as never,
+          params: {
+            fileName: manual.fileName,
+            title: manual.definition.title,
+          },
+        });
+      }
       return;
     }
 
