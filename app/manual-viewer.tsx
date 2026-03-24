@@ -1,7 +1,7 @@
 import React from "react";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import { Alert, Linking, Platform, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Linking, Platform, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -32,10 +32,12 @@ function getSingleParam(value: string | string[] | undefined, fallback: string) 
 
 export default function ManualViewerScreen() {
   const colors = useColors();
+  const { width } = useWindowDimensions();
   const params = useLocalSearchParams<{ fileName?: string | string[]; title?: string | string[] }>();
   const fileName = getSingleParam(params.fileName, "");
   const title = getSingleParam(params.title, "Manual");
   const manualUrl = fileName ? getManualPdfUrl(fileName) : "";
+  const isMobileWeb = Platform.OS === "web" && width < 900;
 
   const downloadManual = async () => {
     if (!manualUrl) {
@@ -104,7 +106,15 @@ export default function ManualViewerScreen() {
           <Text className="flex-1 text-base font-semibold text-foreground" numberOfLines={1}>
             {title}
           </Text>
-          {Platform.OS === "web" ? (
+          {isMobileWeb ? (
+            <TouchableOpacity
+              onPress={() => void openExternally()}
+              className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
+            >
+              <IconSymbol name="book.fill" size={18} color={colors.foreground} />
+              <Text className="text-foreground font-medium">Open</Text>
+            </TouchableOpacity>
+          ) : Platform.OS === "web" ? (
             <TouchableOpacity
               onPress={() => void downloadManual()}
               className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
@@ -124,7 +134,7 @@ export default function ManualViewerScreen() {
         </View>
       </View>
 
-      {Platform.OS === "web" && manualUrl ? (
+      {Platform.OS === "web" && manualUrl && !isMobileWeb ? (
         <View className="flex-1 bg-background" style={{ minHeight: 0, overflow: "scroll" }}>
           {iframe}
         </View>
@@ -132,15 +142,26 @@ export default function ManualViewerScreen() {
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-lg font-semibold text-foreground text-center mb-2">{title}</Text>
           <Text className="text-sm text-muted text-center mb-5">
-            Tap Open to view the PDF in your device browser, then use Back to return to the app.
+            {isMobileWeb
+              ? "Use Open to read the full PDF in your browser, or Download to save a copy. Then use Back to return to the app."
+              : "Tap Open to view the PDF in your device browser, then use Back to return to the app."}
           </Text>
-          <TouchableOpacity
-            onPress={() => void openExternally()}
-            className="bg-primary rounded-xl px-5 py-3 flex-row items-center gap-2"
-          >
-            <IconSymbol name="book.fill" size={18} color={colors.background} />
-            <Text className="text-background font-semibold">Open Manual</Text>
-          </TouchableOpacity>
+          <View className="w-full max-w-sm gap-3">
+            <TouchableOpacity
+              onPress={() => void openExternally()}
+              className="bg-primary rounded-xl px-5 py-3 flex-row items-center justify-center gap-2"
+            >
+              <IconSymbol name="book.fill" size={18} color={colors.background} />
+              <Text className="text-background font-semibold">Open Manual</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => void downloadManual()}
+              className="bg-background border border-border rounded-xl px-5 py-3 flex-row items-center justify-center gap-2"
+            >
+              <IconSymbol name="arrow.down.doc" size={18} color={colors.foreground} />
+              <Text className="text-foreground font-semibold">Download PDF</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </ScreenContainer>
