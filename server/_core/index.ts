@@ -34,8 +34,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
     const app = express();
     const webBuildDir = path.resolve(process.cwd(), "dist-web");
+    const manualsDir = path.resolve(process.cwd(), "docs", "manuals");
     const webEntryPath = path.join(webBuildDir, "index.html");
     const hasWebBuild = fs.existsSync(webEntryPath);
+    const hasManualsDir = fs.existsSync(manualsDir);
     // Enable CORS for all routes - reflect the request origin to support credentials
     app.use((req, res, next) => {
       const origin = req.headers.origin;
@@ -77,6 +79,10 @@ async function startServer() {
       },
     }),
   );
+
+  if (hasManualsDir) {
+    app.use("/manuals", express.static(manualsDir, { index: false }));
+  }
 
   if (hasWebBuild) {
     app.use(express.static(webBuildDir, { index: false }));
