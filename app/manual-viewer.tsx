@@ -75,6 +75,11 @@ export default function ManualViewerScreen() {
       return;
     }
 
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.open(manualUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     await Linking.openURL(manualUrl);
   };
 
@@ -106,7 +111,7 @@ export default function ManualViewerScreen() {
           <Text className="flex-1 text-base font-semibold text-foreground" numberOfLines={1}>
             {title}
           </Text>
-          {Platform.OS === "web" ? (
+          {isMobileWeb ? (
             <TouchableOpacity
               onPress={() => void downloadManual()}
               className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
