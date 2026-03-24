@@ -2,6 +2,7 @@ import { Alert, Linking, Platform, ScrollView, Text, TouchableOpacity, View } fr
 import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import { router } from "expo-router";
 
 import { getApiBaseUrl } from "@/constants/oauth";
 import { APP_VERSION } from "@/constants/const";
@@ -70,7 +71,13 @@ export default function ManualsScreen() {
     }
 
     if (Platform.OS === "web") {
-      window.location.assign(manualUrl);
+      router.push({
+        pathname: "/manual-viewer" as never,
+        params: {
+          fileName: manual.fileName,
+          title: manual.definition.title,
+        },
+      });
       return;
     }
 
