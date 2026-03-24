@@ -8,6 +8,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { useColors } from "@/hooks/use-colors";
+import { adminManual, buildManualHtml, staffManual } from "@/lib/manuals";
 
 function getManualPdfUrl(fileName: string) {
   const baseUrl =
@@ -46,13 +47,41 @@ function isMobileWebBrowser(width: number) {
 export default function ManualViewerScreen() {
   const colors = useColors();
   const { width } = useWindowDimensions();
-  const params = useLocalSearchParams<{ fileName?: string | string[]; title?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    fileName?: string | string[];
+    title?: string | string[];
+    source?: string | string[];
+    manualKey?: string | string[];
+  }>();
   const fileName = getSingleParam(params.fileName, "");
   const title = getSingleParam(params.title, "Manual");
-  const manualUrl = fileName ? getManualPdfUrl(fileName) : "";
+  const source = getSingleParam(params.source, "pdf");
+  const manualKey = getSingleParam(params.manualKey, "");
+  const manualUrl = source === "pdf" && fileName ? getManualPdfUrl(fileName) : "";
   const isMobileWeb = isMobileWebBrowser(width);
+  const generatedManual =
+    source === "generated" ? (manualKey === "admin" ? adminManual : staffManual) : null;
+  const generatedHtml = generatedManual ? buildManualHtml(generatedManual) : "";
 
   const downloadManual = async () => {
+    if (source === "generated") {
+      if (Platform.OS === "web") {
+        if (typeof window !== "undefined") {
+          const previewWindow = window.open("", "_blank", "noopener,noreferrer");
+          if (!previewWindow) {
+            throw new Error("The browser blocked the manual preview window.");
+          }
+          previewWindow.document.open();
+          previewWindow.document.write(`<!DOCTYPE html>${generatedHtml}`);
+          previewWindow.document.close();
+          previewWindow.focus();
+        }
+        return;
+      }
+
+      return;
+    }
+
     if (!manualUrl) {
       return;
     }
@@ -84,6 +113,20 @@ export default function ManualViewerScreen() {
   };
 
   const openExternally = async () => {
+    if (source === "generated") {
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        const previewWindow = window.open("", "_blank", "noopener,noreferrer");
+        if (!previewWindow) {
+          throw new Error("The browser blocked the manual preview window.");
+        }
+        previewWindow.document.open();
+        previewWindow.document.write(`<!DOCTYPE html>${generatedHtml}`);
+        previewWindow.document.close();
+        previewWindow.focus();
+      }
+      return;
+    }
+
     if (!manualUrl) {
       return;
     }
@@ -97,9 +140,23 @@ export default function ManualViewerScreen() {
   };
 
   const iframe =
-    Platform.OS === "web" && manualUrl
+    Platform.OS === "web" && source === "pdf" && manualUrl
       ? React.createElement("iframe", {
           src: manualUrl,
+          title,
+          style: {
+            border: "none",
+            width: "100%",
+            height: "calc(100vh - 96px)",
+            backgroundColor: "#ffffff",
+          },
+        })
+      : null;
+
+  const generatedFrame =
+    Platform.OS === "web" && source === "generated"
+      ? React.createElement("iframe", {
+          srcDoc: `<!DOCTYPE html>${generatedHtml}`,
           title,
           style: {
             border: "none",
@@ -124,7 +181,9 @@ export default function ManualViewerScreen() {
           <Text className="flex-1 text-base font-semibold text-foreground" numberOfLines={1}>
             {title}
           </Text>
-          {isMobileWeb ? (
+          {source === "generated" ? (
+            <View />
+          ) : isMobileWeb ? (
             <TouchableOpacity
               onPress={() => void downloadManual()}
               className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
@@ -144,7 +203,11 @@ export default function ManualViewerScreen() {
         </View>
       </View>
 
-      {Platform.OS === "web" && manualUrl && !isMobileWeb ? (
+      {Platform.OS === "web" && source === "generated" ? (
+        <View className="flex-1 bg-background" style={{ minHeight: 0, overflow: "scroll" }}>
+          {generatedFrame}
+        </View>
+      ) : Platform.OS === "web" && manualUrl && !isMobileWeb ? (
         <View className="flex-1 bg-background" style={{ minHeight: 0, overflow: "scroll" }}>
           {iframe}
         </View>

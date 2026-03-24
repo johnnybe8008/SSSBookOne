@@ -132,18 +132,18 @@ export default function ManualsScreen() {
     Alert.alert("Success", `PDF saved to: ${targetUri}`);
   };
 
-  const viewGeneratedManual = async (manual: ManualDefinition) => {
+  const viewGeneratedManual = async (manual: ManualDefinition, manualKey: string) => {
     const html = buildManualHtml(manual);
 
     if (Platform.OS === "web") {
-      const previewWindow = window.open("", "_blank", "noopener,noreferrer");
-      if (!previewWindow) {
-        throw new Error("The browser blocked the manual preview window.");
-      }
-      previewWindow.document.open();
-      previewWindow.document.write(`<!DOCTYPE html>${html}`);
-      previewWindow.document.close();
-      previewWindow.focus();
+      router.push({
+        pathname: "/manual-viewer" as never,
+        params: {
+          source: "generated",
+          manualKey,
+          title: manual.title,
+        },
+      });
       return;
     }
 
@@ -177,7 +177,10 @@ export default function ManualsScreen() {
         return;
       }
 
-      await viewGeneratedManual(manual.definition);
+      await viewGeneratedManual(
+        manual.definition,
+        manual.filePrefix === "SSS_Admin_Manual" ? "admin" : "staff",
+      );
     } catch (error) {
       console.error("[Manuals] Manual view failed", error);
       Alert.alert("View Failed", "Could not open the manual preview.");
