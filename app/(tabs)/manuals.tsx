@@ -1,8 +1,7 @@
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import * as WebBrowser from "expo-web-browser";
 
 import { getApiBaseUrl } from "@/constants/oauth";
 import { APP_VERSION } from "@/constants/const";
@@ -75,7 +74,7 @@ export default function ManualsScreen() {
       return;
     }
 
-    await WebBrowser.openBrowserAsync(manualUrl);
+    await Linking.openURL(manualUrl);
   };
 
   const downloadStaticManual = async (manual: ManualAsset) => {
