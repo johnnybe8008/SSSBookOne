@@ -1,5 +1,7 @@
 import React from "react";
-import { Linking, Platform, Text, TouchableOpacity, View } from "react-native";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { Alert, Linking, Platform, Text, TouchableOpacity, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -35,6 +37,37 @@ export default function ManualViewerScreen() {
   const title = getSingleParam(params.title, "Manual");
   const manualUrl = fileName ? getManualPdfUrl(fileName) : "";
 
+  const downloadManual = async () => {
+    if (!manualUrl) {
+      return;
+    }
+
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined") {
+        const link = document.createElement("a");
+        link.href = manualUrl;
+        link.download = fileName || "manual.pdf";
+        link.click();
+      }
+      return;
+    }
+
+    const targetUri = `${FileSystem.documentDirectory}${fileName || "manual.pdf"}`;
+    await FileSystem.downloadAsync(manualUrl, targetUri);
+
+    const canShare = await Sharing.isAvailableAsync();
+    if (canShare) {
+      await Sharing.shareAsync(targetUri, {
+        dialogTitle: title,
+        mimeType: "application/pdf",
+        UTI: "com.adobe.pdf",
+      });
+      return;
+    }
+
+    Alert.alert("Success", `PDF saved to: ${targetUri}`);
+  };
+
   const openExternally = async () => {
     if (!manualUrl) {
       return;
@@ -51,7 +84,7 @@ export default function ManualViewerScreen() {
           style: {
             border: "none",
             width: "100%",
-            height: "100%",
+            height: "calc(100vh - 96px)",
             backgroundColor: "#ffffff",
           },
         })
@@ -71,18 +104,28 @@ export default function ManualViewerScreen() {
           <Text className="flex-1 text-base font-semibold text-foreground" numberOfLines={1}>
             {title}
           </Text>
-          <TouchableOpacity
-            onPress={() => void openExternally()}
-            className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
-          >
-            <IconSymbol name="arrow.down.doc" size={18} color={colors.foreground} />
-            <Text className="text-foreground font-medium">Open</Text>
-          </TouchableOpacity>
+          {Platform.OS === "web" ? (
+            <TouchableOpacity
+              onPress={() => void downloadManual()}
+              className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
+            >
+              <IconSymbol name="arrow.down.doc" size={18} color={colors.foreground} />
+              <Text className="text-foreground font-medium">Download</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => void openExternally()}
+              className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2"
+            >
+              <IconSymbol name="arrow.down.doc" size={18} color={colors.foreground} />
+              <Text className="text-foreground font-medium">Open</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       {Platform.OS === "web" && manualUrl ? (
-        <View className="flex-1 bg-background" style={{ minHeight: 0 }}>
+        <View className="flex-1 bg-background" style={{ minHeight: 0, overflow: "scroll" }}>
           {iframe}
         </View>
       ) : (
