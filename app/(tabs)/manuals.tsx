@@ -2,117 +2,226 @@ import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react
 import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import * as WebBrowser from "expo-web-browser";
 
+import { getApiBaseUrl } from "@/constants/oauth";
+import { APP_VERSION } from "@/constants/const";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
-import { APP_VERSION } from "@/constants/const";
-import { adminManual, buildManualHtml, staffManual, type ManualDefinition } from "@/lib/manuals";
 import { useStaffRole } from "@/hooks/use-staff-role";
+import { adminManual, buildManualHtml, staffManual, type ManualDefinition } from "@/lib/manuals";
+
+type ManualAsset = {
+  accentClassName: string;
+  definition: ManualDefinition;
+  fileName: string;
+  filePrefix: string;
+};
+
+const adminManualAsset: ManualAsset = {
+  accentClassName: "bg-error",
+  definition: adminManual,
+  fileName: "SSS_Admin_Manual.pdf",
+  filePrefix: "SSS_Admin_Manual",
+};
+
+const staffManualAsset: ManualAsset = {
+  accentClassName: "bg-primary",
+  definition: staffManual,
+  fileName: "SSS_Staff_Manual.pdf",
+  filePrefix: "SSS_Staff_Manual",
+};
 
 export default function ManualsScreen() {
   const colors = useColors();
   const { isAdmin } = useStaffRole();
 
-  const exportManualPdf = async (manual: ManualDefinition, filePrefix: string) => {
+  const getManualPdfUrl = (fileName: string) => {
+    const baseUrl =
+      Platform.OS === "web" && typeof window !== "undefined" && window.location
+        ? window.location.origin
+        : getApiBaseUrl();
+
+    if (!baseUrl) {
+      return "";
+    }
+
+    return `${baseUrl.replace(/\/$/, "")}/manuals/${encodeURIComponent(fileName)}`;
+  };
+
+  const hasStaticManual = async (fileName: string) => {
+    const manualUrl = getManualPdfUrl(fileName);
+    if (!manualUrl) {
+      return false;
+    }
+
     try {
-      const html = buildManualHtml(manual);
-
-      if (Platform.OS === "web") {
-        const iframe = document.createElement("iframe");
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "0";
-        iframe.setAttribute("aria-hidden", "true");
-        document.body.appendChild(iframe);
-
-        const cleanup = () => {
-          window.setTimeout(() => {
-            iframe.parentNode?.removeChild(iframe);
-          }, 1000);
-        };
-
-        iframe.onload = () => {
-          try {
-            const frameWindow = iframe.contentWindow;
-            if (!frameWindow) {
-              cleanup();
-              Alert.alert("Export Failed", "The browser could not prepare the manual for printing.");
-              return;
-            }
-
-            frameWindow.focus();
-            frameWindow.print();
-            cleanup();
-          } catch (error) {
-            console.error("[Manuals] Web print failed", error);
-            cleanup();
-            Alert.alert("Export Failed", "Could not open the print dialog for this manual.");
-          }
-        };
-
-        iframe.srcdoc = `<!DOCTYPE html>${html}`;
-
-        return;
-      }
-
-      const result = await Print.printToFileAsync({ html });
-      const fileName = `${filePrefix}_${new Date().toISOString().split("T")[0]}.pdf`;
-      const targetUri = `${FileSystem.documentDirectory}${fileName}`;
-      await FileSystem.copyAsync({ from: result.uri, to: targetUri });
-
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(targetUri, {
-          mimeType: "application/pdf",
-          dialogTitle: manual.title,
-          UTI: "com.adobe.pdf",
-        });
-      } else {
-        Alert.alert("Success", `PDF saved to: ${targetUri}`);
-      }
-    } catch (error) {
-      console.error("[Manuals] PDF export failed", error);
-      Alert.alert("Export Failed", "Could not generate the manual PDF.");
+      const response = await fetch(manualUrl, { method: "HEAD" });
+      return response.ok;
+    } catch {
+      return false;
     }
   };
 
-  const renderManualCard = (manual: ManualDefinition, filePrefix: string, accentClassName: string) => (
+  const viewStaticManual = async (manual: ManualAsset) => {
+    const manualUrl = getManualPdfUrl(manual.fileName);
+    if (!manualUrl) {
+      throw new Error("Manual URL could not be resolved.");
+    }
+
+    if (Platform.OS === "web") {
+      window.open(manualUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    await WebBrowser.openBrowserAsync(manualUrl);
+  };
+
+  const downloadStaticManual = async (manual: ManualAsset) => {
+    const manualUrl = getManualPdfUrl(manual.fileName);
+    if (!manualUrl) {
+      throw new Error("Manual URL could not be resolved.");
+    }
+
+    if (Platform.OS === "web") {
+      const link = document.createElement("a");
+      link.href = manualUrl;
+      link.download = manual.fileName;
+      link.click();
+      return;
+    }
+
+    const datedFileName = `${manual.filePrefix}_${new Date().toISOString().split("T")[0]}.pdf`;
+    const targetUri = `${FileSystem.documentDirectory}${datedFileName}`;
+    await FileSystem.downloadAsync(manualUrl, targetUri);
+
+    const canShare = await Sharing.isAvailableAsync();
+    if (canShare) {
+      await Sharing.shareAsync(targetUri, {
+        dialogTitle: manual.definition.title,
+        mimeType: "application/pdf",
+        UTI: "com.adobe.pdf",
+      });
+      return;
+    }
+
+    Alert.alert("Success", `PDF saved to: ${targetUri}`);
+  };
+
+  const viewGeneratedManual = async (manual: ManualDefinition) => {
+    const html = buildManualHtml(manual);
+
+    if (Platform.OS === "web") {
+      const previewWindow = window.open("", "_blank", "noopener,noreferrer");
+      if (!previewWindow) {
+        throw new Error("The browser blocked the manual preview window.");
+      }
+      previewWindow.document.open();
+      previewWindow.document.write(`<!DOCTYPE html>${html}`);
+      previewWindow.document.close();
+      previewWindow.focus();
+      return;
+    }
+
+    await Print.printAsync({ html });
+  };
+
+  const downloadGeneratedManualPdf = async (manual: ManualDefinition, filePrefix: string) => {
+    const html = buildManualHtml(manual);
+    const result = await Print.printToFileAsync({ html });
+    const datedFileName = `${filePrefix}_${new Date().toISOString().split("T")[0]}.pdf`;
+    const targetUri = `${FileSystem.documentDirectory}${datedFileName}`;
+    await FileSystem.copyAsync({ from: result.uri, to: targetUri });
+
+    const canShare = await Sharing.isAvailableAsync();
+    if (canShare) {
+      await Sharing.shareAsync(targetUri, {
+        dialogTitle: manual.title,
+        mimeType: "application/pdf",
+        UTI: "com.adobe.pdf",
+      });
+      return;
+    }
+
+    Alert.alert("Success", `PDF saved to: ${targetUri}`);
+  };
+
+  const viewManual = async (manual: ManualAsset) => {
+    try {
+      if (await hasStaticManual(manual.fileName)) {
+        await viewStaticManual(manual);
+        return;
+      }
+
+      await viewGeneratedManual(manual.definition);
+    } catch (error) {
+      console.error("[Manuals] Manual view failed", error);
+      Alert.alert("View Failed", "Could not open the manual preview.");
+    }
+  };
+
+  const downloadManual = async (manual: ManualAsset) => {
+    try {
+      if (await hasStaticManual(manual.fileName)) {
+        await downloadStaticManual(manual);
+        return;
+      }
+
+      await downloadGeneratedManualPdf(manual.definition, manual.filePrefix);
+    } catch (error) {
+      console.error("[Manuals] Manual download failed", error);
+      Alert.alert("Download Failed", "Could not open or generate the manual PDF.");
+    }
+  };
+
+  const renderManualCard = (manual: ManualAsset) => (
     <View className="bg-surface rounded-2xl border border-border p-5 mb-4">
       <View className="flex-row items-start justify-between gap-3 mb-3">
         <View className="flex-1">
-          <Text className="text-xl font-bold text-foreground">{manual.title}</Text>
-          <Text className="text-sm text-muted mt-1">{manual.subtitle}</Text>
+          <Text className="text-xl font-bold text-foreground">{manual.definition.title}</Text>
+          <Text className="text-sm text-muted mt-1">{manual.definition.subtitle}</Text>
         </View>
-        <View className={`px-3 py-1 rounded-full ${accentClassName}`}>
-          <Text className="text-xs font-semibold text-background">{manual.audience}</Text>
+        <View className={`px-3 py-1 rounded-full ${manual.accentClassName}`}>
+          <Text className="text-xs font-semibold text-background">{manual.definition.audience}</Text>
         </View>
       </View>
 
-      <Text className="text-sm text-muted mb-4">{manual.versionNote}</Text>
+      <Text className="text-sm text-muted mb-2">{manual.definition.versionNote}</Text>
+      <Text className="text-xs text-muted mb-4">
+        Preferred static file: <Text className="font-semibold text-foreground">docs/manuals/{manual.fileName}</Text>
+      </Text>
 
       <View className="gap-2 mb-4">
-        {manual.sections.slice(0, 4).map((section) => (
+        {manual.definition.sections.slice(0, 4).map((section) => (
           <View key={section.title} className="flex-row items-start gap-2">
-            <Text className="text-primary mt-[1px]">•</Text>
+            <Text className="text-primary mt-[1px]">-</Text>
             <Text className="text-sm text-foreground flex-1">{section.title}</Text>
           </View>
         ))}
-        {manual.sections.length > 4 && (
-          <Text className="text-xs text-muted">Plus {manual.sections.length - 4} more sections.</Text>
+        {manual.definition.sections.length > 4 && (
+          <Text className="text-xs text-muted">
+            Plus {manual.definition.sections.length - 4} more sections.
+          </Text>
         )}
       </View>
 
-      <TouchableOpacity
-        className="bg-primary rounded-xl py-3 px-4 flex-row items-center justify-center gap-2"
-        onPress={() => void exportManualPdf(manual, filePrefix)}
-      >
-        <IconSymbol name="arrow.down.doc" size={18} color={colors.background} />
-        <Text className="text-background font-semibold">Export PDF</Text>
-      </TouchableOpacity>
+      <View className="flex-row gap-3">
+        <TouchableOpacity
+          className="flex-1 bg-background border border-border rounded-xl py-3 px-4 flex-row items-center justify-center gap-2"
+          onPress={() => void viewManual(manual)}
+        >
+          <IconSymbol name="book.fill" size={18} color={colors.foreground} />
+          <Text className="text-foreground font-semibold">View Manual</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="flex-1 bg-primary rounded-xl py-3 px-4 flex-row items-center justify-center gap-2"
+          onPress={() => void downloadManual(manual)}
+        >
+          <IconSymbol name="arrow.down.doc" size={18} color={colors.background} />
+          <Text className="text-background font-semibold">Download</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -133,18 +242,18 @@ export default function ManualsScreen() {
           </Text>
           <Text className="text-sm text-muted">
             {isAdmin
-              ? "Admin users can export both the admin guide and the staff guide. Screenshot placeholders are included so real captures can be dropped in during a later documentation pass."
-              : "This area gives staff a printable guide for the current system. Screenshot placeholders are included so real captures can be dropped in during a later documentation pass."}
+              ? "Drop the final PDFs into docs/manuals to have the app open them directly. If a PDF is missing, the app falls back to the generated manual."
+              : "Drop the final staff PDF into docs/manuals to have the app open it directly. If the PDF is missing, the app falls back to the generated manual."}
           </Text>
         </View>
 
         {isAdmin ? (
           <>
-            {renderManualCard(adminManual, "SSS_Admin_Manual", "bg-error")}
-            {renderManualCard(staffManual, "SSS_Staff_Manual", "bg-primary")}
+            {renderManualCard(adminManualAsset)}
+            {renderManualCard(staffManualAsset)}
           </>
         ) : (
-          renderManualCard(staffManual, "SSS_Staff_Manual", "bg-primary")
+          renderManualCard(staffManualAsset)
         )}
       </ScrollView>
     </ScreenContainer>

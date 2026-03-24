@@ -10,7 +10,7 @@ export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 8 : Math.max(insets.bottom, 6);
-  const tabBarHeight = 60 + bottomPadding;
+  const tabBarHeight = 56 + bottomPadding;
 
   return (
     <Tabs
@@ -24,9 +24,9 @@ export default function TabLayout() {
           <Text
             style={{
               color: typeof color === "string" ? color : colors.foreground,
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: "600",
-              marginBottom: 2,
+              marginBottom: 1,
             }}
             numberOfLines={1}
           >
@@ -42,8 +42,9 @@ export default function TabLayout() {
           borderTopWidth: 0.5,
         },
         tabBarItemStyle: {
+          flex: 1,
           minWidth: 0,
-          paddingVertical: 2,
+          paddingVertical: 1,
         },
       }}
     >
@@ -51,42 +52,42 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="clients"
         options={{
           title: "Clients",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="person.2.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="person.2.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="sessions"
         options={{
           title: "Sessions",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="calendar" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="calendar" color={color} />,
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
           title: "Reports",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="chart.bar.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="chart.bar.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="manuals"
         options={{
           title: "Manuals",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="book.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="book.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: "More",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="ellipsis.circle.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="ellipsis.circle.fill" color={color} />,
         }}
       />
     </Tabs>
