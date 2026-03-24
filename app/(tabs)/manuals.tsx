@@ -70,7 +70,7 @@ export default function ManualsScreen() {
     }
 
     if (Platform.OS === "web") {
-      window.open(manualUrl, "_blank", "noopener,noreferrer");
+      window.location.assign(manualUrl);
       return;
     }
 
