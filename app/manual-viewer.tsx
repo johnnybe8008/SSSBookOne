@@ -30,6 +30,19 @@ function getSingleParam(value: string | string[] | undefined, fallback: string) 
   return value ?? fallback;
 }
 
+function isMobileWebBrowser(width: number) {
+  if (Platform.OS !== "web" || typeof navigator === "undefined") {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent || "";
+  const mobileAgent =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  const hasTouchPoints = typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 1;
+
+  return mobileAgent || (hasTouchPoints && width < 900);
+}
+
 export default function ManualViewerScreen() {
   const colors = useColors();
   const { width } = useWindowDimensions();
@@ -37,7 +50,7 @@ export default function ManualViewerScreen() {
   const fileName = getSingleParam(params.fileName, "");
   const title = getSingleParam(params.title, "Manual");
   const manualUrl = fileName ? getManualPdfUrl(fileName) : "";
-  const isMobileWeb = Platform.OS === "web" && width < 900;
+  const isMobileWeb = isMobileWebBrowser(width);
 
   const downloadManual = async () => {
     if (!manualUrl) {
