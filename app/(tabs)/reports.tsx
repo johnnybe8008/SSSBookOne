@@ -3,6 +3,7 @@ import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator, Modal, Tex
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useIsMobileWeb } from "@/hooks/use-is-mobile-web";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useStaffRole } from "@/hooks/use-staff-role";
@@ -19,6 +20,7 @@ import { useStaffRole } from "@/hooks/use-staff-role";
  */
 export default function ReportsScreen() {
   const colors = useColors();
+  const isMobileWeb = useIsMobileWeb();
   const { staff } = useAuth();
   const { isAdmin } = useStaffRole();
   const [showFilters, setShowFilters] = useState(false);
@@ -39,6 +41,7 @@ export default function ReportsScreen() {
   const PICKER_MAX_ROWS = 8;
   const PICKER_ROW_HEIGHT = 40;
   const pickerMaxHeight = PICKER_MAX_ROWS * PICKER_ROW_HEIGHT;
+  const horizontalPaddingClassName = isMobileWeb ? "px-4" : "px-6";
 
   // Calculate date range based on selected period
   const getDateRange = () => {
@@ -255,7 +258,7 @@ export default function ReportsScreen() {
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+      <View className={`${horizontalPaddingClassName} pt-4 pb-3 bg-background border-b border-border`}>
         <View className="flex-row items-center justify-between">
           <View>
             <Text className="text-2xl font-bold text-foreground">Reports</Text>
@@ -272,7 +275,7 @@ export default function ReportsScreen() {
       </View>
 
       {showFilters && (
-        <View className="px-6 py-4 bg-surface border-b border-border gap-3">
+        <View className={`${horizontalPaddingClassName} py-4 bg-surface border-b border-border gap-3`}>
           {hasAnyFilter && (
             <View className="flex-row justify-end">
               <TouchableOpacity
@@ -362,7 +365,7 @@ export default function ReportsScreen() {
         </View>
       )}
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
+      <ScrollView className={`flex-1 ${horizontalPaddingClassName}`} contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
         {/* Period Selector */}
         <View className="mb-6">
           <Text className="text-sm font-semibold text-foreground mb-3">Time Period</Text>

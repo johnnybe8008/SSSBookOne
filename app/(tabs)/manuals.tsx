@@ -9,6 +9,7 @@ import { APP_VERSION } from "@/constants/const";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useIsMobileWeb } from "@/hooks/use-is-mobile-web";
 import { useStaffRole } from "@/hooks/use-staff-role";
 import { adminManual, buildManualHtml, staffManual, type ManualDefinition } from "@/lib/manuals";
 
@@ -48,7 +49,9 @@ const staffManualAsset: ManualAsset = {
 
 export default function ManualsScreen() {
   const colors = useColors();
+  const isMobileWeb = useIsMobileWeb();
   const { isAdmin } = useStaffRole();
+  const horizontalPaddingClassName = isMobileWeb ? "px-4" : "px-6";
 
   const getManualPdfUrl = (fileName: string) => {
     const baseUrl =
@@ -253,14 +256,14 @@ export default function ManualsScreen() {
 
   return (
     <ScreenContainer className="flex-1">
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+      <View className={`${horizontalPaddingClassName} pt-4 pb-3 bg-background border-b border-border`}>
         <Text className="text-2xl font-bold text-foreground">Manuals</Text>
         <Text className="text-sm text-muted mt-1">
           Quick access to printable staff and admin guides for SSS Book One
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
+      <ScrollView className={`flex-1 ${horizontalPaddingClassName}`} contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
         <View className="bg-primary/10 rounded-2xl border border-primary/20 p-5 mb-5">
           <Text className="text-base font-semibold text-foreground mb-2">Documentation Notes</Text>
           <Text className="text-sm text-muted mb-2">

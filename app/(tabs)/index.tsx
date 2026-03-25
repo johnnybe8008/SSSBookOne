@@ -3,6 +3,7 @@ import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator } from "rea
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useIsMobileWeb } from "@/hooks/use-is-mobile-web";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useStaffRole } from "@/hooks/use-staff-role";
@@ -20,6 +21,7 @@ import { useRouter } from "expo-router";
  */
 export default function DashboardScreen() {
   const colors = useColors();
+  const isMobileWeb = useIsMobileWeb();
   const { staff, isAuthenticated, loading: authLoading } = useAuth();
   const { canWrite } = useStaffRole();
   const router = useRouter();
@@ -126,9 +128,10 @@ export default function DashboardScreen() {
   }
 
   const currentMonth = formatMonthYear(currentDate);
+  const pagePaddingClassName = isMobileWeb ? "p-4" : "p-6";
 
   return (
-    <ScreenContainer className="p-6">
+    <ScreenContainer className={pagePaddingClassName}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View className="gap-6">
           {/* Welcome Header */}

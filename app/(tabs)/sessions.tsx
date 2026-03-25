@@ -3,6 +3,7 @@ import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator, Modal, Tex
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useIsMobileWeb } from "@/hooks/use-is-mobile-web";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useStaffRole } from "@/hooks/use-staff-role";
@@ -18,6 +19,7 @@ import { useRouter } from "expo-router";
  */
 export default function SessionsScreen() {
   const colors = useColors();
+  const isMobileWeb = useIsMobileWeb();
   const router = useRouter();
   const { staff } = useAuth();
   const { isAdmin } = useStaffRole();
@@ -136,6 +138,7 @@ export default function SessionsScreen() {
   const PICKER_MAX_ROWS = 8;
   const PICKER_ROW_HEIGHT = 40;
   const pickerMaxHeight = PICKER_MAX_ROWS * PICKER_ROW_HEIGHT;
+  const horizontalPaddingClassName = isMobileWeb ? "px-4" : "px-6";
 
   const toggleClientFilter = (id: number) => {
     setSelectedClientIds((prev) => {
@@ -278,7 +281,7 @@ export default function SessionsScreen() {
 
   return (
     <ScreenContainer className="flex-1">
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+      <View className={`${horizontalPaddingClassName} pt-4 pb-3 bg-background border-b border-border`}>
         <View className="flex-row items-center justify-between">
           <Text className="text-2xl font-bold text-foreground">Sessions</Text>
           <TouchableOpacity
@@ -293,7 +296,7 @@ export default function SessionsScreen() {
 
       {/* Filter Panel (collapsed by default) */}
       {showFilters && (
-        <View className="px-6 py-4 bg-surface border-b border-border">
+        <View className={`${horizontalPaddingClassName} py-4 bg-surface border-b border-border`}>
           {hasAnyFilter && (
             <View className="flex-row justify-end mb-3">
               <TouchableOpacity
@@ -410,7 +413,7 @@ export default function SessionsScreen() {
       )}
 
       {/* Add Session Button at Top */}
-      <View className="px-6 pt-4 pb-2 flex-row items-center justify-between">
+      <View className={`${horizontalPaddingClassName} pt-4 pb-2 flex-row items-center justify-between`}>
         <TouchableOpacity className="flex-row items-center" onPress={() => setSummaryOnly((prev) => !prev)}>
           <View
             style={{
@@ -441,7 +444,7 @@ export default function SessionsScreen() {
 
       {/* Session List */}
       <View className="flex-1">
-        <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
+        <ScrollView className={`flex-1 ${horizontalPaddingClassName}`} contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
           {sessionsLoading ? (
             <View className="items-center justify-center py-12">
               <ActivityIndicator size="large" color={colors.primary} />

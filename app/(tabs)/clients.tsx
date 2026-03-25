@@ -3,6 +3,7 @@ import { ScrollView, Text, View, TouchableOpacity, TextInput, ActivityIndicator,
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useIsMobileWeb } from "@/hooks/use-is-mobile-web";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
@@ -18,7 +19,9 @@ import { Picker } from "@react-native-picker/picker";
  */
 export default function ClientsScreen() {
   const colors = useColors();
+  const isMobileWeb = useIsMobileWeb();
   const router = useRouter();
+  const horizontalPaddingClassName = isMobileWeb ? "px-4" : "px-6";
   const [searchTerm, setSearchTerm] = useState("");
   
   // Cascading filter state
@@ -109,7 +112,7 @@ export default function ClientsScreen() {
   return (
     <ScreenContainer className="flex-1">
       {/* Search Bar and Add Button */}
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+      <View className={`${horizontalPaddingClassName} pt-4 pb-3 bg-background border-b border-border`}>
         <View className="flex-row items-center bg-surface rounded-xl px-4 py-3 border border-border mb-3">
           <IconSymbol name="magnifyingglass" size={20} color={colors.muted} />
           <TextInput
@@ -139,7 +142,7 @@ export default function ClientsScreen() {
       </View>
 
       {/* Filter Section */}
-      <View className="px-6 py-3 bg-background border-b border-border">
+      <View className={`${horizontalPaddingClassName} py-3 bg-background border-b border-border`}>
         <View className="flex-row items-center gap-2">
           <TouchableOpacity
             className="flex-1 px-4 py-3 bg-surface rounded-xl border border-border flex-row items-center justify-between"
@@ -260,7 +263,7 @@ export default function ClientsScreen() {
       </Modal>
 
       {/* Client List */}
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView className={`flex-1 ${horizontalPaddingClassName}`} contentContainerStyle={{ paddingBottom: 100 }}>
         {clientsLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color={colors.primary} />

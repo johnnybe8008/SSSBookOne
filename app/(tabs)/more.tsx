@@ -2,6 +2,7 @@ import { ScrollView, Text, View, TouchableOpacity, Alert, Platform, ActivityIndi
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useIsMobileWeb } from "@/hooks/use-is-mobile-web";
 import { useAuth } from "@/hooks/use-auth";
 import { useStaffRole } from "@/hooks/use-staff-role";
 import { trpc } from "@/lib/trpc";
@@ -30,7 +31,9 @@ export default function MoreScreen() {
     // Ensure only one useAuth destructuring
     // ...existing code...
   const colors = useColors();
+  const isMobileWeb = useIsMobileWeb();
   const router = useRouter();
+  const horizontalPaddingClassName = isMobileWeb ? "px-4" : "px-6";
   const { staff, isAuthenticated, loading: authLoading, logout } = useAuth();
   const { isAdmin } = useStaffRole();
   const { data: allStaff = [] } = trpc.staff.listAll.useQuery(undefined, {
@@ -374,11 +377,11 @@ export default function MoreScreen() {
   return (
     <ScreenContainer className="flex-1">
       {/* Header */}
-      <View className="px-6 pt-4 pb-3 bg-background border-b border-border">
+      <View className={`${horizontalPaddingClassName} pt-4 pb-3 bg-background border-b border-border`}>
         <Text className="text-2xl font-bold text-foreground">More</Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
+      <ScrollView className={`flex-1 ${horizontalPaddingClassName}`} contentContainerStyle={{ paddingBottom: 24, paddingTop: 16 }}>
         {/* Profile Section */}
         <View className="bg-surface rounded-2xl p-6 border border-border mb-6">
           <Text className="text-2xl font-semibold text-primary mb-1">
