@@ -24,6 +24,8 @@ export default function AdminStaffAddScreen() {
   const [mustChangePassword, setMustChangePassword] = useState(true);
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
+  const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp" | null>(null);
+  const [notificationOptOut, setNotificationOptOut] = useState(1);
   
   // Staff organizational assignment
   const [groupId, setGroupId] = useState<number | null>(null);
@@ -92,6 +94,8 @@ export default function AdminStaffAddScreen() {
       mustChangePassword: mustChangePassword ? 1 : 0,
       role: role,
       isVipRated: isVipRated ? 1 : 0,
+      notificationPreference: mobilePhone.trim() ? notificationPreference || undefined : undefined,
+      notificationOptOut,
       isAdmin: role === "admin" ? 1 : 0, // For backward compatibility
       teamId: teamId || 1, // Staff organization team
       createdBy: 1, // Admin user
@@ -211,7 +215,12 @@ export default function AdminStaffAddScreen() {
             <Text className="text-sm font-semibold text-foreground mb-2">Mobile Phone</Text>
             <TextInput
               value={mobilePhone}
-              onChangeText={setMobilePhone}
+              onChangeText={(text) => {
+                setMobilePhone(text);
+                if (!text.trim()) {
+                  setNotificationPreference(null);
+                }
+              }}
               placeholder="Enter mobile phone"
               keyboardType="phone-pad"
               className="bg-surface border border-border rounded-lg p-3 text-foreground"
@@ -354,6 +363,37 @@ export default function AdminStaffAddScreen() {
               />
             </View>
           </TouchableOpacity>
+
+          <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
+            <Text className="text-base font-semibold text-foreground">Preferences</Text>
+
+            <View>
+              <Text className="text-sm font-medium text-foreground mb-2">Notification Preference</Text>
+              <View className={`bg-background border rounded-xl overflow-hidden ${mobilePhone.trim() ? "border-border" : "border-border opacity-50"}`}>
+                <Picker
+                  selectedValue={notificationPreference}
+                  onValueChange={(value) => setNotificationPreference(value || null)}
+                  style={{ color: colors.foreground }}
+                  enabled={!!mobilePhone.trim()}
+                >
+                  <Picker.Item label="Select with mobile number" value={null} />
+                  <Picker.Item label="SMS" value="sms" />
+                  <Picker.Item label="WhatsApp" value="whatsapp" />
+                </Picker>
+              </View>
+              {!mobilePhone.trim() && <Text className="text-xs text-muted mt-2">Enter a mobile phone number to enable notifications.</Text>}
+            </View>
+
+            <TouchableOpacity
+              className="flex-row items-center gap-3"
+              onPress={() => setNotificationOptOut(notificationOptOut === 1 ? 0 : 1)}
+            >
+              <View className={`w-6 h-6 rounded border-2 items-center justify-center ${notificationOptOut === 1 ? "bg-primary border-primary" : "border-border"}`}>
+                {notificationOptOut === 1 && <IconSymbol name="checkmark" size={16} color={colors.background} />}
+              </View>
+              <Text className="text-base text-foreground">Opt out of notifications</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Role Selection */}
           <View>

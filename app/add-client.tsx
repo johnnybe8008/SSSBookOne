@@ -46,7 +46,7 @@ export default function AddClientScreen() {
   const [referralSourceType, setReferralSourceType] = useState<"client" | "staff" | "fsm" | null>(null);
   const [referralSourceId, setReferralSourceId] = useState<number | null>(null);
   const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp" | null>(null);
-  const [notificationOptOut, setNotificationOptOut] = useState(0);
+  const [notificationOptOut, setNotificationOptOut] = useState(1);
   
   const [isVip, setIsVip] = useState(false);
   
