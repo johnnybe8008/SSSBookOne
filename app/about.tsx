@@ -25,7 +25,26 @@ export default function AboutScreen() {
             SSS Book One is a mobile counseling tracker app for managing sessions, clients, and folders.
           </Text>
           <Text className="text-sm text-muted">
-            Copyright © 2026. All rights reserved.
+            Copyright (c) 2026. All rights reserved.
+          </Text>
+        </View>
+        <View className="bg-surface rounded-2xl p-6 border border-border mb-6">
+          <Text className="text-2xl font-bold text-primary mb-4">Privacy Policy</Text>
+          <Text className="text-base text-foreground mb-3">
+            SSS Book One uses information entered into the app to support counseling workflows, including managing
+            clients, sessions, and related records.
+          </Text>
+          <Text className="text-base text-foreground mb-3">
+            Personal information is used only to operate, maintain, and improve the app and to support authorized
+            administrative or service-related functions.
+          </Text>
+          <Text className="text-base text-foreground mb-3">
+            No mobile information will be shared with third parties or affiliates for marketing or promotional
+            purposes.
+          </Text>
+          <Text className="text-base text-foreground">
+            Information may be disclosed only when needed to provide core services, comply with legal obligations,
+            protect users or the app, or when otherwise authorized by the organization using the app.
           </Text>
         </View>
       </ScrollView>
