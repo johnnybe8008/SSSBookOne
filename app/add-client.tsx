@@ -46,7 +46,7 @@ export default function AddClientScreen() {
   const [referralSourceType, setReferralSourceType] = useState<"client" | "staff" | "fsm" | null>(null);
   const [referralSourceId, setReferralSourceId] = useState<number | null>(null);
   const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp" | null>(null);
-  const [notificationOptOut, setNotificationOptOut] = useState(1);
+  const [notificationOptOut, setNotificationOptOut] = useState(0);
   
   const [isVip, setIsVip] = useState(false);
   
@@ -798,7 +798,7 @@ export default function AddClientScreen() {
                   <IconSymbol name="checkmark" size={16} color={colors.background} />
                 )}
               </View>
-              <Text className="text-base text-foreground">Opt out of notifications</Text>
+              <Text className="text-base text-foreground">Opt in for notifications</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

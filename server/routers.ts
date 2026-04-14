@@ -34,7 +34,7 @@ async function syncSessionNotifications(session: {
   const staffRecord = await db.getStaffById(session.staffId);
   const clientRecord = await db.getClientById(session.clientId);
 
-  if (staffRecord && !staffRecord.notificationOptOut && staffRecord.notificationPreference && staffRecord.mobilePhone) {
+  if (staffRecord && staffRecord.notificationOptOut && staffRecord.notificationPreference && staffRecord.mobilePhone) {
     await db.createNotification({
       sessionId: session.id,
       recipientType: "staff",
@@ -45,7 +45,7 @@ async function syncSessionNotifications(session: {
     });
   }
 
-  if (clientRecord && !clientRecord.notificationOptOut && clientRecord.notificationPreference && clientRecord.mobilePhone) {
+  if (clientRecord && clientRecord.notificationOptOut && clientRecord.notificationPreference && clientRecord.mobilePhone) {
     await db.createNotification({
       sessionId: session.id,
       recipientType: "client",

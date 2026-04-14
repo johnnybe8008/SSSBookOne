@@ -254,7 +254,7 @@ export default function ClientDetailScreen() {
               <View className="flex-row items-center justify-between">
                 <Text className="text-base text-muted">Notifications</Text>
                 <Text className="text-base text-foreground font-medium">
-                  {client.notificationOptOut === 1 ? "Opted Out" : "Enabled"}
+                  {client.notificationOptOut === 1 ? "Enabled" : "Not Enabled"}
                 </Text>
               </View>
               {client.isVip === 1 && (

@@ -279,8 +279,8 @@ export async function sendDirectNotification(args: {
   if (!recipientRecord) {
     throw new Error("Recipient not found");
   }
-  if (recipientRecord.notificationOptOut) {
-    return { status: "skipped" as const, reason: "Recipient opted out of notifications" };
+  if (!recipientRecord.notificationOptOut) {
+    return { status: "skipped" as const, reason: "Recipient is not opted in for notifications" };
   }
 
   const notificationType = recipientRecord.notificationPreference as NotificationType | null | undefined;

@@ -25,7 +25,7 @@ export default function AdminStaffAddScreen() {
   const [role, setRole] = useState<"admin" | "counselor" | "viewer">("counselor");
   const [isVipRated, setIsVipRated] = useState(false);
   const [notificationPreference, setNotificationPreference] = useState<"sms" | "whatsapp" | null>(null);
-  const [notificationOptOut, setNotificationOptOut] = useState(1);
+  const [notificationOptOut, setNotificationOptOut] = useState(0);
   
   // Staff organizational assignment
   const [groupId, setGroupId] = useState<number | null>(null);
@@ -391,7 +391,7 @@ export default function AdminStaffAddScreen() {
               <View className={`w-6 h-6 rounded border-2 items-center justify-center ${notificationOptOut === 1 ? "bg-primary border-primary" : "border-border"}`}>
                 {notificationOptOut === 1 && <IconSymbol name="checkmark" size={16} color={colors.background} />}
               </View>
-              <Text className="text-base text-foreground">Opt out of notifications</Text>
+              <Text className="text-base text-foreground">Opt in for notifications</Text>
             </TouchableOpacity>
           </View>
 

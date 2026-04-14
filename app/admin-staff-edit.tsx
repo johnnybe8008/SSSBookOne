@@ -569,7 +569,7 @@ export default function AdminStaffEditScreen() {
               <View className={`w-6 h-6 rounded border-2 items-center justify-center ${notificationOptOut === 1 ? "bg-primary border-primary" : "border-border"}`}>
                 {notificationOptOut === 1 && <IconSymbol name="checkmark" size={16} color={colors.background} />}
               </View>
-              <Text className="text-base text-foreground">Opt out of notifications</Text>
+              <Text className="text-base text-foreground">Opt in for notifications</Text>
             </TouchableOpacity>
           </View>
 
