@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -10,6 +10,9 @@ import { trpc } from "@/lib/trpc";
 
 export default function AdminStaffAddScreen() {
   const colors = useColors();
+  const params = useLocalSearchParams<{ user?: string | string[] }>();
+  const previewUser = Array.isArray(params.user) ? params.user[0] : params.user;
+  const isValidationPreview = previewUser === "staffview-k7m4";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobilePhone, setMobilePhone] = useState("");
@@ -33,11 +36,27 @@ export default function AdminStaffAddScreen() {
   const [teamId, setTeamId] = useState<number | null>(null);
 
   // Fetch staff organizational data
-  const { data: organizations } = trpc.organizations.list.useQuery();
+  const { data: demoData, isLoading: demoLoading } = trpc.demo.adminStaffAddData.useQuery(
+    { user: previewUser || "" },
+    { enabled: isValidationPreview }
+  );
+  const { data: organizationsData, isLoading: organizationsLoading } = trpc.organizations.list.useQuery(
+    undefined,
+    { enabled: !isValidationPreview }
+  );
   // Fetch all staff departments (0 = all)
-  const { data: allStaffDepartments } = trpc.staffDepartments.list.useQuery({ organizationId: 0 });
+  const { data: allStaffDepartmentsData } = trpc.staffDepartments.list.useQuery(
+    { organizationId: 0 },
+    { enabled: !isValidationPreview }
+  );
   // Fetch all teams (0 = all)
-  const { data: allTeams } = trpc.teams.list.useQuery({ groupId: 0 });
+  const { data: allTeamsData } = trpc.teams.list.useQuery(
+    { groupId: 0 },
+    { enabled: !isValidationPreview }
+  );
+  const organizations = isValidationPreview ? demoData?.organizations : organizationsData;
+  const allStaffDepartments = isValidationPreview ? demoData?.staffDepartments : allStaffDepartmentsData;
+  const allTeams = isValidationPreview ? demoData?.teams : allTeamsData;
   
   // Filter departments based on selected organization
   const staffDepartments = groupId 
@@ -66,6 +85,10 @@ export default function AdminStaffAddScreen() {
   });
 
   const handleSave = () => {
+    if (isValidationPreview) {
+      Alert.alert("Preview Mode", "This validation link is view-only. Changes cannot be saved.");
+      return;
+    }
     if (!name.trim()) {
       Alert.alert("Error", "Please enter a name");
       return;
@@ -159,6 +182,11 @@ export default function AdminStaffAddScreen() {
 
   return (
     <ScreenContainer className="p-4">
+      {organizationsLoading || demoLoading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
       <ScrollView>
         {/* Header */}
         <View className="mb-6 flex-row items-center justify-between">
@@ -172,6 +200,12 @@ export default function AdminStaffAddScreen() {
 
         {/* Form */}
         <View className="gap-4">
+          {isValidationPreview && (
+            <View className="rounded-xl border border-amber-300 bg-amber-50 p-3">
+              <Text className="text-sm font-semibold text-amber-900">Validation Preview</Text>
+              <Text className="mt-1 text-sm text-amber-800">This page is view-only. Add and update actions are disabled.</Text>
+            </View>
+          )}
           {/* Name */}
           <View>
             <Text className="text-sm font-semibold text-foreground mb-2">Name *</Text>
@@ -530,10 +564,16 @@ export default function AdminStaffAddScreen() {
                   </View>
                 </View>
                 <TouchableOpacity
-                  onPress={() => setShowDeptModal(true)}
-                  className="ml-2 bg-primary rounded-full w-10 h-10 items-center justify-center"
+                  onPress={() => {
+                    if (isValidationPreview) {
+                      Alert.alert("Preview Mode", "Department creation is disabled for this validation link.");
+                      return;
+                    }
+                    setShowDeptModal(true);
+                  }}
+                  className={`ml-2 rounded-full w-10 h-10 items-center justify-center ${isValidationPreview ? "bg-muted" : "bg-primary"}`}
                 >
-                  <Text className="text-background text-xl font-bold">+</Text>
+                  <Text className={`text-xl font-bold ${isValidationPreview ? "text-foreground" : "text-background"}`}>+</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -569,10 +609,16 @@ export default function AdminStaffAddScreen() {
                   </View>
                 </View>
                 <TouchableOpacity
-                  onPress={() => setShowTeamModal(true)}
-                  className="ml-2 bg-primary rounded-full w-10 h-10 items-center justify-center"
+                  onPress={() => {
+                    if (isValidationPreview) {
+                      Alert.alert("Preview Mode", "Team creation is disabled for this validation link.");
+                      return;
+                    }
+                    setShowTeamModal(true);
+                  }}
+                  className={`ml-2 rounded-full w-10 h-10 items-center justify-center ${isValidationPreview ? "bg-muted" : "bg-primary"}`}
                 >
-                  <Text className="text-background text-xl font-bold">+</Text>
+                  <Text className={`text-xl font-bold ${isValidationPreview ? "text-foreground" : "text-background"}`}>+</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -585,17 +631,17 @@ export default function AdminStaffAddScreen() {
         <View className="gap-3 mt-8 mb-8">
           <TouchableOpacity
             onPress={handleSave}
-            disabled={createStaff.isPending}
+            disabled={isValidationPreview || createStaff.isPending}
             className={`rounded-lg p-3 ${
-              createStaff.isPending ? "bg-muted" : "bg-success"
+              isValidationPreview || createStaff.isPending ? "bg-muted" : "bg-success"
             }`}
             style={{ minHeight: 48 }}
           >
             {createStaff.isPending ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text className="text-background font-semibold text-center text-lg">
-                Create Staff Member
+              <Text className={`font-semibold text-center text-lg ${isValidationPreview ? "text-foreground" : "text-background"}`}>
+                {isValidationPreview ? "Preview Only" : "Create Staff Member"}
               </Text>
             )}
           </TouchableOpacity>
@@ -610,6 +656,7 @@ export default function AdminStaffAddScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      )}
 
       {/* Department Modal */}
       <Modal visible={showDeptModal} transparent animationType="slide">
@@ -640,6 +687,10 @@ export default function AdminStaffAddScreen() {
               <TouchableOpacity
                 onPress={() => {
                   if (!newDeptName.trim() || !groupId) return;
+                  if (isValidationPreview) {
+                    Alert.alert("Preview Mode", "Department creation is disabled for this validation link.");
+                    return;
+                  }
                   createDepartment.mutate({
                     organizationId: groupId,
                     name: newDeptName.trim(),
@@ -685,6 +736,10 @@ export default function AdminStaffAddScreen() {
               <TouchableOpacity
                 onPress={() => {
                   if (!newTeamName.trim() || !staffDepartmentId || !groupId) return;
+                  if (isValidationPreview) {
+                    Alert.alert("Preview Mode", "Team creation is disabled for this validation link.");
+                    return;
+                  }
                   createTeam.mutate({
                     organizationId: groupId,
                     staffDepartmentId: staffDepartmentId,

@@ -24,6 +24,15 @@ export default function AboutScreen() {
           <Text className="text-base text-foreground mb-2">
             SSS Book One is a mobile counseling tracker app for managing sessions, clients, and folders.
           </Text>
+          <Text className="text-base text-foreground mb-2">
+            Developed by SSS Book One Project for Staff Use Only!         
+          </Text>
+          <Text className="text-base text-foreground mb-2">
+            Clearwater, FL 33755, USA - and         
+          </Text>
+           <Text className="text-base text-foreground mb-2">
+            Lone Hill, Sandton 2192, South Africa.         
+          </Text>
           <Text className="text-sm text-muted">
             Copyright (c) 2026. All rights reserved.
           </Text>

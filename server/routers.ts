@@ -81,6 +81,17 @@ function buildMobilePhoneUpdates(input: { mobilePhone?: string; mobileCountryIso
   };
 }
 
+const DEMO_ACCESS_TOKENS = {
+  adminStaffAdd: "staffview-k7m4",
+  addClient: "clientview-p9r2",
+} as const;
+
+function assertDemoAccess(token: string | undefined, route: keyof typeof DEMO_ACCESS_TOKENS) {
+  if (token !== DEMO_ACCESS_TOKENS[route]) {
+    throw new Error("Invalid demo access");
+  }
+}
+
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
@@ -222,6 +233,92 @@ export const appRouter = router({
       }
       return await previewResetDatabase();
     }),
+  }),
+
+  demo: router({
+    adminStaffAddData: publicProcedure
+      .input(z.object({ user: z.string() }))
+      .query(async ({ input }) => {
+        assertDemoAccess(input.user, "adminStaffAdd");
+
+        const [organizations, staffDepartments, teams] = await Promise.all([
+          db.getAllOrganizations(),
+          db.getStaffDepartmentsByOrganizationId(0),
+          db.getTeamsByOrganizationId(0),
+        ]);
+
+        return {
+          organizations: organizations.map((org: any) => ({
+            id: org.id,
+            name: org.name,
+          })),
+          staffDepartments: staffDepartments.map((dept: any) => ({
+            id: dept.id,
+            name: dept.name,
+            organizationId: dept.organizationId,
+          })),
+          teams: teams.map((team: any) => ({
+            id: team.id,
+            name: team.name,
+            groupId: team.groupId,
+            staffDepartmentId: team.staffDepartmentId,
+          })),
+        };
+      }),
+    addClientData: publicProcedure
+      .input(
+        z.object({
+          user: z.string(),
+          companyId: z.number().optional(),
+          coDepartmentId: z.number().optional(),
+          referralSourceType: z.enum(["client", "staff", "fsm"]).nullable().optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        assertDemoAccess(input.user, "addClient");
+
+        const [companies, departments, companyTeams, clients, staff, fsms] = await Promise.all([
+          db.getAllCompanies(),
+          input.companyId ? db.getCoDepartmentsByCompanyId(input.companyId) : Promise.resolve([]),
+          input.coDepartmentId ? db.getCompanyTeamsByDepartmentId(input.coDepartmentId) : Promise.resolve([]),
+          input.referralSourceType === "client" ? db.getAllClients() : Promise.resolve([]),
+          input.referralSourceType === "staff" ? db.getAllStaff() : Promise.resolve([]),
+          input.referralSourceType === "fsm" ? db.getAllFSMs() : Promise.resolve([]),
+        ]);
+
+        return {
+          companies: companies.map((company: any) => ({
+            id: company.id,
+            name: company.name,
+            address: company.address,
+            contactPerson: company.contactPerson,
+          })),
+          departments: departments.map((dept: any) => ({
+            id: dept.id,
+            name: dept.name,
+            description: dept.description,
+            companyId: dept.companyId,
+          })),
+          companyTeams: companyTeams.map((team: any) => ({
+            id: team.id,
+            name: team.name,
+            description: team.description,
+            coDepartmentId: team.coDepartmentId,
+          })),
+          clients: clients.map((client: any) => ({
+            id: client.id,
+            name: client.name,
+          })),
+          staff: staff.map((member: any) => ({
+            id: member.id,
+            name: member.name,
+          })),
+          fsms: fsms.map((fsm: any) => ({
+            id: fsm.id,
+            name: fsm.name,
+          })),
+        };
+      }),
   }),
 
   // Company Templates

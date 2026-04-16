@@ -6,7 +6,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
 
 /**
@@ -21,6 +21,9 @@ import { Picker } from "@react-native-picker/picker";
 export default function AddClientScreen() {
   const colors = useColors();
   const router = useRouter();
+  const params = useLocalSearchParams<{ user?: string | string[] }>();
+  const previewUser = Array.isArray(params.user) ? params.user[0] : params.user;
+  const isValidationPreview = previewUser === "clientview-p9r2";
   const utils = trpc.useUtils();
 
   // Form state
@@ -125,7 +128,7 @@ export default function AddClientScreen() {
     description?: string;
   }>>([]);
   
-  const { data: user } = trpc.auth.me.useQuery();
+  const { data: user } = trpc.auth.me.useQuery(undefined, { enabled: !isValidationPreview });
 
   // Load recent company selections from AsyncStorage
   useEffect(() => {
@@ -143,7 +146,18 @@ export default function AddClientScreen() {
   }, []);
 
   // Fetch dropdown data
-  const { data: companies, isLoading: companiesLoading } = trpc.companies.list.useQuery();
+  const { data: demoData, isLoading: demoLoading } = trpc.demo.addClientData.useQuery(
+    {
+      user: previewUser || "",
+      companyId: companyId || undefined,
+      coDepartmentId: departmentId || undefined,
+      referralSourceType,
+    },
+    { enabled: isValidationPreview }
+  );
+  const { data: companiesData, isLoading: companiesLoading } = trpc.companies.list.useQuery(undefined, {
+    enabled: !isValidationPreview,
+  });
   
   // Save recent company selection
   const saveRecentCompany = async (id: number) => {
@@ -158,8 +172,9 @@ export default function AddClientScreen() {
 
   // Filtered companies for search, with recent ones at top
   const mergedCompanies = useMemo(() => {
-    return [...(companies || []), ...localCompanies];
-  }, [companies, localCompanies]);
+    const sourceCompanies = isValidationPreview ? demoData?.companies || [] : companiesData || [];
+    return [...sourceCompanies, ...localCompanies];
+  }, [companiesData, demoData?.companies, isValidationPreview, localCompanies]);
 
   const filteredCompanies = useMemo(() => {
     if (!mergedCompanies.length) return [];
@@ -186,10 +201,11 @@ export default function AddClientScreen() {
     });
   }, [mergedCompanies, companySearchQuery, recentCompanyIds]);
   
-  const { data: departments } = trpc.coDepartments.list.useQuery(
+  const { data: departmentsData } = trpc.coDepartments.list.useQuery(
     { companyId: companyId || 0 },
-    { enabled: !!companyId && companyId > 0 }
+    { enabled: !isValidationPreview && !!companyId && companyId > 0 }
   );
+  const departments = isValidationPreview ? demoData?.departments : departmentsData;
 
   const localDepartmentsForCompany = useMemo(() => {
     if (!companyId) return [];
@@ -208,10 +224,11 @@ export default function AddClientScreen() {
     );
   }, [departments, localDepartmentsForCompany, departmentSearchQuery]);
   
-  const { data: companyTeams } = trpc.companyTeams.list.useQuery(
+  const { data: companyTeamsData } = trpc.companyTeams.list.useQuery(
     { coDepartmentId: departmentId || 0 },
-    { enabled: !!departmentId }
+    { enabled: !isValidationPreview && !!departmentId }
   );
+  const companyTeams = isValidationPreview ? demoData?.companyTeams : companyTeamsData;
   
   // Filtered teams for search
   const filteredTeams = useMemo(() => {
@@ -225,9 +242,18 @@ export default function AddClientScreen() {
   }, [companyTeams, teamSearchQuery]);
   
   // Fetch referral source options based on type
-  const { data: allClients } = trpc.clients.listAll.useQuery(undefined, { enabled: referralSourceType === "client" });
-  const { data: allStaff } = trpc.staff.listAll.useQuery(undefined, { enabled: referralSourceType === "staff" });
-  const { data: fsms } = trpc.fsms.list.useQuery(undefined, { enabled: referralSourceType === "fsm" });
+  const { data: allClientsData } = trpc.clients.listAll.useQuery(undefined, {
+    enabled: !isValidationPreview && referralSourceType === "client",
+  });
+  const { data: allStaffData } = trpc.staff.listAll.useQuery(undefined, {
+    enabled: !isValidationPreview && referralSourceType === "staff",
+  });
+  const { data: fsmsData } = trpc.fsms.list.useQuery(undefined, {
+    enabled: !isValidationPreview && referralSourceType === "fsm",
+  });
+  const allClients = isValidationPreview ? demoData?.clients : allClientsData;
+  const allStaff = isValidationPreview ? demoData?.staff : allStaffData;
+  const fsms = isValidationPreview ? demoData?.fsms : fsmsData;
 
   // Filtered referral sources for search
   const filteredClientReferrals = useMemo(() => {
@@ -308,6 +334,10 @@ export default function AddClientScreen() {
   });
 
   const handleSubmit = async () => {
+    if (isValidationPreview) {
+      Alert.alert("Preview Mode", "This validation link is view-only. Changes cannot be saved.");
+      return;
+    }
     if (!name.trim()) {
       Alert.alert("Validation Error", "Please enter client name");
       return;
@@ -397,7 +427,7 @@ export default function AddClientScreen() {
     }
   };
 
-  if (companiesLoading) {
+  if (companiesLoading || demoLoading) {
     return (
       <ScreenContainer className="items-center justify-center">
         <ActivityIndicator size="large" color={colors.primary} />
@@ -422,6 +452,12 @@ export default function AddClientScreen() {
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         <View className="gap-4">
+          {isValidationPreview && (
+            <View className="rounded-xl border border-amber-300 bg-amber-50 p-3">
+              <Text className="text-sm font-semibold text-amber-900">Validation Preview</Text>
+              <Text className="mt-1 text-sm text-amber-800">This page is view-only. Add and update actions are disabled.</Text>
+            </View>
+          )}
           {/* Basic Information Section */}
           <View className="bg-surface border border-border rounded-2xl p-4 gap-3">
             <Text className="text-base font-semibold text-foreground">Basic Information</Text>
@@ -816,14 +852,16 @@ export default function AddClientScreen() {
 
           {/* Submit Button */}
           <TouchableOpacity
-            className="bg-primary rounded-xl py-4 items-center mb-8"
+            className={`rounded-xl py-4 items-center mb-8 ${isValidationPreview || createClient.isPending ? "bg-muted" : "bg-primary"}`}
             onPress={handleSubmit}
-            disabled={createClient.isPending}
+            disabled={isValidationPreview || createClient.isPending}
           >
             {createClient.isPending ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text className="text-base font-semibold text-white">Create Client</Text>
+              <Text className={`text-base font-semibold ${isValidationPreview ? "text-foreground" : "text-white"}`}>
+                {isValidationPreview ? "Preview Only" : "Create Client"}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -876,11 +914,17 @@ export default function AddClientScreen() {
                 />
                 
                 <TouchableOpacity
-                  onPress={() => setShowCreateCompany(true)}
-                  style={{ backgroundColor: colors.primary }}
+                  onPress={() => {
+                    if (isValidationPreview) {
+                      Alert.alert("Preview Mode", "Company creation is disabled for this validation link.");
+                      return;
+                    }
+                    setShowCreateCompany(true);
+                  }}
+                  style={{ backgroundColor: isValidationPreview ? colors.border : colors.primary }}
                   className="rounded-lg py-3 mb-4 flex-row items-center justify-center"
                 >
-                  <Text className="text-white font-semibold">+ Create New Company</Text>
+                  <Text className={`font-semibold ${isValidationPreview ? "text-foreground" : "text-white"}`}>+ Create New Company</Text>
                 </TouchableOpacity>
                 
                 <FlatList
@@ -993,6 +1037,10 @@ export default function AddClientScreen() {
                   
                   <TouchableOpacity
                     onPress={() => {
+                      if (isValidationPreview) {
+                        Alert.alert("Preview Mode", "Company creation is disabled for this validation link.");
+                        return;
+                      }
                       if (!newCompanyName.trim()) {
                         Alert.alert("Validation Error", "Please enter company name");
                         return;
@@ -1062,12 +1110,18 @@ export default function AddClientScreen() {
               className="px-4 py-3 rounded-lg mb-4"
             />
             {!showCreateDepartment && (
-              <TouchableOpacity
-                onPress={() => setShowCreateDepartment(true)}
-                style={{ backgroundColor: colors.primary }}
+                  <TouchableOpacity
+                onPress={() => {
+                  if (isValidationPreview) {
+                    Alert.alert("Preview Mode", "Department creation is disabled for this validation link.");
+                    return;
+                  }
+                  setShowCreateDepartment(true);
+                }}
+                style={{ backgroundColor: isValidationPreview ? colors.border : colors.primary }}
                 className="py-3 px-4 rounded-xl mb-4 flex-row items-center justify-center gap-2"
               >
-                <Text className="text-background font-semibold">+ Create New Department</Text>
+                <Text className={`font-semibold ${isValidationPreview ? "text-foreground" : "text-background"}`}>+ Create New Department</Text>
               </TouchableOpacity>
             )}
             {showCreateDepartment ? (
@@ -1092,6 +1146,10 @@ export default function AddClientScreen() {
                 <View className="flex-row gap-2">
                   <TouchableOpacity
                     onPress={() => {
+                      if (isValidationPreview) {
+                        Alert.alert("Preview Mode", "Department creation is disabled for this validation link.");
+                        return;
+                      }
                       if (!newDepartmentName.trim()) {
                         Alert.alert("Validation Error", "Please enter department name");
                         return;
